@@ -55,6 +55,9 @@ export const adminPatronsAPI = {
   updateStatus: (patronId, action) =>
     api.patch(`/admin/patrons/${patronId}/status`, { action }),
   getMembershipPlans: () => api.get('/admin/membership-plans'),
+  createMembershipPlan: (planData) => api.post('/admin/membership-plans', planData),
+  updateMembershipPlan: (planId, planData) => api.put(`/admin/membership-plans/${planId}`, planData),
+  deleteMembershipPlan: (planId) => api.delete(`/admin/membership-plans/${planId}`),
 };
 
 // Admin - Books API

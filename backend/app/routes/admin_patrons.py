@@ -286,9 +286,105 @@ def get_membership_plans():
     query = """
         SELECT plan_id, plan_name, plan_type, duration_days, price, description
         FROM membership_plans
-        WHERE plan_type = 'Active'
         ORDER BY price ASC
     """
     plans = execute_query(query, fetch_all=True)
 
-    return jsonify({"plans": plans}), 200
+    return jsonify({"plans": [dict(p) for p in (plans or [])]}), 200
+
+@admin_patrons_bp.route('/membership-plans', methods=['POST'])
+@jwt_required()
+@admin_required
+def create_membership_plan():
+    """Create a new membership plan"""
+    data = request.get_json()
+
+    required_fields = ['plan_name', 'plan_type', 'duration_days', 'price']
+    if not all(field in data for field in required_fields):
+        return jsonify({"error": "Missing required fields"}), 400
+
+    with get_db_cursor() as cursor:
+        # Check if plan name already exists
+        cursor.execute("SELECT plan_id FROM membership_plans WHERE plan_name = %s", (data['plan_name'],))
+        if cursor.fetchone():
+            return jsonify({"error": "Plan name already exists"}), 400
+
+        cursor.execute("""
+            INSERT INTO membership_plans (plan_name, plan_type, duration_days, price, description)
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING plan_id
+        """, (data['plan_name'], data['plan_type'], data['duration_days'],
+              data['price'], data.get('description')))
+
+        plan_id = cursor.fetchone()['plan_id']
+
+        return jsonify({
+            "message": "Membership plan created successfully",
+            "plan_id": plan_id
+        }), 201
+
+@admin_patrons_bp.route('/membership-plans/<int:plan_id>', methods=['PUT'])
+@jwt_required()
+@admin_required
+def update_membership_plan(plan_id):
+    """Update a membership plan"""
+    data = request.get_json()
+
+    with get_db_cursor() as cursor:
+        # Check if plan exists
+        cursor.execute("SELECT plan_id FROM membership_plans WHERE plan_id = %s", (plan_id,))
+        if not cursor.fetchone():
+            return jsonify({"error": "Membership plan not found"}), 404
+
+        update_fields = []
+        params = []
+
+        if 'plan_name' in data:
+            update_fields.append("plan_name = %s")
+            params.append(data['plan_name'])
+        if 'plan_type' in data:
+            update_fields.append("plan_type = %s")
+            params.append(data['plan_type'])
+        if 'duration_days' in data:
+            update_fields.append("duration_days = %s")
+            params.append(data['duration_days'])
+        if 'price' in data:
+            update_fields.append("price = %s")
+            params.append(data['price'])
+        if 'description' in data:
+            update_fields.append("description = %s")
+            params.append(data['description'])
+
+        if not update_fields:
+            return jsonify({"error": "No fields to update"}), 400
+
+        params.append(plan_id)
+
+        cursor.execute(f"""
+            UPDATE membership_plans
+            SET {', '.join(update_fields)}
+            WHERE plan_id = %s
+        """, tuple(params))
+
+        return jsonify({"message": "Membership plan updated successfully"}), 200
+
+@admin_patrons_bp.route('/membership-plans/<int:plan_id>', methods=['DELETE'])
+@jwt_required()
+@admin_required
+def delete_membership_plan(plan_id):
+    """Delete a membership plan"""
+    with get_db_cursor() as cursor:
+        # Check if plan is being used by any patrons
+        cursor.execute("SELECT COUNT(*) as count FROM patrons WHERE membership_plan_id = %s", (plan_id,))
+        result = cursor.fetchone()
+
+        if result and result['count'] > 0:
+            return jsonify({"error": "Cannot delete plan - it is being used by patrons"}), 400
+
+        cursor.execute("DELETE FROM membership_plans WHERE plan_id = %s RETURNING plan_id", (plan_id,))
+        deleted = cursor.fetchone()
+
+        if not deleted:
+            return jsonify({"error": "Membership plan not found"}), 404
+
+        return jsonify({"message": "Membership plan deleted successfully"}), 200

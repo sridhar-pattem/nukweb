@@ -5,6 +5,7 @@ import PatronManagement from './components/PatronManagement';
 import BookCatalogue from './components/BookCatalogue';
 import BorrowingsManagement from './components/BorrowingsManagement';
 import BrowseBooks from './components/BrowseBooks';
+import MembershipPlans from './components/MembershipPlans';
 
 // Context for authentication
 export const AuthContext = createContext();
@@ -132,6 +133,7 @@ function AdminDashboard() {
         <h2>Nuk Library Admin</h2>
         <ul>
           <li><Link to="/admin/patrons">Patron Management</Link></li>
+          <li><Link to="/admin/membership-plans">Membership Plans</Link></li>
           <li><Link to="/admin/books">Book Catalogue</Link></li>
           <li><Link to="/admin/borrowings">Borrowings</Link></li>
           <li><Link to="/admin/cowork">Cowork Requests</Link></li>
@@ -146,6 +148,7 @@ function AdminDashboard() {
         <Routes>
           <Route index element={<AdminHome />} />
           <Route path="patrons" element={<PatronManagement />} />
+          <Route path="membership-plans" element={<MembershipPlans />} />
           <Route path="books" element={<BookCatalogue />} />
           <Route path="borrowings" element={<BorrowingsManagement />} />
           <Route path="cowork" element={<div>Cowork Requests - Coming Soon</div>} />
