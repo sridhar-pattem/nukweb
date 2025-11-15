@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { adminBorrowingsAPI } from '../services/api';
 
 function BorrowingsManagement() {
@@ -8,10 +8,77 @@ function BorrowingsManagement() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showIssueForm, setShowIssueForm] = useState(false);
-  const [issueForm, setIssueForm] = useState({
-    patron_id: '',
-    book_id: ''
-  });
+
+  // Autocomplete state for patron search
+  const [patronSearch, setPatronSearch] = useState('');
+  const [patronResults, setPatronResults] = useState([]);
+  const [selectedPatron, setSelectedPatron] = useState(null);
+  const [showPatronDropdown, setShowPatronDropdown] = useState(false);
+  const patronRef = useRef(null);
+
+  // Autocomplete state for book search
+  const [bookSearch, setBookSearch] = useState('');
+  const [bookResults, setBookResults] = useState([]);
+  const [selectedBook, setSelectedBook] = useState(null);
+  const [showBookDropdown, setShowBookDropdown] = useState(false);
+  const bookRef = useRef(null);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (patronRef.current && !patronRef.current.contains(event.target)) {
+        setShowPatronDropdown(false);
+      }
+      if (bookRef.current && !bookRef.current.contains(event.target)) {
+        setShowBookDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Search patrons as user types
+  useEffect(() => {
+    const searchPatrons = async () => {
+      if (patronSearch.length < 2) {
+        setPatronResults([]);
+        return;
+      }
+
+      try {
+        const response = await adminBorrowingsAPI.searchPatrons(patronSearch);
+        setPatronResults(response.data);
+        setShowPatronDropdown(true);
+      } catch (err) {
+        console.error('Failed to search patrons:', err);
+      }
+    };
+
+    const timeoutId = setTimeout(searchPatrons, 300);
+    return () => clearTimeout(timeoutId);
+  }, [patronSearch]);
+
+  // Search books as user types
+  useEffect(() => {
+    const searchBooks = async () => {
+      if (bookSearch.length < 2) {
+        setBookResults([]);
+        return;
+      }
+
+      try {
+        const response = await adminBorrowingsAPI.searchBooks(bookSearch);
+        setBookResults(response.data);
+        setShowBookDropdown(true);
+      } catch (err) {
+        console.error('Failed to search books:', err);
+      }
+    };
+
+    const timeoutId = setTimeout(searchBooks, 300);
+    return () => clearTimeout(timeoutId);
+  }, [bookSearch]);
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -35,14 +102,28 @@ function BorrowingsManagement() {
 
   const handleIssueBook = async (e) => {
     e.preventDefault();
+
+    if (!selectedPatron) {
+      alert('Please select a patron');
+      return;
+    }
+
+    if (!selectedBook) {
+      alert('Please select a book');
+      return;
+    }
+
     try {
-      await adminBorrowingsAPI.issueBook(
-        parseInt(issueForm.patron_id),
-        parseInt(issueForm.book_id)
-      );
+      await adminBorrowingsAPI.issueBook(selectedPatron.patron_id, selectedBook.book_id);
       setShowIssueForm(false);
-      setIssueForm({ patron_id: '', book_id: '' });
+      setPatronSearch('');
+      setBookSearch('');
+      setSelectedPatron(null);
+      setSelectedBook(null);
+      setPatronResults([]);
+      setBookResults([]);
       alert('Book issued successfully!');
+
       // Refresh search if there was a previous search
       if (searchValue) {
         handleSearch(new Event('submit'));
@@ -90,6 +171,18 @@ function BorrowingsManagement() {
     }
   };
 
+  const selectPatron = (patron) => {
+    setSelectedPatron(patron);
+    setPatronSearch(patron.name);
+    setShowPatronDropdown(false);
+  };
+
+  const selectBook = (book) => {
+    setSelectedBook(book);
+    setBookSearch(book.title);
+    setShowBookDropdown(false);
+  };
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -112,28 +205,129 @@ function BorrowingsManagement() {
           <h3>Issue Book to Patron</h3>
           <form onSubmit={handleIssueBook}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-              <div className="form-group">
-                <label>Patron ID *</label>
+              {/* Patron Autocomplete */}
+              <div className="form-group" ref={patronRef}>
+                <label>Search Patron by Name *</label>
                 <input
-                  type="number"
-                  value={issueForm.patron_id}
-                  onChange={(e) => setIssueForm({...issueForm, patron_id: e.target.value})}
+                  type="text"
+                  value={patronSearch}
+                  onChange={(e) => {
+                    setPatronSearch(e.target.value);
+                    setSelectedPatron(null);
+                  }}
+                  placeholder="Start typing patron name..."
                   required
-                  placeholder="Enter patron ID"
+                  style={{ width: '100%', padding: '10px' }}
                 />
+                {showPatronDropdown && patronResults.length > 0 && (
+                  <div style={{
+                    position: 'absolute',
+                    zIndex: 1000,
+                    backgroundColor: 'white',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    maxHeight: '200px',
+                    overflowY: 'auto',
+                    width: '100%',
+                    marginTop: '2px',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                  }}>
+                    {patronResults.map((patron) => (
+                      <div
+                        key={patron.patron_id}
+                        onClick={() => selectPatron(patron)}
+                        style={{
+                          padding: '10px',
+                          cursor: 'pointer',
+                          borderBottom: '1px solid #f0f0f0',
+                          ':hover': { backgroundColor: '#f5f5f5' }
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = '#f5f5f5'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
+                      >
+                        <div><strong>{patron.name}</strong></div>
+                        <div style={{ fontSize: '12px', color: '#666' }}>
+                          {patron.email} | ID: {patron.patron_id}
+                        </div>
+                        {patron.plan_name && (
+                          <div style={{ fontSize: '11px', color: '#888' }}>
+                            Plan: {patron.plan_name}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {selectedPatron && (
+                  <div style={{ marginTop: '5px', padding: '5px', backgroundColor: '#e8f5e9', borderRadius: '3px' }}>
+                    <small>Selected: {selectedPatron.name} ({selectedPatron.patron_id})</small>
+                  </div>
+                )}
               </div>
-              <div className="form-group">
-                <label>Book ID *</label>
+
+              {/* Book Autocomplete */}
+              <div className="form-group" ref={bookRef}>
+                <label>Search Book by Title or ISBN *</label>
                 <input
-                  type="number"
-                  value={issueForm.book_id}
-                  onChange={(e) => setIssueForm({...issueForm, book_id: e.target.value})}
+                  type="text"
+                  value={bookSearch}
+                  onChange={(e) => {
+                    setBookSearch(e.target.value);
+                    setSelectedBook(null);
+                  }}
+                  placeholder="Start typing book title or ISBN..."
                   required
-                  placeholder="Enter book ID"
+                  style={{ width: '100%', padding: '10px' }}
                 />
+                {showBookDropdown && bookResults.length > 0 && (
+                  <div style={{
+                    position: 'absolute',
+                    zIndex: 1000,
+                    backgroundColor: 'white',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    maxHeight: '200px',
+                    overflowY: 'auto',
+                    width: '100%',
+                    marginTop: '2px',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                  }}>
+                    {bookResults.map((book) => (
+                      <div
+                        key={book.book_id}
+                        onClick={() => selectBook(book)}
+                        style={{
+                          padding: '10px',
+                          cursor: 'pointer',
+                          borderBottom: '1px solid #f0f0f0'
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = '#f5f5f5'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
+                      >
+                        <div><strong>{book.title}</strong></div>
+                        <div style={{ fontSize: '12px', color: '#666' }}>
+                          {book.author} | ISBN: {book.isbn}
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#888' }}>
+                          Available: {book.available_copies}/{book.total_copies}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {selectedBook && (
+                  <div style={{ marginTop: '5px', padding: '5px', backgroundColor: '#e3f2fd', borderRadius: '3px' }}>
+                    <small>Selected: {selectedBook.title} (Available: {selectedBook.available_copies})</small>
+                  </div>
+                )}
               </div>
             </div>
-            <button type="submit" className="btn btn-success" style={{ marginTop: '10px' }}>
+            <button
+              type="submit"
+              className="btn btn-success"
+              style={{ marginTop: '10px' }}
+              disabled={!selectedPatron || !selectedBook}
+            >
               Issue Book (14 days)
             </button>
           </form>

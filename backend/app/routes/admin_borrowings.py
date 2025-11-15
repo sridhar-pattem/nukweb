@@ -200,3 +200,53 @@ def get_overdue_borrowings():
     """
     overdue = execute_query(query, fetch_all=True)
     return jsonify([dict(b) for b in (overdue or [])]), 200
+
+@admin_borrowings_bp.route('/patrons/search', methods=['GET'])
+@jwt_required()
+@admin_required
+def search_patrons():
+    """Search patrons by name for autocomplete"""
+    search = request.args.get('q', '')
+
+    if len(search) < 2:
+        return jsonify([]), 200
+
+    query = """
+        SELECT p.patron_id, u.name, u.email, u.status,
+               mp.plan_name
+        FROM patrons p
+        JOIN users u ON p.user_id = u.user_id
+        LEFT JOIN membership_plans mp ON p.membership_plan_id = mp.plan_id
+        WHERE u.name ILIKE %s AND u.status = 'active'
+        ORDER BY u.name
+        LIMIT 10
+    """
+    search_param = f'%{search}%'
+    patrons = execute_query(query, (search_param,), fetch_all=True)
+
+    return jsonify([dict(p) for p in (patrons or [])]), 200
+
+@admin_borrowings_bp.route('/books/search', methods=['GET'])
+@jwt_required()
+@admin_required
+def search_books():
+    """Search books by title or ISBN for autocomplete"""
+    search = request.args.get('q', '')
+
+    if len(search) < 2:
+        return jsonify([]), 200
+
+    query = """
+        SELECT book_id, isbn, title, author, available_copies, total_copies,
+               genre, cover_image_url, status
+        FROM books
+        WHERE (title ILIKE %s OR isbn LIKE %s OR author ILIKE %s)
+          AND status = 'Available'
+          AND available_copies > 0
+        ORDER BY title
+        LIMIT 10
+    """
+    search_param = f'%{search}%'
+    books = execute_query(query, (search_param, search_param, search_param), fetch_all=True)
+
+    return jsonify([dict(b) for b in (books or [])]), 200

@@ -79,15 +79,17 @@ export const adminBooksAPI = {
 
 // Admin - Borrowings API
 export const adminBorrowingsAPI = {
-  issueBook: (patronId, bookId) => 
+  issueBook: (patronId, bookId) =>
     api.post('/admin/borrowings/issue', { patron_id: patronId, book_id: bookId }),
-  renewBorrowing: (borrowingId) => 
+  renewBorrowing: (borrowingId) =>
     api.post(`/admin/borrowings/${borrowingId}/renew`),
-  returnBook: (borrowingId) => 
+  returnBook: (borrowingId) =>
     api.post(`/admin/borrowings/${borrowingId}/return`),
-  searchBorrowings: (type, value, status = 'active') => 
+  searchBorrowings: (type, value, status = 'active') =>
     api.get('/admin/borrowings/search', { params: { type, value, status } }),
   getOverdue: () => api.get('/admin/borrowings/overdue'),
+  searchPatrons: (query) => api.get('/admin/patrons/search', { params: { q: query } }),
+  searchBooks: (query) => api.get('/admin/books/search', { params: { q: query } }),
 };
 
 // Patron API
