@@ -70,7 +70,7 @@ def get_patrons():
         "total_pages": (total + Config.ITEMS_PER_PAGE - 1) // Config.ITEMS_PER_PAGE
     }), 200
 
-@admin_patrons_bp.route('/patrons/<int:patron_id>', methods=['GET'])
+@admin_patrons_bp.route('/patrons/<patron_id>', methods=['GET'])
 @jwt_required()
 @admin_required
 def get_patron_details(patron_id):
@@ -112,78 +112,85 @@ def get_patron_details(patron_id):
 def create_patron():
     """Create a new patron"""
     data = request.get_json()
-    
-    required_fields = ['email', 'name', 'membership_plan_id']
+
+    required_fields = ['email', 'name', 'membership_plan_id', 'patron_id']
     if not all(field in data for field in required_fields):
         return jsonify({"error": "Missing required fields"}), 400
-    
+
+    # Validate patron_id format
+    import re
+    if not re.match(r'^[A-Z0-9]+$', data['patron_id']):
+        return jsonify({"error": "Patron ID must be alphanumeric (uppercase letters and numbers only)"}), 400
+
     with get_db_cursor() as cursor:
+        # Check if patron_id already exists
+        cursor.execute("SELECT patron_id FROM patrons WHERE patron_id = %s", (data['patron_id'],))
+        if cursor.fetchone():
+            return jsonify({"error": "Patron ID already exists"}), 400
+
         # Check if email already exists
         cursor.execute("SELECT user_id FROM users WHERE email = %s", (data['email'],))
         if cursor.fetchone():
             return jsonify({"error": "Email already exists"}), 400
-        
+
         # Create user account
         default_password = "BookNook313"
         password_hash = hash_password(default_password)
-        
+
         cursor.execute("""
             INSERT INTO users (email, password_hash, role, name, phone, status)
             VALUES (%s, %s, 'patron', %s, %s, 'active')
             RETURNING user_id
         """, (data['email'], password_hash, data['name'], data.get('phone')))
-        
+
         user_id = cursor.fetchone()['user_id']
-        
+
         # Get membership plan details
         cursor.execute("""
-            SELECT duration_days, plan_name 
-            FROM membership_plans 
+            SELECT duration_days, plan_name
+            FROM membership_plans
             WHERE plan_id = %s
         """, (data['membership_plan_id'],))
         plan = cursor.fetchone()
-        
+
         if not plan:
             return jsonify({"error": "Invalid membership plan"}), 400
-        
+
         # Create patron record
         cursor.execute("""
-            INSERT INTO patrons 
-            (user_id, membership_plan_id, membership_type, membership_start_date, 
+            INSERT INTO patrons
+            (patron_id, user_id, membership_plan_id, membership_type, membership_start_date,
              membership_expiry_date, address, mobile_number)
-            VALUES (%s, %s, %s, CURRENT_DATE, CURRENT_DATE + INTERVAL '%s days', %s, %s)
-            RETURNING patron_id
-        """, (user_id, data['membership_plan_id'], plan['plan_name'],
+            VALUES (%s, %s, %s, %s, CURRENT_DATE, CURRENT_DATE + INTERVAL '%s days', %s, %s)
+        """, (data['patron_id'], user_id, data['membership_plan_id'], plan['plan_name'],
               plan['duration_days'], data.get('address'), data.get('mobile_number')))
-        
-        patron_id = cursor.fetchone()['patron_id']
-        
+
         return jsonify({
             "message": "Patron created successfully",
-            "patron_id": patron_id,
+            "patron_id": data['patron_id'],
             "default_password": default_password
         }), 201
 
-@admin_patrons_bp.route('/patrons/<int:patron_id>', methods=['PUT'])
+@admin_patrons_bp.route('/patrons/<patron_id>', methods=['PUT'])
 @jwt_required()
 @admin_required
 def update_patron(patron_id):
     """Update patron information"""
     data = request.get_json()
-    
+
     with get_db_cursor() as cursor:
         # Check if patron exists
         cursor.execute("SELECT user_id FROM patrons WHERE patron_id = %s", (patron_id,))
         patron = cursor.fetchone()
-        
+
         if not patron:
             return jsonify({"error": "Patron not found"}), 404
-        
+
         # Update user information
         if any(k in data for k in ['name', 'phone', 'email']):
             update_fields = []
             params = []
-            
+
             if 'name' in data:
                 update_fields.append("name = %s")
                 params.append(data['name'])
@@ -193,20 +200,20 @@ def update_patron(patron_id):
             if 'email' in data:
                 update_fields.append("email = %s")
                 params.append(data['email'])
-            
+
             params.append(patron['user_id'])
-            
+
             cursor.execute(f"""
-                UPDATE users 
+                UPDATE users
                 SET {', '.join(update_fields)}
                 WHERE user_id = %s
             """, tuple(params))
-        
+
         # Update patron information
-        if any(k in data for k in ['address', 'mobile_number', 'membership_plan_id']):
+        if any(k in data for k in ['address', 'mobile_number', 'membership_plan_id', 'new_patron_id']):
             update_fields = []
             params = []
-            
+
             if 'address' in data:
                 update_fields.append("address = %s")
                 params.append(data['address'])
@@ -216,18 +223,31 @@ def update_patron(patron_id):
             if 'membership_plan_id' in data:
                 update_fields.append("membership_plan_id = %s")
                 params.append(data['membership_plan_id'])
-            
+            if 'new_patron_id' in data:
+                # Validate new patron_id format
+                import re
+                if not re.match(r'^[A-Z0-9]+$', data['new_patron_id']):
+                    return jsonify({"error": "Patron ID must be alphanumeric (uppercase letters and numbers only)"}), 400
+
+                # Check if new patron_id already exists
+                cursor.execute("SELECT patron_id FROM patrons WHERE patron_id = %s", (data['new_patron_id'],))
+                if cursor.fetchone():
+                    return jsonify({"error": "Patron ID already exists"}), 400
+
+                update_fields.append("patron_id = %s")
+                params.append(data['new_patron_id'])
+
             params.append(patron_id)
-            
+
             cursor.execute(f"""
-                UPDATE patrons 
+                UPDATE patrons
                 SET {', '.join(update_fields)}
                 WHERE patron_id = %s
             """, tuple(params))
-        
+
         return jsonify({"message": "Patron updated successfully"}), 200
 
-@admin_patrons_bp.route('/patrons/<int:patron_id>/reset-password', methods=['POST'])
+@admin_patrons_bp.route('/patrons/<patron_id>/reset-password', methods=['POST'])
 @jwt_required()
 @admin_required
 def reset_patron_password(patron_id):
@@ -249,7 +269,7 @@ def reset_patron_password(patron_id):
         "default_password": default_password
     }), 200
 
-@admin_patrons_bp.route('/patrons/<int:patron_id>/status', methods=['PATCH'])
+@admin_patrons_bp.route('/patrons/<patron_id>/status', methods=['PATCH'])
 @jwt_required()
 @admin_required
 def update_patron_status(patron_id):

@@ -26,7 +26,7 @@ CREATE TABLE membership_plans (
 
 -- Patrons (extends users)
 CREATE TABLE patrons (
-    patron_id SERIAL PRIMARY KEY,
+    patron_id VARCHAR(20) PRIMARY KEY,
     user_id INTEGER UNIQUE REFERENCES users(user_id) ON DELETE CASCADE,
     membership_plan_id INTEGER REFERENCES membership_plans(plan_id),
     membership_type VARCHAR(50),
@@ -34,7 +34,8 @@ CREATE TABLE patrons (
     membership_expiry_date DATE,
     address TEXT,
     join_date DATE DEFAULT CURRENT_DATE,
-    mobile_number VARCHAR(20)
+    mobile_number VARCHAR(20),
+    CONSTRAINT patron_id_format CHECK (patron_id ~ '^[A-Z0-9]+$')
 );
 
 -- Books Catalogue

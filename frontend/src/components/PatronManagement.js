@@ -14,6 +14,7 @@ function PatronManagement() {
   const [selectedPatron, setSelectedPatron] = useState(null);
   const [editFormData, setEditFormData] = useState(null);
   const [newPatron, setNewPatron] = useState({
+    patron_id: '',
     email: '',
     name: '',
     phone: '',
@@ -58,6 +59,7 @@ function PatronManagement() {
       const response = await adminPatronsAPI.getPatronDetails(patronId);
       setSelectedPatron(response.data.patron);
       setEditFormData({
+        new_patron_id: response.data.patron.patron_id,
         name: response.data.patron.name,
         email: response.data.patron.email,
         phone: response.data.patron.phone || '',
@@ -84,6 +86,7 @@ function PatronManagement() {
       await adminPatronsAPI.createPatron(newPatron);
       setShowAddForm(false);
       setNewPatron({
+        patron_id: '',
         email: '',
         name: '',
         phone: '',
@@ -164,8 +167,15 @@ function PatronManagement() {
           <form onSubmit={handleUpdatePatron}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '20px' }}>
               <div className="form-group">
-                <label>Patron ID</label>
-                <input type="text" value={selectedPatron.patron_id} disabled style={{ backgroundColor: '#f0f0f0' }} />
+                <label>Patron ID *</label>
+                <input
+                  type="text"
+                  value={editFormData.new_patron_id}
+                  onChange={(e) => setEditFormData({...editFormData, new_patron_id: e.target.value.toUpperCase()})}
+                  pattern="[A-Z0-9]+"
+                  title="Alphanumeric uppercase only"
+                  required
+                />
               </div>
               <div className="form-group">
                 <label>Status</label>
@@ -222,7 +232,7 @@ function PatronManagement() {
                   <option value="">Select a plan</option>
                   {membershipPlans.map(plan => (
                     <option key={plan.plan_id} value={plan.plan_id}>
-                      {plan.plan_name} - ${plan.price} ({plan.duration_days} days)
+                      {plan.plan_name} - ₹{plan.price} ({plan.duration_days} days)
                     </option>
                   ))}
                 </select>
@@ -315,11 +325,14 @@ function PatronManagement() {
           <form onSubmit={handleAddPatron}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
               <div className="form-group">
-                <label>Email *</label>
+                <label>Patron ID * (e.g., NUKG0001000)</label>
                 <input
-                  type="email"
-                  value={newPatron.email}
-                  onChange={(e) => setNewPatron({...newPatron, email: e.target.value})}
+                  type="text"
+                  value={newPatron.patron_id}
+                  onChange={(e) => setNewPatron({...newPatron, patron_id: e.target.value.toUpperCase()})}
+                  placeholder="NUKG0001000"
+                  pattern="[A-Z0-9]+"
+                  title="Alphanumeric uppercase only"
                   required
                 />
               </div>
@@ -329,6 +342,15 @@ function PatronManagement() {
                   type="text"
                   value={newPatron.name}
                   onChange={(e) => setNewPatron({...newPatron, name: e.target.value})}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Email *</label>
+                <input
+                  type="email"
+                  value={newPatron.email}
+                  onChange={(e) => setNewPatron({...newPatron, email: e.target.value})}
                   required
                 />
               </div>
@@ -366,7 +388,7 @@ function PatronManagement() {
                   <option value="">Select a plan</option>
                   {membershipPlans.map(plan => (
                     <option key={plan.plan_id} value={plan.plan_id}>
-                      {plan.plan_name} - ${plan.price} ({plan.duration_days} days)
+                      {plan.plan_name} - ₹{plan.price} ({plan.duration_days} days)
                     </option>
                   ))}
                 </select>
