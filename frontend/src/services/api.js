@@ -87,6 +87,10 @@ export const adminBorrowingsAPI = {
     api.post(`/admin/borrowings/${borrowingId}/return`),
   searchBorrowings: (type, value, status = 'active') =>
     api.get('/admin/borrowings/search', { params: { type, value, status } }),
+  getAllBorrowings: (patronFilter = '', bookFilter = '') =>
+    api.get('/admin/borrowings/all', { params: { patron: patronFilter, book: bookFilter } }),
+  getBorrowingHistory: (patronId, bookId) =>
+    api.get('/admin/borrowings/history', { params: { patron_id: patronId, book_id: bookId } }),
   getOverdue: () => api.get('/admin/borrowings/overdue'),
   searchPatrons: (query) => api.get('/admin/patrons/search', { params: { q: query } }),
   searchBooks: (query) => api.get('/admin/books/search', { params: { q: query } }),

@@ -230,23 +230,105 @@ def search_patrons():
 @jwt_required()
 @admin_required
 def search_books():
-    """Search books by title or ISBN for autocomplete"""
+    """Search books by title or ISBN for autocomplete - shows all books with checkout status"""
     search = request.args.get('q', '')
 
     if len(search) < 2:
         return jsonify([]), 200
 
     query = """
-        SELECT book_id, isbn, title, author, available_copies, total_copies,
-               genre, cover_image_url, status
-        FROM books
-        WHERE (title ILIKE %s OR isbn LIKE %s OR author ILIKE %s)
-          AND status = 'Available'
-          AND available_copies > 0
-        ORDER BY title
+        SELECT b.book_id, b.isbn, b.title, b.author, b.available_copies, b.total_copies,
+               b.genre, b.cover_image_url, b.status,
+               CASE
+                   WHEN EXISTS (
+                       SELECT 1 FROM borrowings br
+                       WHERE br.book_id = b.book_id
+                       AND br.status = 'active'
+                   ) THEN true
+                   ELSE false
+               END as is_checked_out,
+               (SELECT MIN(due_date) FROM borrowings br
+                WHERE br.book_id = b.book_id AND br.status = 'active') as earliest_due_date
+        FROM books b
+        WHERE (b.title ILIKE %s OR b.isbn LIKE %s OR b.author ILIKE %s)
+          AND b.status = 'Available'
+        ORDER BY b.available_copies DESC, b.title
         LIMIT 10
     """
     search_param = f'%{search}%'
     books = execute_query(query, (search_param, search_param, search_param), fetch_all=True)
 
     return jsonify([dict(b) for b in (books or [])]), 200
+
+@admin_borrowings_bp.route('/borrowings/all', methods=['GET'])
+@jwt_required()
+@admin_required
+def get_all_borrowings():
+    """Get all active borrowings with optional filtering"""
+    patron_filter = request.args.get('patron', '')
+    book_filter = request.args.get('book', '')
+
+    query = """
+        SELECT b.*, bk.title, bk.author, bk.isbn,
+               p.patron_id, u.name as patron_name, u.email
+        FROM borrowings b
+        JOIN books bk ON b.book_id = bk.book_id
+        JOIN patrons p ON b.patron_id = p.patron_id
+        JOIN users u ON p.user_id = u.user_id
+        WHERE b.status = 'active'
+    """
+
+    params = []
+
+    if patron_filter:
+        query += " AND u.name ILIKE %s"
+        params.append(f'%{patron_filter}%')
+
+    if book_filter:
+        query += " AND bk.title ILIKE %s"
+        params.append(f'%{book_filter}%')
+
+    query += " ORDER BY b.checkout_date DESC"
+
+    borrowings = execute_query(query, tuple(params) if params else None, fetch_all=True)
+    return jsonify([dict(b) for b in (borrowings or [])]), 200
+
+@admin_borrowings_bp.route('/borrowings/history', methods=['GET'])
+@jwt_required()
+@admin_required
+def get_borrowing_history():
+    """Get borrowing history for a patron or book"""
+    patron_id = request.args.get('patron_id')
+    book_id = request.args.get('book_id')
+
+    if not patron_id and not book_id:
+        return jsonify({"error": "patron_id or book_id required"}), 400
+
+    if patron_id:
+        query = """
+            SELECT b.*, bk.title, bk.author, bk.isbn, bk.cover_image_url,
+                   u.name as patron_name, u.email
+            FROM borrowings b
+            JOIN books bk ON b.book_id = bk.book_id
+            JOIN patrons p ON b.patron_id = p.patron_id
+            JOIN users u ON p.user_id = u.user_id
+            WHERE p.patron_id = %s
+            ORDER BY b.checkout_date DESC
+            LIMIT 50
+        """
+        history = execute_query(query, (patron_id,), fetch_all=True)
+    else:
+        query = """
+            SELECT b.*, p.patron_id, u.name as patron_name, u.email,
+                   bk.title, bk.author, bk.isbn
+            FROM borrowings b
+            JOIN books bk ON b.book_id = bk.book_id
+            JOIN patrons p ON b.patron_id = p.patron_id
+            JOIN users u ON p.user_id = u.user_id
+            WHERE bk.book_id = %s
+            ORDER BY b.checkout_date DESC
+            LIMIT 50
+        """
+        history = execute_query(query, (book_id,), fetch_all=True)
+
+    return jsonify([dict(h) for h in (history or [])]), 200

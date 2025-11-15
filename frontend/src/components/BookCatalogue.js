@@ -299,11 +299,38 @@ function BookCatalogue() {
               {books.map((book) => (
                 <tr key={book.book_id}>
                   <td>{book.book_id}</td>
-                  <td>{book.title}</td>
+                  <td>
+                    {book.title}
+                    {book.is_checked_out && (
+                      <div style={{ marginTop: '3px' }}>
+                        <span style={{
+                          padding: '2px 6px',
+                          borderRadius: '3px',
+                          fontSize: '10px',
+                          backgroundColor: '#ff9800',
+                          color: 'white'
+                        }}>
+                          CHECKED OUT
+                        </span>
+                        {book.due_date && (
+                          <small style={{ marginLeft: '5px', color: '#666' }}>
+                            Due: {new Date(book.due_date).toLocaleDateString()}
+                          </small>
+                        )}
+                      </div>
+                    )}
+                  </td>
                   <td>{book.author || 'Unknown'}</td>
                   <td>{book.collection}</td>
                   <td>{book.isbn}</td>
-                  <td>{book.available_copies}/{book.total_copies}</td>
+                  <td>
+                    {book.available_copies}/{book.total_copies}
+                    {book.available_copies === 0 && book.total_copies > 0 && (
+                      <div style={{ fontSize: '10px', color: '#d32f2f', marginTop: '2px' }}>
+                        All copies out
+                      </div>
+                    )}
+                  </td>
                   <td>
                     <span style={{
                       padding: '3px 8px',

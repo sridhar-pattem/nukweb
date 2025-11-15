@@ -50,18 +50,28 @@ def get_books():
     total_result = execute_query(count_query, tuple(params), fetch_one=True)
     total = total_result['total'] if total_result else 0
     
-    # Get books
+    # Get books with checkout status
     query = f"""
-        SELECT book_id, isbn, title, author, genre, sub_genre, publisher, 
-               publication_year, collection, total_copies, available_copies,
-               age_rating, cover_image_url, status, created_at
-        FROM books
+        SELECT b.book_id, b.isbn, b.title, b.author, b.genre, b.sub_genre, b.publisher,
+               b.publication_year, b.collection, b.total_copies, b.available_copies,
+               b.age_rating, b.cover_image_url, b.status, b.created_at,
+               CASE
+                   WHEN EXISTS (
+                       SELECT 1 FROM borrowings br
+                       WHERE br.book_id = b.book_id
+                       AND br.status = 'active'
+                   ) THEN true
+                   ELSE false
+               END as is_checked_out,
+               (SELECT MIN(due_date) FROM borrowings br
+                WHERE br.book_id = b.book_id AND br.status = 'active') as due_date
+        FROM books b
         {where_sql}
-        ORDER BY created_at DESC
+        ORDER BY b.created_at DESC
         LIMIT %s OFFSET %s
     """
     params.extend([Config.ITEMS_PER_PAGE, offset])
-    
+
     books = execute_query(query, tuple(params), fetch_all=True)
     
     return jsonify({
