@@ -400,7 +400,7 @@ function PatronManagement() {
                 <th>Phone</th>
                 <th>Status</th>
                 <th>Membership</th>
-                <th style={{ minWidth: '200px' }}>Actions</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -434,19 +434,11 @@ function PatronManagement() {
                   </td>
                   <td>{patron.plan_name || patron.membership_type || 'N/A'}</td>
                   <td>
-                    <div style={{ display: 'flex', gap: '3px', flexWrap: 'nowrap', minWidth: '200px' }}>
-                      <button
-                        onClick={() => handleResetPassword(patron.patron_id)}
-                        className="btn btn-secondary"
-                        style={{ fontSize: '10px', padding: '3px 6px', whiteSpace: 'nowrap', flex: '0 0 auto' }}
-                        title="Reset password to default"
-                      >
-                        Reset
-                      </button>
+                    <div style={{ display: 'flex', gap: '5px', flexWrap: 'nowrap' }}>
                       <button
                         onClick={() => handleStatusChange(patron.patron_id, 'renew')}
                         className="btn btn-success"
-                        style={{ fontSize: '10px', padding: '3px 6px', whiteSpace: 'nowrap', flex: '0 0 auto' }}
+                        style={{ fontSize: '11px', padding: '4px 10px', whiteSpace: 'nowrap' }}
                         title="Renew membership"
                       >
                         Renew
@@ -455,7 +447,7 @@ function PatronManagement() {
                         <button
                           onClick={() => handleStatusChange(patron.patron_id, 'freeze')}
                           className="btn btn-secondary"
-                          style={{ fontSize: '10px', padding: '3px 6px', whiteSpace: 'nowrap', flex: '0 0 auto' }}
+                          style={{ fontSize: '11px', padding: '4px 10px', whiteSpace: 'nowrap' }}
                           title="Freeze account"
                         >
                           Freeze
@@ -465,20 +457,12 @@ function PatronManagement() {
                         <button
                           onClick={() => handleStatusChange(patron.patron_id, 'renew')}
                           className="btn btn-success"
-                          style={{ fontSize: '10px', padding: '3px 6px', whiteSpace: 'nowrap', flex: '0 0 auto' }}
+                          style={{ fontSize: '11px', padding: '4px 10px', whiteSpace: 'nowrap' }}
                           title="Activate account"
                         >
                           Activate
                         </button>
                       )}
-                      <button
-                        onClick={() => handleStatusChange(patron.patron_id, 'close')}
-                        className="btn btn-danger"
-                        style={{ fontSize: '10px', padding: '3px 6px', whiteSpace: 'nowrap', flex: '0 0 auto' }}
-                        title="Close account"
-                      >
-                        Close
-                      </button>
                     </div>
                   </td>
                 </tr>
