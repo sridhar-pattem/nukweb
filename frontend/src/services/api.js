@@ -64,6 +64,7 @@ export const adminPatronsAPI = {
 export const adminBooksAPI = {
   getBooks: (page = 1, filters = {}) =>
     api.get('/admin/books', { params: { page, ...filters } }),
+  getBookDetails: (bookId) => api.get(`/admin/books/${bookId}`),
   fetchByISBN: (isbn) => api.post('/admin/books/fetch-by-isbn', { isbn }),
   addBook: (bookData) => api.post('/admin/books', bookData),
   updateBook: (bookId, bookData) => api.put(`/admin/books/${bookId}`, bookData),

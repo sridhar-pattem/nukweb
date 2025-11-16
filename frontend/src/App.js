@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
 import './styles/App.css';
 import PatronManagement from './components/PatronManagement';
 import BookCatalogue from './components/BookCatalogue';
+import BookDetail from './components/BookDetail';
 import BorrowingsManagement from './components/BorrowingsManagement';
 import BrowseBooks from './components/BrowseBooks';
 import MembershipPlans from './components/MembershipPlans';
@@ -202,6 +203,7 @@ function AdminDashboard() {
           <Route path="patron-management" element={<PatronManagement />} />
           <Route path="membership-plans" element={<MembershipPlans />} />
           <Route path="books" element={<BookCatalogue />} />
+          <Route path="books/:bookId" element={<BookDetail />} />
           <Route path="collections" element={<Collections />} />
           <Route path="checkouts" element={<BorrowingsManagement />} />
           <Route path="invoicing" element={<div>Invoicing - Coming Soon</div>} />

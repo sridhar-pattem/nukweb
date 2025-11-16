@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { adminBooksAPI, adminCollectionsAPI } from '../services/api';
 
 function BookCatalogue() {
+  const navigate = useNavigate();
   const [books, setBooks] = useState([]);
   const [collections, setCollections] = useState([]);
+  const [selectedCollection, setSelectedCollection] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
@@ -31,14 +34,21 @@ function BookCatalogue() {
   });
 
   useEffect(() => {
-    loadBooks();
     loadCollections();
-  }, [page, search]);
+  }, []);
+
+  useEffect(() => {
+    loadBooks();
+  }, [page, search, selectedCollection]);
 
   const loadBooks = async () => {
     try {
       setLoading(true);
-      const response = await adminBooksAPI.getBooks(page, { search });
+      const filters = { search };
+      if (selectedCollection) {
+        filters.collection = selectedCollection;
+      }
+      const response = await adminBooksAPI.getBooks(page, filters);
       setBooks(response.data.books);
       setTotalPages(response.data.total_pages);
       setError('');
@@ -53,9 +63,21 @@ function BookCatalogue() {
     try {
       const response = await adminCollectionsAPI.getCollections();
       setCollections(response.data);
+
+      // Find "Popular Science" collection and set as default
+      const popularScience = response.data.find(c =>
+        c.collection_name.toLowerCase().includes('popular science')
+      );
+      if (popularScience && !selectedCollection) {
+        setSelectedCollection(popularScience.collection_id);
+      }
     } catch (err) {
       console.error('Failed to load collections:', err);
     }
+  };
+
+  const handleBookClick = (bookId) => {
+    navigate(`/admin/books/${bookId}`);
   };
 
   const handleCreateCollection = async () => {
@@ -139,18 +161,6 @@ function BookCatalogue() {
       alert('Book added successfully!');
     } catch (err) {
       alert(err.response?.data?.error || 'Failed to add book');
-    }
-  };
-
-  const handleUpdateStatus = async (bookId, status) => {
-    if (window.confirm(`Mark this book as ${status}?`)) {
-      try {
-        await adminBooksAPI.updateBookStatus(bookId, status);
-        loadBooks();
-        alert(`Book status updated to ${status}`);
-      } catch (err) {
-        alert('Failed to update book status');
-      }
     }
   };
 
@@ -386,36 +396,82 @@ function BookCatalogue() {
       )}
 
       <div className="card">
-        <div style={{ marginBottom: '15px' }}>
-          <input
-            type="text"
-            placeholder="Search by title, author, or ISBN..."
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}
-          />
+        {/* Collection Selector */}
+        <div style={{ marginBottom: '15px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <div style={{ flex: 1 }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Filter by Collection:</label>
+            <select
+              value={selectedCollection}
+              onChange={(e) => {
+                setSelectedCollection(e.target.value);
+                setPage(1);
+              }}
+              style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}
+            >
+              <option value="">All Collections</option>
+              {collections.map((col) => (
+                <option key={col.collection_id} value={col.collection_id}>
+                  {col.collection_name} ({col.book_count} books)
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Search:</label>
+            <input
+              type="text"
+              placeholder="Search by title, author, or ISBN..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}
+            />
+          </div>
         </div>
 
         <div style={{ overflowX: 'auto' }}>
           <table>
             <thead>
               <tr>
-                <th>ID</th>
+                <th>Cover</th>
+                <th>ISBN</th>
                 <th>Title</th>
                 <th>Author</th>
                 <th>Collection</th>
-                <th>ISBN</th>
                 <th>Copies</th>
                 <th>Status</th>
-                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {books.map((book) => (
                 <tr key={book.book_id}>
-                  <td>{book.book_id}</td>
                   <td>
-                    {book.title}
+                    <img
+                      src={book.cover_image_url || 'https://via.placeholder.com/60x90?text=No+Cover'}
+                      alt={book.title}
+                      style={{
+                        width: '60px',
+                        height: '90px',
+                        objectFit: 'cover',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => handleBookClick(book.book_id)}
+                      onError={(e) => { e.target.src = 'https://via.placeholder.com/60x90?text=No+Cover'; }}
+                    />
+                  </td>
+                  <td>{book.isbn}</td>
+                  <td>
+                    <span
+                      style={{
+                        color: '#667eea',
+                        cursor: 'pointer',
+                        textDecoration: 'underline',
+                        fontWeight: '500'
+                      }}
+                      onClick={() => handleBookClick(book.book_id)}
+                    >
+                      {book.title}
+                    </span>
                     {book.is_checked_out && (
                       <div style={{ marginTop: '3px' }}>
                         <span style={{
@@ -437,7 +493,6 @@ function BookCatalogue() {
                   </td>
                   <td>{book.author || 'Unknown'}</td>
                   <td>{book.collection}</td>
-                  <td>{book.isbn}</td>
                   <td>
                     {book.available_copies}/{book.total_copies}
                     {book.available_copies === 0 && book.total_copies > 0 && (
@@ -456,17 +511,6 @@ function BookCatalogue() {
                     }}>
                       {book.status}
                     </span>
-                  </td>
-                  <td>
-                    {book.status === 'Available' && (
-                      <button
-                        onClick={() => handleUpdateStatus(book.book_id, 'Lost')}
-                        className="btn btn-danger"
-                        style={{ fontSize: '12px', padding: '5px 10px' }}
-                      >
-                        Mark Lost
-                      </button>
-                    )}
                   </td>
                 </tr>
               ))}

@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
 from app.utils.auth import admin_required
 from app.utils.database import execute_query, get_db_cursor
-from app.utils.openlibrary import fetch_book_by_isbn
+from app.utils.googlebooks import fetch_book_by_isbn
 from app.config import Config
 
 admin_books_bp = Blueprint('admin_books', __name__)
@@ -84,30 +84,73 @@ def get_books():
         "total_pages": (total + Config.ITEMS_PER_PAGE - 1) // Config.ITEMS_PER_PAGE
     }), 200
 
+@admin_books_bp.route('/books/<int:book_id>', methods=['GET'])
+@jwt_required()
+@admin_required
+def get_book_details(book_id):
+    """Get detailed information about a specific book"""
+    query = """
+        SELECT b.book_id, b.isbn, b.title, b.author, b.genre, b.sub_genre,
+               b.publisher, b.publication_year, b.description,
+               b.collection_id, c.collection_name,
+               b.total_copies, b.available_copies, b.age_rating,
+               b.cover_image_url, b.status, b.created_at, b.updated_at,
+               CASE
+                   WHEN EXISTS (
+                       SELECT 1 FROM borrowings br
+                       WHERE br.book_id = b.book_id AND br.status = 'active'
+                   ) THEN true
+                   ELSE false
+               END as is_checked_out,
+               (SELECT json_agg(json_build_object(
+                   'borrowing_id', br.borrowing_id,
+                   'patron_id', p.patron_id,
+                   'patron_name', u.name,
+                   'checkout_date', br.checkout_date,
+                   'due_date', br.due_date,
+                   'status', br.status
+               ))
+                FROM borrowings br
+                JOIN patrons p ON br.patron_id = p.patron_id
+                JOIN users u ON p.user_id = u.user_id
+                WHERE br.book_id = b.book_id AND br.status = 'active'
+               ) as active_borrowings
+        FROM books b
+        LEFT JOIN collections c ON b.collection_id = c.collection_id
+        WHERE b.book_id = %s
+    """
+
+    book = execute_query(query, (book_id,), fetch_one=True)
+
+    if not book:
+        return jsonify({"error": "Book not found"}), 404
+
+    return jsonify(dict(book)), 200
+
 @admin_books_bp.route('/books/fetch-by-isbn', methods=['POST'])
 @jwt_required()
 @admin_required
 def fetch_book_details():
-    """Fetch book details from Open Library API by ISBN"""
+    """Fetch book details from Google Books API by ISBN"""
     data = request.get_json()
     isbn = data.get('isbn')
-    
+
     if not isbn:
         return jsonify({"error": "ISBN is required"}), 400
-    
+
     # Check if book already exists
     existing_query = "SELECT book_id FROM books WHERE isbn = %s"
     existing = execute_query(existing_query, (isbn.replace('-', '').replace(' ', ''),), fetch_one=True)
-    
+
     if existing:
         return jsonify({"error": "Book with this ISBN already exists"}), 400
-    
-    # Fetch from Open Library
+
+    # Fetch from Google Books
     book_info = fetch_book_by_isbn(isbn)
-    
+
     if not book_info:
-        return jsonify({"error": "Book not found in Open Library"}), 404
-    
+        return jsonify({"error": "Book not found in Google Books"}), 404
+
     return jsonify(book_info), 200
 
 @admin_books_bp.route('/books', methods=['POST'])
