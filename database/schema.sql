@@ -26,7 +26,7 @@ CREATE TABLE membership_plans (
 
 -- Patrons (extends users)
 CREATE TABLE patrons (
-    patron_id SERIAL PRIMARY KEY,
+    patron_id VARCHAR(20) PRIMARY KEY,
     user_id INTEGER UNIQUE REFERENCES users(user_id) ON DELETE CASCADE,
     membership_plan_id INTEGER REFERENCES membership_plans(plan_id),
     membership_type VARCHAR(50),
@@ -34,7 +34,17 @@ CREATE TABLE patrons (
     membership_expiry_date DATE,
     address TEXT,
     join_date DATE DEFAULT CURRENT_DATE,
-    mobile_number VARCHAR(20)
+    mobile_number VARCHAR(20),
+    CONSTRAINT patron_id_format CHECK (patron_id ~ '^[A-Z0-9]+$')
+);
+
+-- Collections
+CREATE TABLE collections (
+    collection_id SERIAL PRIMARY KEY,
+    collection_name VARCHAR(100) UNIQUE NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Books Catalogue
@@ -48,7 +58,7 @@ CREATE TABLE books (
     publisher VARCHAR(255),
     publication_year INTEGER,
     description TEXT,
-    collection VARCHAR(100),
+    collection_id INTEGER NOT NULL REFERENCES collections(collection_id) ON DELETE RESTRICT,
     total_copies INTEGER DEFAULT 1,
     available_copies INTEGER DEFAULT 1,
     age_rating VARCHAR(50),
@@ -182,7 +192,7 @@ CREATE INDEX idx_borrowings_book_id ON borrowings(book_id);
 CREATE INDEX idx_borrowings_status ON borrowings(status);
 CREATE INDEX idx_borrowings_due_date ON borrowings(due_date);
 CREATE INDEX idx_books_isbn ON books(isbn);
-CREATE INDEX idx_books_collection ON books(collection);
+CREATE INDEX idx_books_collection_id ON books(collection_id);
 CREATE INDEX idx_books_genre ON books(genre);
 CREATE INDEX idx_reviews_book_id ON reviews(book_id);
 CREATE INDEX idx_invoices_patron_id ON invoices(patron_id);
@@ -214,6 +224,9 @@ CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_books_updated_at BEFORE UPDATE ON books
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_collections_updated_at BEFORE UPDATE ON collections
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Function to auto-update available_copies

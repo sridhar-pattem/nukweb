@@ -62,32 +62,59 @@ export const adminPatronsAPI = {
 
 // Admin - Books API
 export const adminBooksAPI = {
-  getBooks: (page = 1, filters = {}) => 
+  getBooks: (page = 1, filters = {}) =>
     api.get('/admin/books', { params: { page, ...filters } }),
+  getBookDetails: (bookId) => api.get(`/admin/books/${bookId}`),
   fetchByISBN: (isbn) => api.post('/admin/books/fetch-by-isbn', { isbn }),
   addBook: (bookData) => api.post('/admin/books', bookData),
   updateBook: (bookId, bookData) => api.put(`/admin/books/${bookId}`, bookData),
-  updateBookStatus: (bookId, status) => 
+  updateBookStatus: (bookId, status) =>
     api.patch(`/admin/books/${bookId}/status`, { status }),
-  updateCopies: (bookId, action, count) => 
+  updateCopies: (bookId, action, count) =>
     api.patch(`/admin/books/${bookId}/copies`, { action, count }),
-  getCollections: () => api.get('/admin/books/collections'),
   getGenres: () => api.get('/admin/books/genres'),
   getAgeRatings: () => api.get('/admin/age-ratings'),
   addAgeRating: (ratingData) => api.post('/admin/age-ratings', ratingData),
 };
 
+// Admin - Collections API
+export const adminCollectionsAPI = {
+  getCollections: () => api.get('/admin/collections'),
+  createCollection: (collectionData) => api.post('/admin/collections', collectionData),
+  updateCollection: (collectionId, collectionData) =>
+    api.put(`/admin/collections/${collectionId}`, collectionData),
+  deleteCollection: (collectionId) => api.delete(`/admin/collections/${collectionId}`),
+};
+
+// Admin - Dashboard API
+export const adminDashboardAPI = {
+  getStats: () => api.get('/admin/dashboard/stats'),
+  getBorrowingTrends: (days = 30) => api.get('/admin/dashboard/borrowing-trends', { params: { days } }),
+  getPopularBooks: (limit = 10) => api.get('/admin/dashboard/popular-books', { params: { limit } }),
+  getCollectionDistribution: () => api.get('/admin/dashboard/collection-distribution'),
+  getMembershipDistribution: () => api.get('/admin/dashboard/membership-distribution'),
+  getOverdueBooks: () => api.get('/admin/dashboard/overdue-books'),
+  getRecentActivity: (limit = 20) => api.get('/admin/dashboard/recent-activity', { params: { limit } }),
+  getPatronActivity: () => api.get('/admin/dashboard/patron-activity'),
+};
+
 // Admin - Borrowings API
 export const adminBorrowingsAPI = {
-  issueBook: (patronId, bookId) => 
+  issueBook: (patronId, bookId) =>
     api.post('/admin/borrowings/issue', { patron_id: patronId, book_id: bookId }),
-  renewBorrowing: (borrowingId) => 
+  renewBorrowing: (borrowingId) =>
     api.post(`/admin/borrowings/${borrowingId}/renew`),
-  returnBook: (borrowingId) => 
+  returnBook: (borrowingId) =>
     api.post(`/admin/borrowings/${borrowingId}/return`),
-  searchBorrowings: (type, value, status = 'active') => 
+  searchBorrowings: (type, value, status = 'active') =>
     api.get('/admin/borrowings/search', { params: { type, value, status } }),
+  getAllBorrowings: (patronFilter = '', bookFilter = '') =>
+    api.get('/admin/borrowings/all', { params: { patron: patronFilter, book: bookFilter } }),
+  getBorrowingHistory: (patronId, bookId) =>
+    api.get('/admin/borrowings/history', { params: { patron_id: patronId, book_id: bookId } }),
   getOverdue: () => api.get('/admin/borrowings/overdue'),
+  searchPatrons: (query) => api.get('/admin/patrons/search', { params: { q: query } }),
+  searchBooks: (query) => api.get('/admin/books/search', { params: { q: query } }),
 };
 
 // Patron API

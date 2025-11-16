@@ -158,14 +158,14 @@ function MembershipPlans() {
               </div>
 
               <div className="form-group">
-                <label>Price ($) *</label>
+                <label>Price (₹) *</label>
                 <input
                   type="number"
                   min="0"
                   step="0.01"
                   value={formData.price}
                   onChange={(e) => setFormData({...formData, price: e.target.value})}
-                  placeholder="e.g., 29.99"
+                  placeholder="e.g., 299.99"
                   required
                 />
               </div>
@@ -231,7 +231,7 @@ function MembershipPlans() {
                       </span>
                     </td>
                     <td>{plan.duration_days} days</td>
-                    <td>${parseFloat(plan.price).toFixed(2)}</td>
+                    <td>₹{parseFloat(plan.price).toFixed(2)}</td>
                     <td>{plan.description || 'N/A'}</td>
                     <td>
                       <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>

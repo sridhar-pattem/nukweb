@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
 from app.utils.auth import admin_required
 from app.utils.database import execute_query, get_db_cursor
-from app.utils.openlibrary import fetch_book_by_isbn
+from app.utils.googlebooks import fetch_book_by_isbn
 from app.config import Config
 
 admin_books_bp = Blueprint('admin_books', __name__)
@@ -32,7 +32,7 @@ def get_books():
         params.extend([search_param, search_param, search_param])
     
     if collection:
-        where_clauses.append("collection = %s")
+        where_clauses.append("b.collection_id = %s")
         params.append(collection)
     
     if genre:
@@ -44,24 +44,41 @@ def get_books():
         params.append(status)
     
     where_sql = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
-    
+
     # Get total count
-    count_query = f"SELECT COUNT(*) as total FROM books {where_sql}"
+    count_query = f"""
+        SELECT COUNT(*) as total
+        FROM books b
+        LEFT JOIN collections c ON b.collection_id = c.collection_id
+        {where_sql}
+    """
     total_result = execute_query(count_query, tuple(params), fetch_one=True)
     total = total_result['total'] if total_result else 0
-    
-    # Get books
+
+    # Get books with checkout status
     query = f"""
-        SELECT book_id, isbn, title, author, genre, sub_genre, publisher, 
-               publication_year, collection, total_copies, available_copies,
-               age_rating, cover_image_url, status, created_at
-        FROM books
+        SELECT b.book_id, b.isbn, b.title, b.author, b.genre, b.sub_genre, b.publisher,
+               b.publication_year, b.collection_id, c.collection_name as collection,
+               b.total_copies, b.available_copies,
+               b.age_rating, b.cover_image_url, b.status, b.created_at,
+               CASE
+                   WHEN EXISTS (
+                       SELECT 1 FROM borrowings br
+                       WHERE br.book_id = b.book_id
+                       AND br.status = 'active'
+                   ) THEN true
+                   ELSE false
+               END as is_checked_out,
+               (SELECT MIN(due_date) FROM borrowings br
+                WHERE br.book_id = b.book_id AND br.status = 'active') as due_date
+        FROM books b
+        LEFT JOIN collections c ON b.collection_id = c.collection_id
         {where_sql}
-        ORDER BY created_at DESC
+        ORDER BY b.created_at DESC
         LIMIT %s OFFSET %s
     """
     params.extend([Config.ITEMS_PER_PAGE, offset])
-    
+
     books = execute_query(query, tuple(params), fetch_all=True)
     
     return jsonify({
@@ -72,30 +89,73 @@ def get_books():
         "total_pages": (total + Config.ITEMS_PER_PAGE - 1) // Config.ITEMS_PER_PAGE
     }), 200
 
+@admin_books_bp.route('/books/<int:book_id>', methods=['GET'])
+@jwt_required()
+@admin_required
+def get_book_details(book_id):
+    """Get detailed information about a specific book"""
+    query = """
+        SELECT b.book_id, b.isbn, b.title, b.author, b.genre, b.sub_genre,
+               b.publisher, b.publication_year, b.description,
+               b.collection_id, c.collection_name,
+               b.total_copies, b.available_copies, b.age_rating,
+               b.cover_image_url, b.status, b.created_at, b.updated_at,
+               CASE
+                   WHEN EXISTS (
+                       SELECT 1 FROM borrowings br
+                       WHERE br.book_id = b.book_id AND br.status = 'active'
+                   ) THEN true
+                   ELSE false
+               END as is_checked_out,
+               (SELECT json_agg(json_build_object(
+                   'borrowing_id', br.borrowing_id,
+                   'patron_id', p.patron_id,
+                   'patron_name', u.name,
+                   'checkout_date', br.checkout_date,
+                   'due_date', br.due_date,
+                   'status', br.status
+               ))
+                FROM borrowings br
+                JOIN patrons p ON br.patron_id = p.patron_id
+                JOIN users u ON p.user_id = u.user_id
+                WHERE br.book_id = b.book_id AND br.status = 'active'
+               ) as active_borrowings
+        FROM books b
+        LEFT JOIN collections c ON b.collection_id = c.collection_id
+        WHERE b.book_id = %s
+    """
+
+    book = execute_query(query, (book_id,), fetch_one=True)
+
+    if not book:
+        return jsonify({"error": "Book not found"}), 404
+
+    return jsonify(dict(book)), 200
+
 @admin_books_bp.route('/books/fetch-by-isbn', methods=['POST'])
 @jwt_required()
 @admin_required
 def fetch_book_details():
-    """Fetch book details from Open Library API by ISBN"""
+    """Fetch book details from Google Books API by ISBN"""
     data = request.get_json()
     isbn = data.get('isbn')
-    
+
     if not isbn:
         return jsonify({"error": "ISBN is required"}), 400
-    
+
     # Check if book already exists
     existing_query = "SELECT book_id FROM books WHERE isbn = %s"
     existing = execute_query(existing_query, (isbn.replace('-', '').replace(' ', ''),), fetch_one=True)
-    
+
     if existing:
         return jsonify({"error": "Book with this ISBN already exists"}), 400
-    
-    # Fetch from Open Library
+
+    # Fetch from Google Books
     book_info = fetch_book_by_isbn(isbn)
-    
+
     if not book_info:
-        return jsonify({"error": "Book not found in Open Library"}), 404
-    
+        return jsonify({"error": "Book not found in Google Books"}), 404
+
     return jsonify(book_info), 200
 
 @admin_books_bp.route('/books', methods=['POST'])
@@ -104,29 +164,36 @@ def fetch_book_details():
 def add_book():
     """Add a new book to the catalogue"""
     data = request.get_json()
-    
-    required_fields = ['isbn', 'title', 'collection']
+
+    required_fields = ['isbn', 'title', 'collection_id']
     if not all(field in data for field in required_fields):
         return jsonify({"error": "Missing required fields"}), 400
-    
+
     # Check if ISBN already exists
     check_query = "SELECT book_id FROM books WHERE isbn = %s"
     existing = execute_query(check_query, (data['isbn'],), fetch_one=True)
-    
+
     if existing:
         return jsonify({"error": "Book with this ISBN already exists"}), 400
-    
+
+    # Validate collection_id exists
+    collection_check = "SELECT collection_id FROM collections WHERE collection_id = %s"
+    collection_exists = execute_query(collection_check, (data['collection_id'],), fetch_one=True)
+
+    if not collection_exists:
+        return jsonify({"error": "Invalid collection ID"}), 400
+
     query = """
-        INSERT INTO books 
+        INSERT INTO books
         (isbn, title, author, genre, sub_genre, publisher, publication_year,
-         description, collection, total_copies, available_copies, age_rating,
+         description, collection_id, total_copies, available_copies, age_rating,
          cover_image_url, status)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'Available')
         RETURNING book_id
     """
-    
+
     total_copies = data.get('total_copies', 1)
-    
+
     with get_db_cursor() as cursor:
         cursor.execute(query, (
             data['isbn'],
@@ -137,15 +204,15 @@ def add_book():
             data.get('publisher'),
             data.get('publication_year'),
             data.get('description'),
-            data['collection'],
+            data['collection_id'],
             total_copies,
             total_copies,  # available_copies = total_copies initially
             data.get('age_rating'),
             data.get('cover_image_url')
         ))
-        
+
         book_id = cursor.fetchone()['book_id']
-        
+
         return jsonify({
             "message": "Book added successfully",
             "book_id": book_id
@@ -171,7 +238,7 @@ def update_book(book_id):
     
     updatable_fields = [
         'title', 'author', 'genre', 'sub_genre', 'publisher', 'publication_year',
-        'description', 'collection', 'total_copies', 'age_rating', 'cover_image_url'
+        'description', 'collection_id', 'total_copies', 'age_rating', 'cover_image_url'
     ]
     
     for field in updatable_fields:
@@ -250,14 +317,6 @@ def update_book_copies(book_id):
             return jsonify({"error": "Book not found or insufficient copies"}), 404
         
         return jsonify({"message": f"Book copies {action}ed successfully"}), 200
-
-@admin_books_bp.route('/books/collections', methods=['GET'])
-@jwt_required()
-def get_collections():
-    """Get all unique collections"""
-    query = "SELECT DISTINCT collection FROM books WHERE collection IS NOT NULL ORDER BY collection"
-    collections = execute_query(query, fetch_all=True)
-    return jsonify([c['collection'] for c in (collections or [])]), 200
 
 @admin_books_bp.route('/books/genres', methods=['GET'])
 @jwt_required()
