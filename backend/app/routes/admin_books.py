@@ -44,12 +44,17 @@ def get_books():
         params.append(status)
     
     where_sql = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
-    
+
     # Get total count
-    count_query = f"SELECT COUNT(*) as total FROM books {where_sql}"
+    count_query = f"""
+        SELECT COUNT(*) as total
+        FROM books b
+        LEFT JOIN collections c ON b.collection_id = c.collection_id
+        {where_sql}
+    """
     total_result = execute_query(count_query, tuple(params), fetch_one=True)
     total = total_result['total'] if total_result else 0
-    
+
     # Get books with checkout status
     query = f"""
         SELECT b.book_id, b.isbn, b.title, b.author, b.genre, b.sub_genre, b.publisher,
