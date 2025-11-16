@@ -11,6 +11,8 @@ function BookCatalogue() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [isbnLookup, setIsbnLookup] = useState('');
   const [lookupLoading, setLookupLoading] = useState(false);
+  const [collections, setCollections] = useState([]);
+  const [selectedCollection, setSelectedCollection] = useState('');
   const [newBook, setNewBook] = useState({
     isbn: '',
     title: '',
@@ -27,13 +29,30 @@ function BookCatalogue() {
   });
 
   useEffect(() => {
+    loadCollections();
+  }, []);
+
+  useEffect(() => {
     loadBooks();
-  }, [page, search]);
+  }, [page, search, selectedCollection]);
+
+  const loadCollections = async () => {
+    try {
+      const response = await adminBooksAPI.getCollections();
+      setCollections(response.data || []);
+    } catch (err) {
+      console.error('Failed to load collections:', err);
+    }
+  };
 
   const loadBooks = async () => {
     try {
       setLoading(true);
-      const response = await adminBooksAPI.getBooks(page, { search });
+      const filters = { search };
+      if (selectedCollection) {
+        filters.collection = selectedCollection;
+      }
+      const response = await adminBooksAPI.getBooks(page, filters);
       setBooks(response.data.books);
       setTotalPages(response.data.total_pages);
       setError('');
@@ -271,14 +290,26 @@ function BookCatalogue() {
       )}
 
       <div className="card">
-        <div style={{ marginBottom: '15px' }}>
+        <div style={{ marginBottom: '15px', display: 'flex', gap: '10px' }}>
           <input
             type="text"
             placeholder="Search by title, author, or ISBN..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}
+            style={{ flex: 2, padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}
           />
+          <select
+            value={selectedCollection}
+            onChange={(e) => { setSelectedCollection(e.target.value); setPage(1); }}
+            style={{ flex: 1, padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}
+          >
+            <option value="">All Collections</option>
+            {collections.map((collection) => (
+              <option key={collection} value={collection}>
+                {collection}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div style={{ overflowX: 'auto' }}>
@@ -305,15 +336,50 @@ function BookCatalogue() {
                   <td>{book.isbn}</td>
                   <td>{book.available_copies}/{book.total_copies}</td>
                   <td>
-                    <span style={{
-                      padding: '3px 8px',
-                      borderRadius: '3px',
-                      fontSize: '12px',
-                      backgroundColor: book.status === 'Available' ? '#27ae60' : '#e74c3c',
-                      color: 'white'
-                    }}>
-                      {book.status}
-                    </span>
+                    {(() => {
+                      // Determine checkout status based on active borrowings
+                      const hasActiveBorrowings = book.active_borrowings > 0;
+                      const isAvailable = book.available_copies > 0 && !hasActiveBorrowings;
+
+                      if (isAvailable) {
+                        return (
+                          <span style={{
+                            padding: '3px 8px',
+                            borderRadius: '3px',
+                            fontSize: '12px',
+                            backgroundColor: '#27ae60',
+                            color: 'white'
+                          }}>
+                            Available
+                          </span>
+                        );
+                      } else if (hasActiveBorrowings && book.earliest_due_date) {
+                        const dueDate = new Date(book.earliest_due_date).toLocaleDateString();
+                        return (
+                          <span style={{
+                            padding: '3px 8px',
+                            borderRadius: '3px',
+                            fontSize: '12px',
+                            backgroundColor: '#e74c3c',
+                            color: 'white'
+                          }}>
+                            Checked Out (Due: {dueDate})
+                          </span>
+                        );
+                      } else {
+                        return (
+                          <span style={{
+                            padding: '3px 8px',
+                            borderRadius: '3px',
+                            fontSize: '12px',
+                            backgroundColor: '#95a5a6',
+                            color: 'white'
+                          }}>
+                            {book.status}
+                          </span>
+                        );
+                      }
+                    })()}
                   </td>
                   <td>
                     {book.status === 'Available' && (

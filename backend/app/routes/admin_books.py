@@ -50,18 +50,24 @@ def get_books():
     total_result = execute_query(count_query, tuple(params), fetch_one=True)
     total = total_result['total'] if total_result else 0
     
-    # Get books
+    # Get books with borrowing information
     query = f"""
-        SELECT book_id, isbn, title, author, genre, sub_genre, publisher, 
-               publication_year, collection, total_copies, available_copies,
-               age_rating, cover_image_url, status, created_at
-        FROM books
+        SELECT b.book_id, b.isbn, b.title, b.author, b.genre, b.sub_genre, b.publisher,
+               b.publication_year, b.collection, b.total_copies, b.available_copies,
+               b.age_rating, b.cover_image_url, b.status, b.created_at,
+               MIN(br.due_date) as earliest_due_date,
+               COUNT(CASE WHEN br.status = 'active' THEN 1 END) as active_borrowings
+        FROM books b
+        LEFT JOIN borrowings br ON b.book_id = br.book_id AND br.status = 'active'
         {where_sql}
-        ORDER BY created_at DESC
+        GROUP BY b.book_id, b.isbn, b.title, b.author, b.genre, b.sub_genre, b.publisher,
+                 b.publication_year, b.collection, b.total_copies, b.available_copies,
+                 b.age_rating, b.cover_image_url, b.status, b.created_at
+        ORDER BY b.created_at DESC
         LIMIT %s OFFSET %s
     """
     params.extend([Config.ITEMS_PER_PAGE, offset])
-    
+
     books = execute_query(query, tuple(params), fetch_all=True)
     
     return jsonify({
