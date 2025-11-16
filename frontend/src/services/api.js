@@ -119,17 +119,34 @@ export const adminBorrowingsAPI = {
 
 // Patron API
 export const patronAPI = {
-  getBooks: (page = 1, collection = '', search = '') => 
+  getBooks: (page = 1, collection = '', search = '') =>
     api.get('/patron/books', { params: { page, collection, search } }),
   getBookDetails: (bookId) => api.get(`/patron/books/${bookId}`),
-  addReview: (bookId, rating, comment) => 
+  addReview: (bookId, rating, comment) =>
     api.post(`/patron/books/${bookId}/review`, { rating, comment }),
-  getMyBorrowings: (status = 'active') => 
+  getMyBorrowings: (status = 'active') =>
     api.get('/patron/my-borrowings', { params: { status } }),
   getRecommendations: () => api.get('/patron/recommendations'),
-  requestCoworkBooking: (bookingData) => 
+  requestCoworkBooking: (bookingData) =>
     api.post('/patron/cowork-booking', bookingData),
   getMyCoworkBookings: () => api.get('/patron/my-cowork-bookings'),
+};
+
+// Admin - Cowork Invoices API
+export const adminCoworkInvoicesAPI = {
+  getInvoices: (page = 1, perPage = 20, paymentStatus = '', search = '') =>
+    api.get('/admin/cowork-invoices', {
+      params: { page, per_page: perPage, payment_status: paymentStatus, search }
+    }),
+  getInvoice: (invoiceId) => api.get(`/admin/cowork-invoices/${invoiceId}`),
+  createInvoice: (invoiceData) => api.post('/admin/cowork-invoices', invoiceData),
+  updateInvoice: (invoiceId, invoiceData) =>
+    api.put(`/admin/cowork-invoices/${invoiceId}`, invoiceData),
+  deleteInvoice: (invoiceId) => api.delete(`/admin/cowork-invoices/${invoiceId}`),
+  downloadPDF: (invoiceId) =>
+    api.get(`/admin/cowork-invoices/${invoiceId}/pdf`, {
+      responseType: 'blob'
+    }),
 };
 
 export default api;

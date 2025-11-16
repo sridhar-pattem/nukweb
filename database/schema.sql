@@ -151,8 +151,27 @@ CREATE TABLE invoices (
     payment_date DATE,
     pdf_url TEXT,
     sent_via_email BOOLEAN DEFAULT FALSE,
+    custom_member_name VARCHAR(255),
+    custom_member_email VARCHAR(255),
+    custom_member_phone VARCHAR(20),
+    custom_member_address TEXT,
+    notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Invoice Line Items
+CREATE TABLE invoice_line_items (
+    line_item_id SERIAL PRIMARY KEY,
+    invoice_id INTEGER REFERENCES invoices(invoice_id) ON DELETE CASCADE,
+    description VARCHAR(500) NOT NULL,
+    quantity DECIMAL(10, 2) DEFAULT 1,
+    unit_price DECIMAL(10, 2) NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL,
+    item_order INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_invoice_line_items_invoice_id ON invoice_line_items(invoice_id);
 
 -- Notifications
 CREATE TABLE notifications (

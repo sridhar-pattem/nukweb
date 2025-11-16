@@ -18,6 +18,7 @@ def create_app():
     from app.routes.admin_borrowings import admin_borrowings_bp
     from app.routes.admin_collections import admin_collections_bp
     from app.routes.admin_dashboard import admin_dashboard_bp
+    from app.routes.admin_cowork_invoices import admin_cowork_invoices_bp
     from app.routes.patron import patron_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -26,6 +27,7 @@ def create_app():
     app.register_blueprint(admin_borrowings_bp, url_prefix='/api/admin')
     app.register_blueprint(admin_collections_bp, url_prefix='/api/admin')
     app.register_blueprint(admin_dashboard_bp, url_prefix='/api/admin')
+    app.register_blueprint(admin_cowork_invoices_bp, url_prefix='/api/admin')
     app.register_blueprint(patron_bp, url_prefix='/api/patron')
     
     # Health check endpoint
