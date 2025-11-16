@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { adminBooksAPI } from '../services/api';
+import { useNavigate } from 'react-router-dom';
+import { adminBooksAPI, adminCollectionsAPI } from '../services/api';
 
 function BookCatalogue() {
+  const navigate = useNavigate();
   const [books, setBooks] = useState([]);
+  const [collections, setCollections] = useState([]);
+  const [selectedCollection, setSelectedCollection] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
@@ -11,9 +15,9 @@ function BookCatalogue() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [isbnLookup, setIsbnLookup] = useState('');
   const [lookupLoading, setLookupLoading] = useState(false);
-  const [collections, setCollections] = useState([]);
-  const [selectedCollection, setSelectedCollection] = useState('');
-  const [showDamagedLost, setShowDamagedLost] = useState(false);
+  const [showNewCollectionForm, setShowNewCollectionForm] = useState(false);
+  const [newCollectionName, setNewCollectionName] = useState('');
+  const [newCollectionDescription, setNewCollectionDescription] = useState('');
   const [newBook, setNewBook] = useState({
     isbn: '',
     title: '',
@@ -23,7 +27,7 @@ function BookCatalogue() {
     publisher: '',
     publication_year: '',
     description: '',
-    collection: '',
+    collection_id: '',
     total_copies: 1,
     age_rating: '',
     cover_image_url: ''
@@ -35,16 +39,7 @@ function BookCatalogue() {
 
   useEffect(() => {
     loadBooks();
-  }, [page, search, selectedCollection, showDamagedLost]);
-
-  const loadCollections = async () => {
-    try {
-      const response = await adminBooksAPI.getCollections();
-      setCollections(response.data || []);
-    } catch (err) {
-      console.error('Failed to load collections:', err);
-    }
-  };
+  }, [page, search, selectedCollection]);
 
   const loadBooks = async () => {
     try {
@@ -52,9 +47,6 @@ function BookCatalogue() {
       const filters = { search };
       if (selectedCollection) {
         filters.collection = selectedCollection;
-      }
-      if (!showDamagedLost) {
-        filters.exclude_damaged_lost = true;
       }
       const response = await adminBooksAPI.getBooks(page, filters);
       setBooks(response.data.books);
@@ -64,6 +56,56 @@ function BookCatalogue() {
       setError(err.response?.data?.error || 'Failed to load books');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadCollections = async () => {
+    try {
+      const response = await adminCollectionsAPI.getCollections();
+      setCollections(response.data);
+
+      // Find "Popular Science" collection and set as default
+      const popularScience = response.data.find(c =>
+        c.collection_name.toLowerCase().includes('popular science')
+      );
+      if (popularScience && !selectedCollection) {
+        setSelectedCollection(popularScience.collection_id);
+      }
+    } catch (err) {
+      console.error('Failed to load collections:', err);
+    }
+  };
+
+  const handleBookClick = (bookId) => {
+    navigate(`/admin/books/${bookId}`);
+  };
+
+  const handleCreateCollection = async () => {
+    if (!newCollectionName.trim()) {
+      alert('Please enter a collection name');
+      return;
+    }
+
+    try {
+      const response = await adminCollectionsAPI.createCollection({
+        collection_name: newCollectionName,
+        description: newCollectionDescription
+      });
+
+      // Reload collections
+      await loadCollections();
+
+      // Select the newly created collection
+      setNewBook({ ...newBook, collection_id: response.data.collection.collection_id });
+
+      // Reset form
+      setNewCollectionName('');
+      setNewCollectionDescription('');
+      setShowNewCollectionForm(false);
+
+      alert('Collection created successfully!');
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to create collection');
     }
   };
 
@@ -80,9 +122,9 @@ function BookCatalogue() {
         ...newBook,
         ...response.data,
         total_copies: 1,
-        collection: newBook.collection || ''
+        collection_id: newBook.collection_id || ''
       });
-      alert('Book details fetched! Please add collection and review before saving.');
+      alert('Book details fetched! Please select a collection and review before saving.');
     } catch (err) {
       alert(err.response?.data?.error || 'Book not found in Open Library');
     } finally {
@@ -92,8 +134,8 @@ function BookCatalogue() {
 
   const handleAddBook = async (e) => {
     e.preventDefault();
-    if (!newBook.collection) {
-      alert('Please specify a collection (e.g., History, Philosophy, Science, etc.)');
+    if (!newBook.collection_id) {
+      alert('Please select a collection');
       return;
     }
 
@@ -109,7 +151,7 @@ function BookCatalogue() {
         publisher: '',
         publication_year: '',
         description: '',
-        collection: '',
+        collection_id: '',
         total_copies: 1,
         age_rating: '',
         cover_image_url: ''
@@ -119,18 +161,6 @@ function BookCatalogue() {
       alert('Book added successfully!');
     } catch (err) {
       alert(err.response?.data?.error || 'Failed to add book');
-    }
-  };
-
-  const handleUpdateStatus = async (bookId, status) => {
-    if (window.confirm(`Mark this book as ${status}?`)) {
-      try {
-        await adminBooksAPI.updateBookStatus(bookId, status);
-        loadBooks();
-        alert(`Book status updated to ${status}`);
-      } catch (err) {
-        alert('Failed to update book status');
-      }
     }
   };
 
@@ -204,15 +234,87 @@ function BookCatalogue() {
                   onChange={(e) => setNewBook({...newBook, author: e.target.value})}
                 />
               </div>
-              <div className="form-group">
-                <label>Collection * (e.g., History, Philosophy)</label>
-                <input
-                  type="text"
-                  value={newBook.collection}
-                  onChange={(e) => setNewBook({...newBook, collection: e.target.value})}
-                  required
-                  placeholder="History, Science, Biography, etc."
-                />
+              <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                <label>Collection *</label>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                  <div style={{ flex: 1 }}>
+                    <select
+                      value={newBook.collection_id}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '__new__') {
+                          setShowNewCollectionForm(true);
+                        } else {
+                          setNewBook({...newBook, collection_id: value});
+                        }
+                      }}
+                      required
+                      style={{ width: '100%' }}
+                    >
+                      <option value="">Select a collection</option>
+                      {collections.map((col) => (
+                        <option key={col.collection_id} value={col.collection_id}>
+                          {col.collection_name}
+                        </option>
+                      ))}
+                      <option value="__new__">+ Add New Collection</option>
+                    </select>
+                  </div>
+                </div>
+
+                {showNewCollectionForm && (
+                  <div style={{
+                    marginTop: '10px',
+                    padding: '15px',
+                    backgroundColor: '#f0f8ff',
+                    border: '1px solid #ccc',
+                    borderRadius: '5px'
+                  }}>
+                    <h4 style={{ marginTop: 0 }}>Create New Collection</h4>
+                    <div style={{ display: 'grid', gap: '10px' }}>
+                      <div>
+                        <label>Collection Name *</label>
+                        <input
+                          type="text"
+                          value={newCollectionName}
+                          onChange={(e) => setNewCollectionName(e.target.value)}
+                          placeholder="e.g., History, Science Fiction"
+                        />
+                      </div>
+                      <div>
+                        <label>Description</label>
+                        <textarea
+                          value={newCollectionDescription}
+                          onChange={(e) => setNewCollectionDescription(e.target.value)}
+                          placeholder="Brief description"
+                          rows="2"
+                        />
+                      </div>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <button
+                          type="button"
+                          onClick={handleCreateCollection}
+                          className="btn btn-success"
+                          style={{ fontSize: '12px', padding: '6px 12px' }}
+                        >
+                          Create Collection
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowNewCollectionForm(false);
+                            setNewCollectionName('');
+                            setNewCollectionDescription('');
+                          }}
+                          className="btn btn-secondary"
+                          style={{ fontSize: '12px', padding: '6px 12px' }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="form-group">
                 <label>Genre</label>
@@ -294,38 +396,35 @@ function BookCatalogue() {
       )}
 
       <div className="card">
-        <div style={{ marginBottom: '15px' }}>
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+        {/* Collection Selector */}
+        <div style={{ marginBottom: '15px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <div style={{ flex: 1 }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Filter by Collection:</label>
+            <select
+              value={selectedCollection}
+              onChange={(e) => {
+                setSelectedCollection(e.target.value);
+                setPage(1);
+              }}
+              style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}
+            >
+              <option value="">All Collections</option>
+              {collections.map((col) => (
+                <option key={col.collection_id} value={col.collection_id}>
+                  {col.collection_name} ({col.book_count} books)
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Search:</label>
             <input
               type="text"
               placeholder="Search by title, author, or ISBN..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              style={{ flex: 2, padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}
+              style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}
             />
-            <select
-              value={selectedCollection}
-              onChange={(e) => { setSelectedCollection(e.target.value); setPage(1); }}
-              style={{ flex: 1, padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}
-            >
-              <option value="">All Collections</option>
-              {collections.map((collection) => (
-                <option key={collection} value={collection}>
-                  {collection}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <input
-              type="checkbox"
-              id="showDamagedLost"
-              checked={showDamagedLost}
-              onChange={(e) => { setShowDamagedLost(e.target.checked); setPage(1); }}
-            />
-            <label htmlFor="showDamagedLost" style={{ margin: 0, cursor: 'pointer' }}>
-              Show Damaged or Lost books
-            </label>
           </div>
         </div>
 
@@ -333,25 +432,75 @@ function BookCatalogue() {
           <table>
             <thead>
               <tr>
-                <th>ID</th>
+                <th>Cover</th>
+                <th>ISBN</th>
                 <th>Title</th>
                 <th>Author</th>
                 <th>Collection</th>
-                <th>ISBN</th>
                 <th>Copies</th>
                 <th>Status</th>
-                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {books.map((book) => (
                 <tr key={book.book_id}>
-                  <td>{book.book_id}</td>
-                  <td>{book.title}</td>
+                  <td>
+                    <img
+                      src={book.cover_image_url || 'https://via.placeholder.com/60x90?text=No+Cover'}
+                      alt={book.title}
+                      style={{
+                        width: '60px',
+                        height: '90px',
+                        objectFit: 'cover',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => handleBookClick(book.book_id)}
+                      onError={(e) => { e.target.src = 'https://via.placeholder.com/60x90?text=No+Cover'; }}
+                    />
+                  </td>
+                  <td>{book.isbn}</td>
+                  <td>
+                    <span
+                      style={{
+                        color: '#667eea',
+                        cursor: 'pointer',
+                        textDecoration: 'underline',
+                        fontWeight: '500'
+                      }}
+                      onClick={() => handleBookClick(book.book_id)}
+                    >
+                      {book.title}
+                    </span>
+                    {book.is_checked_out && (
+                      <div style={{ marginTop: '3px' }}>
+                        <span style={{
+                          padding: '2px 6px',
+                          borderRadius: '3px',
+                          fontSize: '10px',
+                          backgroundColor: '#ff9800',
+                          color: 'white'
+                        }}>
+                          CHECKED OUT
+                        </span>
+                        {book.due_date && (
+                          <small style={{ marginLeft: '5px', color: '#666' }}>
+                            Due: {new Date(book.due_date).toLocaleDateString()}
+                          </small>
+                        )}
+                      </div>
+                    )}
+                  </td>
                   <td>{book.author || 'Unknown'}</td>
                   <td>{book.collection}</td>
-                  <td>{book.isbn}</td>
-                  <td>{book.available_copies}/{book.total_copies}</td>
+                  <td>
+                    {book.available_copies}/{book.total_copies}
+                    {book.available_copies === 0 && book.total_copies > 0 && (
+                      <div style={{ fontSize: '10px', color: '#d32f2f', marginTop: '2px' }}>
+                        All copies out
+                      </div>
+                    )}
+                  </td>
                   <td>
                     {(() => {
                       // Determine book status
@@ -411,17 +560,6 @@ function BookCatalogue() {
                         );
                       }
                     })()}
-                  </td>
-                  <td>
-                    {book.status === 'Available' && (
-                      <button
-                        onClick={() => handleUpdateStatus(book.book_id, 'Lost')}
-                        className="btn btn-danger"
-                        style={{ fontSize: '12px', padding: '5px 10px' }}
-                      >
-                        Mark Lost
-                      </button>
-                    )}
                   </td>
                 </tr>
               ))}
