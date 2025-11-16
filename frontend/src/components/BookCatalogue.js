@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { adminBooksAPI } from '../services/api';
+import { adminBooksAPI, adminCollectionsAPI } from '../services/api';
 
 function BookCatalogue() {
   const [books, setBooks] = useState([]);
+  const [collections, setCollections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
@@ -11,6 +12,9 @@ function BookCatalogue() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [isbnLookup, setIsbnLookup] = useState('');
   const [lookupLoading, setLookupLoading] = useState(false);
+  const [showNewCollectionForm, setShowNewCollectionForm] = useState(false);
+  const [newCollectionName, setNewCollectionName] = useState('');
+  const [newCollectionDescription, setNewCollectionDescription] = useState('');
   const [newBook, setNewBook] = useState({
     isbn: '',
     title: '',
@@ -20,7 +24,7 @@ function BookCatalogue() {
     publisher: '',
     publication_year: '',
     description: '',
-    collection: '',
+    collection_id: '',
     total_copies: 1,
     age_rating: '',
     cover_image_url: ''
@@ -28,6 +32,7 @@ function BookCatalogue() {
 
   useEffect(() => {
     loadBooks();
+    loadCollections();
   }, [page, search]);
 
   const loadBooks = async () => {
@@ -44,6 +49,44 @@ function BookCatalogue() {
     }
   };
 
+  const loadCollections = async () => {
+    try {
+      const response = await adminCollectionsAPI.getCollections();
+      setCollections(response.data);
+    } catch (err) {
+      console.error('Failed to load collections:', err);
+    }
+  };
+
+  const handleCreateCollection = async () => {
+    if (!newCollectionName.trim()) {
+      alert('Please enter a collection name');
+      return;
+    }
+
+    try {
+      const response = await adminCollectionsAPI.createCollection({
+        collection_name: newCollectionName,
+        description: newCollectionDescription
+      });
+
+      // Reload collections
+      await loadCollections();
+
+      // Select the newly created collection
+      setNewBook({ ...newBook, collection_id: response.data.collection.collection_id });
+
+      // Reset form
+      setNewCollectionName('');
+      setNewCollectionDescription('');
+      setShowNewCollectionForm(false);
+
+      alert('Collection created successfully!');
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to create collection');
+    }
+  };
+
   const handleISBNLookup = async () => {
     if (!isbnLookup) {
       alert('Please enter an ISBN');
@@ -57,9 +100,9 @@ function BookCatalogue() {
         ...newBook,
         ...response.data,
         total_copies: 1,
-        collection: newBook.collection || ''
+        collection_id: newBook.collection_id || ''
       });
-      alert('Book details fetched! Please add collection and review before saving.');
+      alert('Book details fetched! Please select a collection and review before saving.');
     } catch (err) {
       alert(err.response?.data?.error || 'Book not found in Open Library');
     } finally {
@@ -69,8 +112,8 @@ function BookCatalogue() {
 
   const handleAddBook = async (e) => {
     e.preventDefault();
-    if (!newBook.collection) {
-      alert('Please specify a collection (e.g., History, Philosophy, Science, etc.)');
+    if (!newBook.collection_id) {
+      alert('Please select a collection');
       return;
     }
 
@@ -86,7 +129,7 @@ function BookCatalogue() {
         publisher: '',
         publication_year: '',
         description: '',
-        collection: '',
+        collection_id: '',
         total_copies: 1,
         age_rating: '',
         cover_image_url: ''
@@ -181,15 +224,87 @@ function BookCatalogue() {
                   onChange={(e) => setNewBook({...newBook, author: e.target.value})}
                 />
               </div>
-              <div className="form-group">
-                <label>Collection * (e.g., History, Philosophy)</label>
-                <input
-                  type="text"
-                  value={newBook.collection}
-                  onChange={(e) => setNewBook({...newBook, collection: e.target.value})}
-                  required
-                  placeholder="History, Science, Biography, etc."
-                />
+              <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                <label>Collection *</label>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                  <div style={{ flex: 1 }}>
+                    <select
+                      value={newBook.collection_id}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '__new__') {
+                          setShowNewCollectionForm(true);
+                        } else {
+                          setNewBook({...newBook, collection_id: value});
+                        }
+                      }}
+                      required
+                      style={{ width: '100%' }}
+                    >
+                      <option value="">Select a collection</option>
+                      {collections.map((col) => (
+                        <option key={col.collection_id} value={col.collection_id}>
+                          {col.collection_name}
+                        </option>
+                      ))}
+                      <option value="__new__">+ Add New Collection</option>
+                    </select>
+                  </div>
+                </div>
+
+                {showNewCollectionForm && (
+                  <div style={{
+                    marginTop: '10px',
+                    padding: '15px',
+                    backgroundColor: '#f0f8ff',
+                    border: '1px solid #ccc',
+                    borderRadius: '5px'
+                  }}>
+                    <h4 style={{ marginTop: 0 }}>Create New Collection</h4>
+                    <div style={{ display: 'grid', gap: '10px' }}>
+                      <div>
+                        <label>Collection Name *</label>
+                        <input
+                          type="text"
+                          value={newCollectionName}
+                          onChange={(e) => setNewCollectionName(e.target.value)}
+                          placeholder="e.g., History, Science Fiction"
+                        />
+                      </div>
+                      <div>
+                        <label>Description</label>
+                        <textarea
+                          value={newCollectionDescription}
+                          onChange={(e) => setNewCollectionDescription(e.target.value)}
+                          placeholder="Brief description"
+                          rows="2"
+                        />
+                      </div>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <button
+                          type="button"
+                          onClick={handleCreateCollection}
+                          className="btn btn-success"
+                          style={{ fontSize: '12px', padding: '6px 12px' }}
+                        >
+                          Create Collection
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowNewCollectionForm(false);
+                            setNewCollectionName('');
+                            setNewCollectionDescription('');
+                          }}
+                          className="btn btn-secondary"
+                          style={{ fontSize: '12px', padding: '6px 12px' }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="form-group">
                 <label>Genre</label>

@@ -134,6 +134,42 @@ button:disabled {
   margin-bottom: 10px;
 }
 
+.sidebar .menu-section {
+  margin-bottom: 15px;
+}
+
+.sidebar .menu-header {
+  color: white;
+  font-weight: 600;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.3s;
+  background: #34495e;
+}
+
+.sidebar .menu-header:hover {
+  background: #3d566e;
+}
+
+.sidebar .menu-toggle {
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.sidebar .submenu {
+  list-style: none;
+  margin-left: 15px;
+  margin-top: 5px;
+}
+
+.sidebar .submenu li {
+  margin-bottom: 5px;
+}
+
 .sidebar a {
   color: white;
   text-decoration: none;

@@ -32,7 +32,7 @@ def get_books():
         params.extend([search_param, search_param, search_param])
     
     if collection:
-        where_clauses.append("collection = %s")
+        where_clauses.append("b.collection_id = %s")
         params.append(collection)
     
     if genre:
@@ -53,7 +53,8 @@ def get_books():
     # Get books with checkout status
     query = f"""
         SELECT b.book_id, b.isbn, b.title, b.author, b.genre, b.sub_genre, b.publisher,
-               b.publication_year, b.collection, b.total_copies, b.available_copies,
+               b.publication_year, b.collection_id, c.collection_name as collection,
+               b.total_copies, b.available_copies,
                b.age_rating, b.cover_image_url, b.status, b.created_at,
                CASE
                    WHEN EXISTS (
@@ -66,6 +67,7 @@ def get_books():
                (SELECT MIN(due_date) FROM borrowings br
                 WHERE br.book_id = b.book_id AND br.status = 'active') as due_date
         FROM books b
+        LEFT JOIN collections c ON b.collection_id = c.collection_id
         {where_sql}
         ORDER BY b.created_at DESC
         LIMIT %s OFFSET %s
@@ -114,29 +116,36 @@ def fetch_book_details():
 def add_book():
     """Add a new book to the catalogue"""
     data = request.get_json()
-    
-    required_fields = ['isbn', 'title', 'collection']
+
+    required_fields = ['isbn', 'title', 'collection_id']
     if not all(field in data for field in required_fields):
         return jsonify({"error": "Missing required fields"}), 400
-    
+
     # Check if ISBN already exists
     check_query = "SELECT book_id FROM books WHERE isbn = %s"
     existing = execute_query(check_query, (data['isbn'],), fetch_one=True)
-    
+
     if existing:
         return jsonify({"error": "Book with this ISBN already exists"}), 400
-    
+
+    # Validate collection_id exists
+    collection_check = "SELECT collection_id FROM collections WHERE collection_id = %s"
+    collection_exists = execute_query(collection_check, (data['collection_id'],), fetch_one=True)
+
+    if not collection_exists:
+        return jsonify({"error": "Invalid collection ID"}), 400
+
     query = """
-        INSERT INTO books 
+        INSERT INTO books
         (isbn, title, author, genre, sub_genre, publisher, publication_year,
-         description, collection, total_copies, available_copies, age_rating,
+         description, collection_id, total_copies, available_copies, age_rating,
          cover_image_url, status)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'Available')
         RETURNING book_id
     """
-    
+
     total_copies = data.get('total_copies', 1)
-    
+
     with get_db_cursor() as cursor:
         cursor.execute(query, (
             data['isbn'],
@@ -147,15 +156,15 @@ def add_book():
             data.get('publisher'),
             data.get('publication_year'),
             data.get('description'),
-            data['collection'],
+            data['collection_id'],
             total_copies,
             total_copies,  # available_copies = total_copies initially
             data.get('age_rating'),
             data.get('cover_image_url')
         ))
-        
+
         book_id = cursor.fetchone()['book_id']
-        
+
         return jsonify({
             "message": "Book added successfully",
             "book_id": book_id
@@ -181,7 +190,7 @@ def update_book(book_id):
     
     updatable_fields = [
         'title', 'author', 'genre', 'sub_genre', 'publisher', 'publication_year',
-        'description', 'collection', 'total_copies', 'age_rating', 'cover_image_url'
+        'description', 'collection_id', 'total_copies', 'age_rating', 'cover_image_url'
     ]
     
     for field in updatable_fields:
@@ -260,14 +269,6 @@ def update_book_copies(book_id):
             return jsonify({"error": "Book not found or insufficient copies"}), 404
         
         return jsonify({"message": f"Book copies {action}ed successfully"}), 200
-
-@admin_books_bp.route('/books/collections', methods=['GET'])
-@jwt_required()
-def get_collections():
-    """Get all unique collections"""
-    query = "SELECT DISTINCT collection FROM books WHERE collection IS NOT NULL ORDER BY collection"
-    collections = execute_query(query, fetch_all=True)
-    return jsonify([c['collection'] for c in (collections or [])]), 200
 
 @admin_books_bp.route('/books/genres', methods=['GET'])
 @jwt_required()

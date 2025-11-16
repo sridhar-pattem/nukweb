@@ -62,19 +62,27 @@ export const adminPatronsAPI = {
 
 // Admin - Books API
 export const adminBooksAPI = {
-  getBooks: (page = 1, filters = {}) => 
+  getBooks: (page = 1, filters = {}) =>
     api.get('/admin/books', { params: { page, ...filters } }),
   fetchByISBN: (isbn) => api.post('/admin/books/fetch-by-isbn', { isbn }),
   addBook: (bookData) => api.post('/admin/books', bookData),
   updateBook: (bookId, bookData) => api.put(`/admin/books/${bookId}`, bookData),
-  updateBookStatus: (bookId, status) => 
+  updateBookStatus: (bookId, status) =>
     api.patch(`/admin/books/${bookId}/status`, { status }),
-  updateCopies: (bookId, action, count) => 
+  updateCopies: (bookId, action, count) =>
     api.patch(`/admin/books/${bookId}/copies`, { action, count }),
-  getCollections: () => api.get('/admin/books/collections'),
   getGenres: () => api.get('/admin/books/genres'),
   getAgeRatings: () => api.get('/admin/age-ratings'),
   addAgeRating: (ratingData) => api.post('/admin/age-ratings', ratingData),
+};
+
+// Admin - Collections API
+export const adminCollectionsAPI = {
+  getCollections: () => api.get('/admin/collections'),
+  createCollection: (collectionData) => api.post('/admin/collections', collectionData),
+  updateCollection: (collectionId, collectionData) =>
+    api.put(`/admin/collections/${collectionId}`, collectionData),
+  deleteCollection: (collectionId) => api.delete(`/admin/collections/${collectionId}`),
 };
 
 // Admin - Borrowings API

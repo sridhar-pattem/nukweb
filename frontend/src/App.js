@@ -6,6 +6,7 @@ import BookCatalogue from './components/BookCatalogue';
 import BorrowingsManagement from './components/BorrowingsManagement';
 import BrowseBooks from './components/BrowseBooks';
 import MembershipPlans from './components/MembershipPlans';
+import Collections from './components/Collections';
 
 // Context for authentication
 export const AuthContext = createContext();
@@ -126,16 +127,63 @@ function LoginPage() {
 // Admin Dashboard Component
 function AdminDashboard() {
   const { user, logout } = useAuth();
+  const [expandedMenus, setExpandedMenus] = useState({
+    library: true,
+    lending: true,
+    patrons: true
+  });
+
+  const toggleMenu = (menu) => {
+    setExpandedMenus(prev => ({
+      ...prev,
+      [menu]: !prev[menu]
+    }));
+  };
 
   return (
     <div className="dashboard">
       <nav className="sidebar">
         <h2>Nuk Library Admin</h2>
         <ul>
-          <li><Link to="/admin/patrons">Patron Management</Link></li>
-          <li><Link to="/admin/membership-plans">Membership Plans</Link></li>
-          <li><Link to="/admin/books">Book Catalogue</Link></li>
-          <li><Link to="/admin/borrowings">Borrowings</Link></li>
+          <li className="menu-section">
+            <div className="menu-header" onClick={() => toggleMenu('library')}>
+              <span>Library</span>
+              <span className="menu-toggle">{expandedMenus.library ? '−' : '+'}</span>
+            </div>
+            {expandedMenus.library && (
+              <ul className="submenu">
+                <li><Link to="/admin/books">Catalogue</Link></li>
+                <li><Link to="/admin/collections">Collections</Link></li>
+              </ul>
+            )}
+          </li>
+
+          <li className="menu-section">
+            <div className="menu-header" onClick={() => toggleMenu('lending')}>
+              <span>Lending</span>
+              <span className="menu-toggle">{expandedMenus.lending ? '−' : '+'}</span>
+            </div>
+            {expandedMenus.lending && (
+              <ul className="submenu">
+                <li><Link to="/admin/checkouts">Checkouts</Link></li>
+              </ul>
+            )}
+          </li>
+
+          <li className="menu-section">
+            <div className="menu-header" onClick={() => toggleMenu('patrons')}>
+              <span>Patrons</span>
+              <span className="menu-toggle">{expandedMenus.patrons ? '−' : '+'}</span>
+            </div>
+            {expandedMenus.patrons && (
+              <ul className="submenu">
+                <li><Link to="/admin/patron-management">Patron Management</Link></li>
+                <li><Link to="/admin/membership-plans">Membership Plans</Link></li>
+                <li><Link to="/admin/invoicing">Invoicing</Link></li>
+              </ul>
+            )}
+          </li>
+
           <li><Link to="/admin/cowork">Cowork Requests</Link></li>
         </ul>
         <div className="user-info">
@@ -143,14 +191,16 @@ function AdminDashboard() {
           <button onClick={logout}>Logout</button>
         </div>
       </nav>
-      
+
       <main className="main-content">
         <Routes>
           <Route index element={<AdminHome />} />
-          <Route path="patrons" element={<PatronManagement />} />
+          <Route path="patron-management" element={<PatronManagement />} />
           <Route path="membership-plans" element={<MembershipPlans />} />
           <Route path="books" element={<BookCatalogue />} />
-          <Route path="borrowings" element={<BorrowingsManagement />} />
+          <Route path="collections" element={<Collections />} />
+          <Route path="checkouts" element={<BorrowingsManagement />} />
+          <Route path="invoicing" element={<div>Invoicing - Coming Soon</div>} />
           <Route path="cowork" element={<div>Cowork Requests - Coming Soon</div>} />
         </Routes>
       </main>
