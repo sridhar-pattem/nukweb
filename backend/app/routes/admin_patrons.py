@@ -77,7 +77,7 @@ def get_patron_details(patron_id):
     """Get detailed information about a patron"""
     query = """
         SELECT p.*, u.email, u.name, u.phone, u.status,
-               mp.plan_name, mp.plan_type, mp.price
+               mp.plan_name, mp.plan_type, mp.price, mp.borrowing_limit
         FROM patrons p
         JOIN users u ON p.user_id = u.user_id
         LEFT JOIN membership_plans mp ON p.membership_plan_id = mp.plan_id
@@ -304,7 +304,7 @@ def update_patron_status(patron_id):
 def get_membership_plans():
     """Get all available membership plans"""
     query = """
-        SELECT plan_id, plan_name, plan_type, duration_days, price, description
+        SELECT plan_id, plan_name, plan_type, duration_days, price, description, borrowing_limit
         FROM membership_plans
         ORDER BY price ASC
     """
@@ -330,11 +330,11 @@ def create_membership_plan():
             return jsonify({"error": "Plan name already exists"}), 400
 
         cursor.execute("""
-            INSERT INTO membership_plans (plan_name, plan_type, duration_days, price, description)
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO membership_plans (plan_name, plan_type, duration_days, price, description, borrowing_limit)
+            VALUES (%s, %s, %s, %s, %s, %s)
             RETURNING plan_id
         """, (data['plan_name'], data['plan_type'], data['duration_days'],
-              data['price'], data.get('description')))
+              data['price'], data.get('description'), data.get('borrowing_limit', 3)))
 
         plan_id = cursor.fetchone()['plan_id']
 
@@ -374,6 +374,9 @@ def update_membership_plan(plan_id):
         if 'description' in data:
             update_fields.append("description = %s")
             params.append(data['description'])
+        if 'borrowing_limit' in data:
+            update_fields.append("borrowing_limit = %s")
+            params.append(data['borrowing_limit'])
 
         if not update_fields:
             return jsonify({"error": "No fields to update"}), 400

@@ -38,20 +38,33 @@ def issue_book():
         if book['available_copies'] <= 0:
             return jsonify({"error": "No copies available"}), 400
         
-        # Check if patron has active account
+        # Check if patron has active account and get borrowing limit
         cursor.execute("""
-            SELECT u.status 
+            SELECT u.status, mp.borrowing_limit
             FROM patrons p
             JOIN users u ON p.user_id = u.user_id
+            LEFT JOIN membership_plans mp ON p.membership_plan_id = mp.plan_id
             WHERE p.patron_id = %s
         """, (patron_id,))
         patron = cursor.fetchone()
-        
+
         if not patron:
             return jsonify({"error": "Patron not found"}), 404
-        
+
         if patron['status'] != 'active':
             return jsonify({"error": f"Patron account is {patron['status']}"}), 400
+
+        # Check current active borrowings against limit
+        borrowing_limit = patron['borrowing_limit'] or 3  # Default to 3 if no plan
+        cursor.execute("""
+            SELECT COUNT(*) as active_count
+            FROM borrowings
+            WHERE patron_id = %s AND status = 'active'
+        """, (patron_id,))
+        active_count = cursor.fetchone()['active_count']
+
+        if active_count >= borrowing_limit:
+            return jsonify({"error": f"Borrowing limit reached. Maximum {borrowing_limit} books allowed."}), 400
         
         # Create borrowing record
         checkout_date = datetime.now().date()
