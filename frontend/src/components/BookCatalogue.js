@@ -13,6 +13,7 @@ function BookCatalogue() {
   const [lookupLoading, setLookupLoading] = useState(false);
   const [collections, setCollections] = useState([]);
   const [selectedCollection, setSelectedCollection] = useState('');
+  const [showDamagedLost, setShowDamagedLost] = useState(false);
   const [newBook, setNewBook] = useState({
     isbn: '',
     title: '',
@@ -34,7 +35,7 @@ function BookCatalogue() {
 
   useEffect(() => {
     loadBooks();
-  }, [page, search, selectedCollection]);
+  }, [page, search, selectedCollection, showDamagedLost]);
 
   const loadCollections = async () => {
     try {
@@ -51,6 +52,9 @@ function BookCatalogue() {
       const filters = { search };
       if (selectedCollection) {
         filters.collection = selectedCollection;
+      }
+      if (!showDamagedLost) {
+        filters.exclude_damaged_lost = true;
       }
       const response = await adminBooksAPI.getBooks(page, filters);
       setBooks(response.data.books);
@@ -290,26 +294,39 @@ function BookCatalogue() {
       )}
 
       <div className="card">
-        <div style={{ marginBottom: '15px', display: 'flex', gap: '10px' }}>
-          <input
-            type="text"
-            placeholder="Search by title, author, or ISBN..."
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            style={{ flex: 2, padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}
-          />
-          <select
-            value={selectedCollection}
-            onChange={(e) => { setSelectedCollection(e.target.value); setPage(1); }}
-            style={{ flex: 1, padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}
-          >
-            <option value="">All Collections</option>
-            {collections.map((collection) => (
-              <option key={collection} value={collection}>
-                {collection}
-              </option>
-            ))}
-          </select>
+        <div style={{ marginBottom: '15px' }}>
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+            <input
+              type="text"
+              placeholder="Search by title, author, or ISBN..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              style={{ flex: 2, padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}
+            />
+            <select
+              value={selectedCollection}
+              onChange={(e) => { setSelectedCollection(e.target.value); setPage(1); }}
+              style={{ flex: 1, padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}
+            >
+              <option value="">All Collections</option>
+              {collections.map((collection) => (
+                <option key={collection} value={collection}>
+                  {collection}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <input
+              type="checkbox"
+              id="showDamagedLost"
+              checked={showDamagedLost}
+              onChange={(e) => { setShowDamagedLost(e.target.checked); setPage(1); }}
+            />
+            <label htmlFor="showDamagedLost" style={{ margin: 0, cursor: 'pointer' }}>
+              Show Damaged or Lost books
+            </label>
+          </div>
         </div>
 
         <div style={{ overflowX: 'auto' }}>
@@ -337,23 +354,36 @@ function BookCatalogue() {
                   <td>{book.available_copies}/{book.total_copies}</td>
                   <td>
                     {(() => {
-                      // Determine checkout status based on active borrowings
+                      // Determine book status
                       const hasActiveBorrowings = book.active_borrowings > 0;
-                      const isAvailable = book.available_copies > 0 && !hasActiveBorrowings;
 
-                      if (isAvailable) {
+                      // Check for Damaged or Lost status first
+                      if (book.status === 'Damaged') {
                         return (
                           <span style={{
                             padding: '3px 8px',
                             borderRadius: '3px',
                             fontSize: '12px',
-                            backgroundColor: '#27ae60',
+                            backgroundColor: '#f39c12',
                             color: 'white'
                           }}>
-                            Available
+                            Damaged
+                          </span>
+                        );
+                      } else if (book.status === 'Lost') {
+                        return (
+                          <span style={{
+                            padding: '3px 8px',
+                            borderRadius: '3px',
+                            fontSize: '12px',
+                            backgroundColor: '#95a5a6',
+                            color: 'white'
+                          }}>
+                            Lost
                           </span>
                         );
                       } else if (hasActiveBorrowings && book.earliest_due_date) {
+                        // Checked out status with due date
                         const dueDate = new Date(book.earliest_due_date).toLocaleDateString();
                         return (
                           <span style={{
@@ -367,15 +397,16 @@ function BookCatalogue() {
                           </span>
                         );
                       } else {
+                        // Available status
                         return (
                           <span style={{
                             padding: '3px 8px',
                             borderRadius: '3px',
                             fontSize: '12px',
-                            backgroundColor: '#95a5a6',
+                            backgroundColor: '#27ae60',
                             color: 'white'
                           }}>
-                            {book.status}
+                            Available
                           </span>
                         );
                       }

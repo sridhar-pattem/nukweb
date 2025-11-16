@@ -17,36 +17,41 @@ def get_books():
     collection = request.args.get('collection', '')
     genre = request.args.get('genre', '')
     status = request.args.get('status', '')
-    
+    exclude_damaged_lost = request.args.get('exclude_damaged_lost', 'false').lower() == 'true'
+
     offset = (page - 1) * Config.ITEMS_PER_PAGE
-    
+
     # Build query
     where_clauses = []
     params = []
-    
+
     if search:
         where_clauses.append("""
-            (title ILIKE %s OR author ILIKE %s OR isbn LIKE %s)
+            (b.title ILIKE %s OR b.author ILIKE %s OR b.isbn LIKE %s)
         """)
         search_param = f'%{search}%'
         params.extend([search_param, search_param, search_param])
-    
+
     if collection:
-        where_clauses.append("collection = %s")
+        where_clauses.append("b.collection = %s")
         params.append(collection)
-    
+
     if genre:
-        where_clauses.append("genre = %s")
+        where_clauses.append("b.genre = %s")
         params.append(genre)
-    
+
     if status:
-        where_clauses.append("status = %s")
+        where_clauses.append("b.status = %s")
         params.append(status)
-    
+
+    # By default, exclude Damaged and Lost books unless explicitly requested
+    if exclude_damaged_lost:
+        where_clauses.append("b.status NOT IN ('Damaged', 'Lost')")
+
     where_sql = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
-    
+
     # Get total count
-    count_query = f"SELECT COUNT(*) as total FROM books {where_sql}"
+    count_query = f"SELECT COUNT(*) as total FROM books b {where_sql}"
     total_result = execute_query(count_query, tuple(params), fetch_one=True)
     total = total_result['total'] if total_result else 0
     
