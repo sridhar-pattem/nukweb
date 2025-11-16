@@ -12,7 +12,8 @@ function MembershipPlans() {
     plan_type: 'Active',
     duration_days: '',
     price: '',
-    description: ''
+    description: '',
+    borrowing_limit: 3
   });
 
   useEffect(() => {
@@ -50,7 +51,8 @@ function MembershipPlans() {
         plan_type: 'Active',
         duration_days: '',
         price: '',
-        description: ''
+        description: '',
+        borrowing_limit: 3
       });
       loadPlans();
     } catch (err) {
@@ -65,7 +67,8 @@ function MembershipPlans() {
       plan_type: plan.plan_type,
       duration_days: plan.duration_days,
       price: plan.price,
-      description: plan.description || ''
+      description: plan.description || '',
+      borrowing_limit: plan.borrowing_limit || 3
     });
     setShowAddForm(true);
   };
@@ -90,7 +93,8 @@ function MembershipPlans() {
       plan_type: 'Active',
       duration_days: '',
       price: '',
-      description: ''
+      description: '',
+      borrowing_limit: 3
     });
   };
 
@@ -170,6 +174,18 @@ function MembershipPlans() {
                 />
               </div>
 
+              <div className="form-group">
+                <label>Borrowing Limit *</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={formData.borrowing_limit}
+                  onChange={(e) => setFormData({...formData, borrowing_limit: parseInt(e.target.value)})}
+                  placeholder="e.g., 3"
+                  required
+                />
+              </div>
+
               <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                 <label>Description</label>
                 <textarea
@@ -210,6 +226,7 @@ function MembershipPlans() {
                   <th>Type</th>
                   <th>Duration</th>
                   <th>Price</th>
+                  <th>Borrowing Limit</th>
                   <th>Description</th>
                   <th>Actions</th>
                 </tr>
@@ -232,6 +249,7 @@ function MembershipPlans() {
                     </td>
                     <td>{plan.duration_days} days</td>
                     <td>₹{parseFloat(plan.price).toFixed(2)}</td>
+                    <td>{plan.borrowing_limit || 3} books</td>
                     <td>{plan.description || 'N/A'}</td>
                     <td>
                       <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
