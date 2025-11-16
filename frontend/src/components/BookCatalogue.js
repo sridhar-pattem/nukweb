@@ -502,15 +502,64 @@ function BookCatalogue() {
                     )}
                   </td>
                   <td>
-                    <span style={{
-                      padding: '3px 8px',
-                      borderRadius: '3px',
-                      fontSize: '12px',
-                      backgroundColor: book.status === 'Available' ? '#27ae60' : '#e74c3c',
-                      color: 'white'
-                    }}>
-                      {book.status}
-                    </span>
+                    {(() => {
+                      // Determine book status
+                      const hasActiveBorrowings = book.active_borrowings > 0;
+
+                      // Check for Damaged or Lost status first
+                      if (book.status === 'Damaged') {
+                        return (
+                          <span style={{
+                            padding: '3px 8px',
+                            borderRadius: '3px',
+                            fontSize: '12px',
+                            backgroundColor: '#f39c12',
+                            color: 'white'
+                          }}>
+                            Damaged
+                          </span>
+                        );
+                      } else if (book.status === 'Lost') {
+                        return (
+                          <span style={{
+                            padding: '3px 8px',
+                            borderRadius: '3px',
+                            fontSize: '12px',
+                            backgroundColor: '#95a5a6',
+                            color: 'white'
+                          }}>
+                            Lost
+                          </span>
+                        );
+                      } else if (hasActiveBorrowings && book.earliest_due_date) {
+                        // Checked out status with due date
+                        const dueDate = new Date(book.earliest_due_date).toLocaleDateString();
+                        return (
+                          <span style={{
+                            padding: '3px 8px',
+                            borderRadius: '3px',
+                            fontSize: '12px',
+                            backgroundColor: '#e74c3c',
+                            color: 'white'
+                          }}>
+                            Checked Out (Due: {dueDate})
+                          </span>
+                        );
+                      } else {
+                        // Available status
+                        return (
+                          <span style={{
+                            padding: '3px 8px',
+                            borderRadius: '3px',
+                            fontSize: '12px',
+                            backgroundColor: '#27ae60',
+                            color: 'white'
+                          }}>
+                            Available
+                          </span>
+                        );
+                      }
+                    })()}
                   </td>
                 </tr>
               ))}

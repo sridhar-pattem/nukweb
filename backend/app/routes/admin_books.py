@@ -17,32 +17,37 @@ def get_books():
     collection = request.args.get('collection', '')
     genre = request.args.get('genre', '')
     status = request.args.get('status', '')
-    
+    exclude_damaged_lost = request.args.get('exclude_damaged_lost', 'false').lower() == 'true'
+
     offset = (page - 1) * Config.ITEMS_PER_PAGE
-    
+
     # Build query
     where_clauses = []
     params = []
-    
+
     if search:
         where_clauses.append("""
-            (title ILIKE %s OR author ILIKE %s OR isbn LIKE %s)
+            (b.title ILIKE %s OR b.author ILIKE %s OR b.isbn LIKE %s)
         """)
         search_param = f'%{search}%'
         params.extend([search_param, search_param, search_param])
-    
+
     if collection:
         where_clauses.append("b.collection_id = %s")
         params.append(collection)
-    
+
     if genre:
-        where_clauses.append("genre = %s")
+        where_clauses.append("b.genre = %s")
         params.append(genre)
-    
+
     if status:
-        where_clauses.append("status = %s")
+        where_clauses.append("b.status = %s")
         params.append(status)
-    
+
+    # By default, exclude Damaged and Lost books unless explicitly requested
+    if exclude_damaged_lost:
+        where_clauses.append("b.status NOT IN ('Damaged', 'Lost')")
+
     where_sql = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
 
     # Get total count
