@@ -85,6 +85,18 @@ export const adminCollectionsAPI = {
   deleteCollection: (collectionId) => api.delete(`/admin/collections/${collectionId}`),
 };
 
+// Admin - Dashboard API
+export const adminDashboardAPI = {
+  getStats: () => api.get('/admin/dashboard/stats'),
+  getBorrowingTrends: (days = 30) => api.get('/admin/dashboard/borrowing-trends', { params: { days } }),
+  getPopularBooks: (limit = 10) => api.get('/admin/dashboard/popular-books', { params: { limit } }),
+  getCollectionDistribution: () => api.get('/admin/dashboard/collection-distribution'),
+  getMembershipDistribution: () => api.get('/admin/dashboard/membership-distribution'),
+  getOverdueBooks: () => api.get('/admin/dashboard/overdue-books'),
+  getRecentActivity: (limit = 20) => api.get('/admin/dashboard/recent-activity', { params: { limit } }),
+  getPatronActivity: () => api.get('/admin/dashboard/patron-activity'),
+};
+
 // Admin - Borrowings API
 export const adminBorrowingsAPI = {
   issueBook: (patronId, bookId) =>

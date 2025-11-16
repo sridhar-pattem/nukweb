@@ -7,6 +7,7 @@ import BorrowingsManagement from './components/BorrowingsManagement';
 import BrowseBooks from './components/BrowseBooks';
 import MembershipPlans from './components/MembershipPlans';
 import Collections from './components/Collections';
+import Dashboard from './components/Dashboard';
 
 // Context for authentication
 export const AuthContext = createContext();
@@ -145,6 +146,8 @@ function AdminDashboard() {
       <nav className="sidebar">
         <h2>Nuk Library Admin</h2>
         <ul>
+          <li><Link to="/admin/dashboard">Dashboard</Link></li>
+
           <li className="menu-section">
             <div className="menu-header" onClick={() => toggleMenu('library')}>
               <span>Library</span>
@@ -195,6 +198,7 @@ function AdminDashboard() {
       <main className="main-content">
         <Routes>
           <Route index element={<AdminHome />} />
+          <Route path="dashboard" element={<Dashboard />} />
           <Route path="patron-management" element={<PatronManagement />} />
           <Route path="membership-plans" element={<MembershipPlans />} />
           <Route path="books" element={<BookCatalogue />} />
