@@ -7,10 +7,10 @@ import {
 } from 'recharts';
 
 const COLORS = {
-  primary: '#667eea',
-  secondary: '#764ba2',
-  success: '#27ae60',
-  warning: '#f39c12',
+  primary: '#5C7CFA',
+  secondary: '#2E3A59',
+  success: '#20C997',
+  warning: '#FFB84D',
   danger: '#e74c3c',
   info: '#3498db',
   purple: '#9b59b6',
