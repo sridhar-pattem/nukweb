@@ -69,7 +69,7 @@ def get_books():
                b.age_rating, b.cover_image_url, b.created_at,
                ba.total_items, ba.available_items,
                ba.checked_out_items, ba.on_hold_items,
-               (SELECT json_agg(
+               COALESCE((SELECT json_agg(
                    json_build_object(
                        'contributor_id', contrib.contributor_id,
                        'name', contrib.name,
@@ -80,7 +80,7 @@ def get_books():
                 FROM book_contributors bc
                 JOIN contributors contrib ON bc.contributor_id = contrib.contributor_id
                 WHERE bc.book_id = b.book_id
-               ) as contributors
+               ), '[]'::json) as contributors
         FROM books b
         LEFT JOIN collections c ON b.collection_id = c.collection_id
         LEFT JOIN mv_book_availability ba ON b.book_id = ba.book_id
