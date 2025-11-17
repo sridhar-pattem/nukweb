@@ -21,6 +21,7 @@ CREATE TABLE membership_plans (
     duration_days INTEGER NOT NULL,
     price DECIMAL(10, 2) NOT NULL,
     description TEXT,
+    borrowing_limit INTEGER DEFAULT 3 CHECK (borrowing_limit > 0),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
