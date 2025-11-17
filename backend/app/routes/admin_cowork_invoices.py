@@ -275,10 +275,9 @@ def get_cowork_invoices():
 
     except Exception as e:
         import traceback
-        error_msg = str(e) if str(e) else type(e).__name__
-        print(f"Error fetching invoices: {error_msg}")
+        print(f"Error fetching invoices: {e}")
         traceback.print_exc()
-        return jsonify({'error': error_msg}), 500
+        return jsonify({'error': str(e)}), 500
 
 
 @admin_cowork_invoices_bp.route('/cowork-invoices/<int:invoice_id>', methods=['GET'])
