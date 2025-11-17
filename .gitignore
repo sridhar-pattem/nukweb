@@ -51,6 +51,7 @@ logs/
 /tmp
 *.tmp
 uploads/
+frontend/static/
 
 # Database
 *.sqlite
