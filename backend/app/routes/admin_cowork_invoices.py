@@ -222,8 +222,8 @@ def get_cowork_invoices():
 
         with get_db_cursor() as cur:
             # Get total count
-            cur.execute(f"SELECT COUNT(*) FROM invoices WHERE {where_clause}", params)
-            total = cur.fetchone()[0]
+            cur.execute(f"SELECT COUNT(*) as count FROM invoices WHERE {where_clause}", params)
+            total = cur.fetchone()['count']
 
             # Get invoices
             query = f"""
