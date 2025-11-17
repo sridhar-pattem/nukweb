@@ -139,12 +139,14 @@ function BookCatalogue() {
 
   // Helper function to display contributors
   const getContributorDisplay = (contributors) => {
-    if (!contributors || contributors.length === 0) return 'Unknown';
-    const authors = contributors.filter(c => c.role === 'author');
+    if (!contributors || !Array.isArray(contributors) || contributors.length === 0) {
+      return 'Unknown';
+    }
+    const authors = contributors.filter(c => c && c.role === 'author');
     if (authors.length > 0) {
       return authors.map(a => a.name).join(', ');
     }
-    return contributors[0].name;
+    return contributors[0] && contributors[0].name ? contributors[0].name : 'Unknown';
   };
 
   if (loading && books.length === 0) {

@@ -49,14 +49,14 @@ def browse_books():
                b.collection_id, c.collection_name,
                b.age_rating, b.cover_image_url,
                ba.available_items, ba.total_items,
-               (SELECT json_agg(
+               COALESCE((SELECT json_agg(
                    json_build_object('name', contrib.name, 'role', bc.role)
                    ORDER BY bc.role, bc.sequence_number
                )
                 FROM book_contributors bc
                 JOIN contributors contrib ON bc.contributor_id = contrib.contributor_id
                 WHERE bc.book_id = b.book_id
-               ) as contributors,
+               ), '[]'::json) as contributors,
                (SELECT AVG(rating) FROM reviews WHERE book_id = b.book_id) as avg_rating,
                (SELECT COUNT(*) FROM reviews WHERE book_id = b.book_id) as review_count
         FROM books b
@@ -191,14 +191,14 @@ def get_my_borrowings():
         SELECT br.*,
                b.title, b.subtitle, b.isbn, b.cover_image_url,
                i.barcode, i.call_number,
-               (SELECT json_agg(
+               COALESCE((SELECT json_agg(
                    json_build_object('name', c.name, 'role', bc.role)
                    ORDER BY bc.role, bc.sequence_number
                )
                 FROM book_contributors bc
                 JOIN contributors c ON bc.contributor_id = c.contributor_id
                 WHERE bc.book_id = b.book_id
-               ) as contributors
+               ), '[]'::json) as contributors
         FROM borrowings br
         JOIN items i ON br.item_id = i.item_id
         JOIN books b ON i.book_id = b.book_id
