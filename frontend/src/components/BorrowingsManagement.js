@@ -18,12 +18,12 @@ function BorrowingsManagement() {
   const [showPatronDropdown, setShowPatronDropdown] = useState(false);
   const patronRef = useRef(null);
 
-  // Autocomplete state for book search
-  const [bookSearch, setBookSearch] = useState('');
-  const [bookResults, setBookResults] = useState([]);
-  const [selectedBook, setSelectedBook] = useState(null);
-  const [showBookDropdown, setShowBookDropdown] = useState(false);
-  const bookRef = useRef(null);
+  // Autocomplete state for item search
+  const [itemSearch, setItemSearch] = useState('');
+  const [itemResults, setItemResults] = useState([]);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [showItemDropdown, setShowItemDropdown] = useState(false);
+  const itemRef = useRef(null);
 
   // History modal
   const [showHistory, setShowHistory] = useState(false);
@@ -41,8 +41,8 @@ function BorrowingsManagement() {
       if (patronRef.current && !patronRef.current.contains(event.target)) {
         setShowPatronDropdown(false);
       }
-      if (bookRef.current && !bookRef.current.contains(event.target)) {
-        setShowBookDropdown(false);
+      if (itemRef.current && !itemRef.current.contains(event.target)) {
+        setShowItemDropdown(false);
       }
     };
 
@@ -71,26 +71,26 @@ function BorrowingsManagement() {
     return () => clearTimeout(timeoutId);
   }, [patronSearch]);
 
-  // Search books as user types
+  // Search items as user types
   useEffect(() => {
-    const searchBooks = async () => {
-      if (bookSearch.length < 2) {
-        setBookResults([]);
+    const searchItems = async () => {
+      if (itemSearch.length < 2) {
+        setItemResults([]);
         return;
       }
 
       try {
-        const response = await adminBorrowingsAPI.searchBooks(bookSearch);
-        setBookResults(response.data);
-        setShowBookDropdown(true);
+        const response = await adminBorrowingsAPI.searchItems(itemSearch);
+        setItemResults(response.data);
+        setShowItemDropdown(true);
       } catch (err) {
-        console.error('Failed to search books:', err);
+        console.error('Failed to search items:', err);
       }
     };
 
-    const timeoutId = setTimeout(searchBooks, 300);
+    const timeoutId = setTimeout(searchItems, 300);
     return () => clearTimeout(timeoutId);
-  }, [bookSearch]);
+  }, [itemSearch]);
 
   const loadAllBorrowings = async () => {
     try {
@@ -123,52 +123,52 @@ function BorrowingsManagement() {
       return;
     }
 
-    if (!selectedBook) {
-      alert('Please select a book');
+    if (!selectedItem) {
+      alert('Please select an item');
       return;
     }
 
-    if (selectedBook.available_copies <= 0) {
-      alert('No copies available for this book');
+    if (selectedItem.circulation_status !== 'available') {
+      alert(`This item is ${selectedItem.circulation_status}`);
       return;
     }
 
     try {
-      await adminBorrowingsAPI.issueBook(selectedPatron.patron_id, selectedBook.book_id);
+      await adminBorrowingsAPI.issueBook(selectedPatron.patron_id, selectedItem.item_id);
       setShowIssueForm(false);
       setPatronSearch('');
-      setBookSearch('');
+      setItemSearch('');
       setSelectedPatron(null);
-      setSelectedBook(null);
+      setSelectedItem(null);
       setPatronResults([]);
-      setBookResults([]);
-      alert('Book issued successfully!');
+      setItemResults([]);
+      alert('Item issued successfully!');
       loadAllBorrowings();
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to issue book');
+      alert(err.response?.data?.error || 'Failed to issue item');
     }
   };
 
   const handleRenew = async (borrowingId) => {
-    if (window.confirm('Renew this book for 14 more days?')) {
+    if (window.confirm('Renew this item for 14 more days?')) {
       try {
         const response = await adminBorrowingsAPI.renewBorrowing(borrowingId);
         alert(response.data.message);
         loadAllBorrowings();
       } catch (err) {
-        alert(err.response?.data?.error || 'Failed to renew book');
+        alert(err.response?.data?.error || 'Failed to renew item');
       }
     }
   };
 
   const handleReturn = async (borrowingId) => {
-    if (window.confirm('Mark this book as returned?')) {
+    if (window.confirm('Mark this item as returned?')) {
       try {
         await adminBorrowingsAPI.returnBook(borrowingId);
-        alert('Book returned successfully!');
+        alert('Item returned successfully!');
         loadAllBorrowings();
       } catch (err) {
-        alert(err.response?.data?.error || 'Failed to return book');
+        alert(err.response?.data?.error || 'Failed to return item');
       }
     }
   };
@@ -191,7 +191,7 @@ function BorrowingsManagement() {
   const showPatronHistory = async (patronId, patronName) => {
     try {
       setLoading(true);
-      const response = await adminBorrowingsAPI.getBorrowingHistory(patronId, null);
+      const response = await adminBorrowingsAPI.getBorrowingHistory(patronId, null, null);
       setHistoryData(response.data);
       setHistoryTitle(`Borrowing History - ${patronName}`);
       setShowHistory(true);
@@ -205,7 +205,7 @@ function BorrowingsManagement() {
   const showBookHistory = async (bookId, bookTitle) => {
     try {
       setLoading(true);
-      const response = await adminBorrowingsAPI.getBorrowingHistory(null, bookId);
+      const response = await adminBorrowingsAPI.getBorrowingHistory(null, null, bookId);
       setHistoryData(response.data);
       setHistoryTitle(`Borrowing History - ${bookTitle}`);
       setShowHistory(true);
@@ -222,10 +222,20 @@ function BorrowingsManagement() {
     setShowPatronDropdown(false);
   };
 
-  const selectBook = (book) => {
-    setSelectedBook(book);
-    setBookSearch(book.title);
-    setShowBookDropdown(false);
+  const selectItem = (item) => {
+    setSelectedItem(item);
+    setItemSearch(`${item.title} (${item.barcode})`);
+    setShowItemDropdown(false);
+  };
+
+  // Helper function to display contributors
+  const getContributorDisplay = (contributors) => {
+    if (!contributors || contributors.length === 0) return 'Unknown';
+    const authors = contributors.filter(c => c.role === 'author');
+    if (authors.length > 0) {
+      return authors.map(a => a.name).join(', ');
+    }
+    return contributors[0].name;
   };
 
   return (
@@ -234,7 +244,7 @@ function BorrowingsManagement() {
         <h1>Borrowings Management</h1>
         <div style={{ display: 'flex', gap: '10px' }}>
           <button onClick={() => setShowIssueForm(!showIssueForm)} className="btn btn-primary">
-            {showIssueForm ? 'Cancel' : 'Issue Book'}
+            {showIssueForm ? 'Cancel' : 'Issue Item'}
           </button>
           <button onClick={loadOverdue} className="btn btn-danger">
             View Overdue
@@ -247,7 +257,7 @@ function BorrowingsManagement() {
       {/* Issue Book Form */}
       {showIssueForm && (
         <div className="card" style={{ marginBottom: '20px' }}>
-          <h3>Issue Book to Patron</h3>
+          <h3>Issue Item to Patron</h3>
           <form onSubmit={handleIssueBook}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
               {/* Patron Autocomplete */}
@@ -298,6 +308,11 @@ function BorrowingsManagement() {
                             Plan: {patron.plan_name}
                           </div>
                         )}
+                        {patron.active_borrowings !== undefined && (
+                          <div style={{ fontSize: '11px', color: '#888' }}>
+                            Active Borrowings: {patron.active_borrowings}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -309,21 +324,21 @@ function BorrowingsManagement() {
                 )}
               </div>
 
-              {/* Book Autocomplete */}
-              <div className="form-group" ref={bookRef}>
-                <label>Search Book by Title or ISBN *</label>
+              {/* Item Autocomplete */}
+              <div className="form-group" ref={itemRef}>
+                <label>Search Item by Title, ISBN, or Barcode *</label>
                 <input
                   type="text"
-                  value={bookSearch}
+                  value={itemSearch}
                   onChange={(e) => {
-                    setBookSearch(e.target.value);
-                    setSelectedBook(null);
+                    setItemSearch(e.target.value);
+                    setSelectedItem(null);
                   }}
-                  placeholder="Start typing book title or ISBN..."
+                  placeholder="Start typing title, ISBN, or barcode..."
                   required
                   style={{ width: '100%', padding: '10px' }}
                 />
-                {showBookDropdown && bookResults.length > 0 && (
+                {showItemDropdown && itemResults.length > 0 && (
                   <div style={{
                     position: 'absolute',
                     zIndex: 1000,
@@ -336,24 +351,24 @@ function BorrowingsManagement() {
                     marginTop: '2px',
                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                   }}>
-                    {bookResults.map((book) => (
+                    {itemResults.map((item) => (
                       <div
-                        key={book.book_id}
-                        onClick={() => selectBook(book)}
+                        key={item.item_id}
+                        onClick={() => selectItem(item)}
                         style={{
                           padding: '10px',
-                          cursor: book.available_copies > 0 ? 'pointer' : 'not-allowed',
+                          cursor: item.circulation_status === 'available' ? 'pointer' : 'not-allowed',
                           borderBottom: '1px solid #f0f0f0',
-                          backgroundColor: book.available_copies === 0 ? '#ffebee' : 'white',
-                          opacity: book.available_copies === 0 ? 0.6 : 1
+                          backgroundColor: item.circulation_status !== 'available' ? '#ffebee' : 'white',
+                          opacity: item.circulation_status !== 'available' ? 0.6 : 1
                         }}
                         onMouseEnter={(e) => {
-                          if (book.available_copies > 0) {
+                          if (item.circulation_status === 'available') {
                             e.target.style.backgroundColor = '#f5f5f5';
                           }
                         }}
                         onMouseLeave={(e) => {
-                          if (book.available_copies > 0) {
+                          if (item.circulation_status === 'available') {
                             e.target.style.backgroundColor = 'white';
                           } else {
                             e.target.style.backgroundColor = '#ffebee';
@@ -361,39 +376,36 @@ function BorrowingsManagement() {
                         }}
                       >
                         <div>
-                          <strong>{book.title}</strong>
-                          {book.available_copies === 0 && (
+                          <strong>{item.title}</strong>
+                          {item.circulation_status !== 'available' && (
                             <span style={{ color: 'red', marginLeft: '5px', fontSize: '11px' }}>
-                              (All Checked Out)
+                              ({item.circulation_status.replace('_', ' ').toUpperCase()})
                             </span>
                           )}
                         </div>
                         <div style={{ fontSize: '12px', color: '#666' }}>
-                          {book.author} | ISBN: {book.isbn}
+                          {getContributorDisplay(item.contributors)} | ISBN: {item.isbn}
                         </div>
-                        <div style={{ fontSize: '11px', color: book.available_copies === 0 ? '#d32f2f' : '#388e3c' }}>
-                          Available: {book.available_copies}/{book.total_copies}
-                          {book.earliest_due_date && book.available_copies === 0 && (
-                            <span> | Next available: {new Date(book.earliest_due_date).toLocaleDateString()}</span>
-                          )}
+                        <div style={{ fontSize: '11px', color: item.circulation_status === 'available' ? '#388e3c' : '#d32f2f' }}>
+                          Barcode: {item.barcode} | Available: {item.available_items || 0}/{item.total_items || 0}
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
-                {selectedBook && (
+                {selectedItem && (
                   <div style={{
                     marginTop: '5px',
                     padding: '5px',
-                    backgroundColor: selectedBook.available_copies > 0 ? '#e3f2fd' : '#ffebee',
+                    backgroundColor: selectedItem.circulation_status === 'available' ? '#e3f2fd' : '#ffebee',
                     borderRadius: '3px'
                   }}>
                     <small>
-                      Selected: {selectedBook.title}
-                      {selectedBook.available_copies > 0 ? (
-                        ` (Available: ${selectedBook.available_copies})`
+                      Selected: {selectedItem.title} (Barcode: {selectedItem.barcode})
+                      {selectedItem.circulation_status === 'available' ? (
+                        ` - Available`
                       ) : (
-                        <span style={{ color: 'red' }}> (No copies available!)</span>
+                        <span style={{ color: 'red' }}> - {selectedItem.circulation_status.replace('_', ' ').toUpperCase()}</span>
                       )}
                     </small>
                   </div>
@@ -404,9 +416,9 @@ function BorrowingsManagement() {
               type="submit"
               className="btn btn-success"
               style={{ marginTop: '10px' }}
-              disabled={!selectedPatron || !selectedBook || selectedBook.available_copies === 0}
+              disabled={!selectedPatron || !selectedItem || selectedItem.circulation_status !== 'available'}
             >
-              Issue Book (14 days)
+              Issue Item (14 days)
             </button>
           </form>
         </div>
@@ -457,6 +469,7 @@ function BorrowingsManagement() {
                 <tr>
                   <th>Patron</th>
                   <th>Book</th>
+                  <th>Barcode</th>
                   <th>Checkout Date</th>
                   <th>Due Date</th>
                   <th>Renewals</th>
@@ -483,7 +496,6 @@ function BorrowingsManagement() {
                       </td>
                       <td>
                         <strong>{borrowing.title}</strong><br />
-                        <small>{borrowing.author}</small><br />
                         <small>ISBN: {borrowing.isbn}</small><br />
                         <button
                           onClick={() => showBookHistory(borrowing.book_id, borrowing.title)}
@@ -492,6 +504,10 @@ function BorrowingsManagement() {
                         >
                           View History
                         </button>
+                      </td>
+                      <td>
+                        <code>{borrowing.barcode}</code>
+                        {borrowing.call_number && <><br /><small>{borrowing.call_number}</small></>}
                       </td>
                       <td>{new Date(borrowing.checkout_date).toLocaleDateString()}</td>
                       <td>
@@ -583,6 +599,7 @@ function BorrowingsManagement() {
                 <thead>
                   <tr>
                     <th>Book/Patron</th>
+                    <th>Barcode</th>
                     <th>Checkout</th>
                     <th>Due Date</th>
                     <th>Return Date</th>
@@ -597,7 +614,7 @@ function BorrowingsManagement() {
                         {record.title ? (
                           <>
                             <strong>{record.title}</strong><br />
-                            <small>{record.author}</small>
+                            <small>ISBN: {record.isbn}</small>
                           </>
                         ) : (
                           <>
@@ -606,6 +623,7 @@ function BorrowingsManagement() {
                           </>
                         )}
                       </td>
+                      <td><code>{record.barcode}</code></td>
                       <td>{new Date(record.checkout_date).toLocaleDateString()}</td>
                       <td>{new Date(record.due_date).toLocaleDateString()}</td>
                       <td>{record.return_date ? new Date(record.return_date).toLocaleDateString() : 'Not returned'}</td>

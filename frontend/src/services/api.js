@@ -68,13 +68,56 @@ export const adminBooksAPI = {
   fetchByISBN: (isbn) => api.post('/admin/books/fetch-by-isbn', { isbn }),
   addBook: (bookData) => api.post('/admin/books', bookData),
   updateBook: (bookId, bookData) => api.put(`/admin/books/${bookId}`, bookData),
-  updateBookStatus: (bookId, status) =>
-    api.patch(`/admin/books/${bookId}/status`, { status }),
-  updateCopies: (bookId, action, count) =>
-    api.patch(`/admin/books/${bookId}/copies`, { action, count }),
-  getGenres: () => api.get('/admin/books/genres'),
+  deleteBook: (bookId) => api.delete(`/admin/books/${bookId}`),
+  addBookContributor: (bookId, contributorData) =>
+    api.post(`/admin/books/${bookId}/contributors`, contributorData),
+  updateBookContributor: (bookId, bookContributorId, contributorData) =>
+    api.put(`/admin/books/${bookId}/contributors/${bookContributorId}`, contributorData),
+  removeBookContributor: (bookId, bookContributorId) =>
+    api.delete(`/admin/books/${bookId}/contributors/${bookContributorId}`),
   getAgeRatings: () => api.get('/admin/age-ratings'),
   addAgeRating: (ratingData) => api.post('/admin/age-ratings', ratingData),
+};
+
+// Admin - Contributors API
+export const adminContributorsAPI = {
+  getContributors: (page = 1, filters = {}) =>
+    api.get('/admin/contributors', { params: { page, ...filters } }),
+  getContributorDetails: (contributorId) =>
+    api.get(`/admin/contributors/${contributorId}`),
+  searchContributors: (query, type = '') =>
+    api.get('/admin/contributors/search', { params: { q: query, type } }),
+  addContributor: (contributorData) => api.post('/admin/contributors', contributorData),
+  updateContributor: (contributorId, contributorData) =>
+    api.put(`/admin/contributors/${contributorId}`, contributorData),
+  deleteContributor: (contributorId) =>
+    api.delete(`/admin/contributors/${contributorId}`),
+  getRoles: () => api.get('/admin/contributors/roles'),
+};
+
+// Admin - Items API
+export const adminItemsAPI = {
+  getItems: (page = 1, filters = {}) =>
+    api.get('/admin/items', { params: { page, ...filters } }),
+  getItemDetails: (itemId) => api.get(`/admin/items/${itemId}`),
+  getItemByBarcode: (barcode) => api.get(`/admin/items/by-barcode/${barcode}`),
+  searchItems: (query, status = '') =>
+    api.get('/admin/items/search', { params: { q: query, status } }),
+  addItem: (itemData) => api.post('/admin/items', itemData),
+  updateItem: (itemId, itemData) => api.put(`/admin/items/${itemId}`, itemData),
+  updateItemStatus: (itemId, status) =>
+    api.patch(`/admin/items/${itemId}/status`, { status }),
+  deleteItem: (itemId) => api.delete(`/admin/items/${itemId}`),
+  getStatuses: () => api.get('/admin/items/statuses'),
+};
+
+// Admin - RDA Vocabularies API
+export const adminRDAVocabulariesAPI = {
+  getContentTypes: () => api.get('/admin/rda/content-types'),
+  getMediaTypes: () => api.get('/admin/rda/media-types'),
+  getCarrierTypes: (mediaType = '') =>
+    api.get('/admin/rda/carrier-types', { params: { media_type: mediaType } }),
+  getAllVocabularies: () => api.get('/admin/rda/vocabularies'),
 };
 
 // Admin - Collections API
@@ -100,8 +143,8 @@ export const adminDashboardAPI = {
 
 // Admin - Borrowings API
 export const adminBorrowingsAPI = {
-  issueBook: (patronId, bookId) =>
-    api.post('/admin/borrowings/issue', { patron_id: patronId, book_id: bookId }),
+  issueBook: (patronId, itemId) =>
+    api.post('/admin/borrowings/issue', { patron_id: patronId, item_id: itemId }),
   renewBorrowing: (borrowingId) =>
     api.post(`/admin/borrowings/${borrowingId}/renew`),
   returnBook: (borrowingId) =>
@@ -110,11 +153,12 @@ export const adminBorrowingsAPI = {
     api.get('/admin/borrowings/search', { params: { type, value, status } }),
   getAllBorrowings: (patronFilter = '', bookFilter = '') =>
     api.get('/admin/borrowings/all', { params: { patron: patronFilter, book: bookFilter } }),
-  getBorrowingHistory: (patronId, bookId) =>
-    api.get('/admin/borrowings/history', { params: { patron_id: patronId, book_id: bookId } }),
+  getBorrowingHistory: (patronId, itemId, bookId) =>
+    api.get('/admin/borrowings/history', { params: { patron_id: patronId, item_id: itemId, book_id: bookId } }),
   getOverdue: () => api.get('/admin/borrowings/overdue'),
   searchPatrons: (query) => api.get('/admin/patrons/search', { params: { q: query } }),
-  searchBooks: (query) => api.get('/admin/books/search', { params: { q: query } }),
+  searchItems: (query) => api.get('/admin/items/search', { params: { q: query } }),
+  getStats: () => api.get('/admin/borrowings/stats'),
 };
 
 // Patron API

@@ -15,20 +15,15 @@ function BookCatalogue() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [isbnLookup, setIsbnLookup] = useState('');
   const [lookupLoading, setLookupLoading] = useState(false);
-  const [showNewCollectionForm, setShowNewCollectionForm] = useState(false);
-  const [newCollectionName, setNewCollectionName] = useState('');
-  const [newCollectionDescription, setNewCollectionDescription] = useState('');
   const [newBook, setNewBook] = useState({
     isbn: '',
     title: '',
-    author: '',
-    genre: '',
-    sub_genre: '',
+    subtitle: '',
     publisher: '',
     publication_year: '',
     description: '',
     collection_id: '',
-    total_copies: 1,
+    language: 'eng',
     age_rating: '',
     cover_image_url: ''
   });
@@ -80,35 +75,6 @@ function BookCatalogue() {
     navigate(`/admin/books/${bookId}`);
   };
 
-  const handleCreateCollection = async () => {
-    if (!newCollectionName.trim()) {
-      alert('Please enter a collection name');
-      return;
-    }
-
-    try {
-      const response = await adminCollectionsAPI.createCollection({
-        collection_name: newCollectionName,
-        description: newCollectionDescription
-      });
-
-      // Reload collections
-      await loadCollections();
-
-      // Select the newly created collection
-      setNewBook({ ...newBook, collection_id: response.data.collection.collection_id });
-
-      // Reset form
-      setNewCollectionName('');
-      setNewCollectionDescription('');
-      setShowNewCollectionForm(false);
-
-      alert('Collection created successfully!');
-    } catch (err) {
-      alert(err.response?.data?.error || 'Failed to create collection');
-    }
-  };
-
   const handleISBNLookup = async () => {
     if (!isbnLookup) {
       alert('Please enter an ISBN');
@@ -118,15 +84,24 @@ function BookCatalogue() {
     try {
       setLookupLoading(true);
       const response = await adminBooksAPI.fetchByISBN(isbnLookup);
+      const bookData = response.data;
+
+      // Map the response to our new schema
       setNewBook({
-        ...newBook,
-        ...response.data,
-        total_copies: 1,
-        collection_id: newBook.collection_id || ''
+        isbn: bookData.isbn || '',
+        title: bookData.title || '',
+        subtitle: bookData.subtitle || '',
+        publisher: bookData.publisher || '',
+        publication_year: bookData.publication_year || '',
+        description: bookData.description || '',
+        cover_image_url: bookData.cover_image_url || '',
+        collection_id: newBook.collection_id || '',
+        language: 'eng',
+        age_rating: ''
       });
-      alert('Book details fetched! Please select a collection and review before saving.');
+      alert('Book details fetched! Please select a collection and review before saving. You can add contributors and items after creating the book.');
     } catch (err) {
-      alert(err.response?.data?.error || 'Book not found in Open Library');
+      alert(err.response?.data?.error || 'Book not found');
     } finally {
       setLookupLoading(false);
     }
@@ -140,28 +115,36 @@ function BookCatalogue() {
     }
 
     try {
-      await adminBooksAPI.addBook(newBook);
+      const response = await adminBooksAPI.addBook(newBook);
       setShowAddForm(false);
       setNewBook({
         isbn: '',
         title: '',
-        author: '',
-        genre: '',
-        sub_genre: '',
+        subtitle: '',
         publisher: '',
         publication_year: '',
         description: '',
         collection_id: '',
-        total_copies: 1,
+        language: 'eng',
         age_rating: '',
         cover_image_url: ''
       });
       setIsbnLookup('');
       loadBooks();
-      alert('Book added successfully!');
+      alert('Book added successfully! Click on the book to add contributors and items.');
     } catch (err) {
       alert(err.response?.data?.error || 'Failed to add book');
     }
+  };
+
+  // Helper function to display contributors
+  const getContributorDisplay = (contributors) => {
+    if (!contributors || contributors.length === 0) return 'Unknown';
+    const authors = contributors.filter(c => c.role === 'author');
+    if (authors.length > 0) {
+      return authors.map(a => a.name).join(', ');
+    }
+    return contributors[0].name;
   };
 
   if (loading && books.length === 0) {
@@ -182,7 +165,11 @@ function BookCatalogue() {
       {showAddForm && (
         <div className="card" style={{ marginBottom: '20px' }}>
           <h3>Add New Book</h3>
-          
+
+          <div style={{ marginBottom: '15px', padding: '10px', backgroundColor: '#fff3cd', borderRadius: '5px', border: '1px solid #ffc107' }}>
+            <strong>Note:</strong> Add basic book information here. After creating the book, click on it to add contributors, items/barcodes, and additional details.
+          </div>
+
           {/* ISBN Lookup */}
           <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f0f0f0', borderRadius: '5px' }}>
             <h4>Quick Add via ISBN</h4>
@@ -200,7 +187,7 @@ function BookCatalogue() {
                 disabled={lookupLoading}
                 className="btn btn-primary"
               >
-                {lookupLoading ? 'Looking up...' : 'Fetch from Open Library'}
+                {lookupLoading ? 'Looking up...' : 'Fetch from Google Books'}
               </button>
             </div>
           </div>
@@ -209,12 +196,11 @@ function BookCatalogue() {
           <form onSubmit={handleAddBook}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
               <div className="form-group">
-                <label>ISBN *</label>
+                <label>ISBN</label>
                 <input
                   type="text"
                   value={newBook.isbn}
                   onChange={(e) => setNewBook({...newBook, isbn: e.target.value})}
-                  required
                 />
               </div>
               <div className="form-group">
@@ -227,110 +213,28 @@ function BookCatalogue() {
                 />
               </div>
               <div className="form-group">
-                <label>Author</label>
+                <label>Subtitle</label>
                 <input
                   type="text"
-                  value={newBook.author}
-                  onChange={(e) => setNewBook({...newBook, author: e.target.value})}
+                  value={newBook.subtitle}
+                  onChange={(e) => setNewBook({...newBook, subtitle: e.target.value})}
                 />
               </div>
-              <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+              <div className="form-group">
                 <label>Collection *</label>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                  <div style={{ flex: 1 }}>
-                    <select
-                      value={newBook.collection_id}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (value === '__new__') {
-                          setShowNewCollectionForm(true);
-                        } else {
-                          setNewBook({...newBook, collection_id: value});
-                        }
-                      }}
-                      required
-                      style={{ width: '100%' }}
-                    >
-                      <option value="">Select a collection</option>
-                      {collections.map((col) => (
-                        <option key={col.collection_id} value={col.collection_id}>
-                          {col.collection_name}
-                        </option>
-                      ))}
-                      <option value="__new__">+ Add New Collection</option>
-                    </select>
-                  </div>
-                </div>
-
-                {showNewCollectionForm && (
-                  <div style={{
-                    marginTop: '10px',
-                    padding: '15px',
-                    backgroundColor: '#f0f8ff',
-                    border: '1px solid #ccc',
-                    borderRadius: '5px'
-                  }}>
-                    <h4 style={{ marginTop: 0 }}>Create New Collection</h4>
-                    <div style={{ display: 'grid', gap: '10px' }}>
-                      <div>
-                        <label>Collection Name *</label>
-                        <input
-                          type="text"
-                          value={newCollectionName}
-                          onChange={(e) => setNewCollectionName(e.target.value)}
-                          placeholder="e.g., History, Science Fiction"
-                        />
-                      </div>
-                      <div>
-                        <label>Description</label>
-                        <textarea
-                          value={newCollectionDescription}
-                          onChange={(e) => setNewCollectionDescription(e.target.value)}
-                          placeholder="Brief description"
-                          rows="2"
-                        />
-                      </div>
-                      <div style={{ display: 'flex', gap: '10px' }}>
-                        <button
-                          type="button"
-                          onClick={handleCreateCollection}
-                          className="btn btn-success"
-                          style={{ fontSize: '12px', padding: '6px 12px' }}
-                        >
-                          Create Collection
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowNewCollectionForm(false);
-                            setNewCollectionName('');
-                            setNewCollectionDescription('');
-                          }}
-                          className="btn btn-secondary"
-                          style={{ fontSize: '12px', padding: '6px 12px' }}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div className="form-group">
-                <label>Genre</label>
-                <input
-                  type="text"
-                  value={newBook.genre}
-                  onChange={(e) => setNewBook({...newBook, genre: e.target.value})}
-                />
-              </div>
-              <div className="form-group">
-                <label>Sub-Genre</label>
-                <input
-                  type="text"
-                  value={newBook.sub_genre}
-                  onChange={(e) => setNewBook({...newBook, sub_genre: e.target.value})}
-                />
+                <select
+                  value={newBook.collection_id}
+                  onChange={(e) => setNewBook({...newBook, collection_id: e.target.value})}
+                  required
+                  style={{ width: '100%' }}
+                >
+                  <option value="">Select a collection</option>
+                  {collections.map((col) => (
+                    <option key={col.collection_id} value={col.collection_id}>
+                      {col.collection_name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="form-group">
                 <label>Publisher</label>
@@ -349,6 +253,22 @@ function BookCatalogue() {
                 />
               </div>
               <div className="form-group">
+                <label>Language</label>
+                <select
+                  value={newBook.language}
+                  onChange={(e) => setNewBook({...newBook, language: e.target.value})}
+                >
+                  <option value="eng">English</option>
+                  <option value="spa">Spanish</option>
+                  <option value="fra">French</option>
+                  <option value="ger">German</option>
+                  <option value="ita">Italian</option>
+                  <option value="por">Portuguese</option>
+                  <option value="chi">Chinese</option>
+                  <option value="jpn">Japanese</option>
+                </select>
+              </div>
+              <div className="form-group">
                 <label>Age Rating</label>
                 <select
                   value={newBook.age_rating}
@@ -360,15 +280,6 @@ function BookCatalogue() {
                   <option value="7-9 years">7-9 years</option>
                   <option value="10+ years">10+ years</option>
                 </select>
-              </div>
-              <div className="form-group">
-                <label>Total Copies</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={newBook.total_copies}
-                  onChange={(e) => setNewBook({...newBook, total_copies: e.target.value})}
-                />
               </div>
               <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                 <label>Cover Image URL</label>
@@ -420,7 +331,7 @@ function BookCatalogue() {
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Search:</label>
             <input
               type="text"
-              placeholder="Search by title, author, or ISBN..."
+              placeholder="Search by title, contributor, or ISBN..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}
@@ -435,10 +346,10 @@ function BookCatalogue() {
                 <th>Cover</th>
                 <th>ISBN</th>
                 <th>Title</th>
-                <th>Author</th>
+                <th>Contributors</th>
                 <th>Collection</th>
-                <th>Copies</th>
-                <th>Status</th>
+                <th>Items</th>
+                <th>Availability</th>
               </tr>
             </thead>
             <tbody>
@@ -472,81 +383,55 @@ function BookCatalogue() {
                     >
                       {book.title}
                     </span>
-                    {book.is_checked_out && (
-                      <div style={{ marginTop: '3px' }}>
-                        <span style={{
-                          padding: '2px 6px',
-                          borderRadius: '3px',
-                          fontSize: '10px',
-                          backgroundColor: '#ff9800',
-                          color: 'white'
-                        }}>
-                          CHECKED OUT
-                        </span>
-                        {book.due_date && (
-                          <small style={{ marginLeft: '5px', color: '#666' }}>
-                            Due: {new Date(book.due_date).toLocaleDateString()}
-                          </small>
-                        )}
+                    {book.subtitle && (
+                      <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>
+                        {book.subtitle}
                       </div>
                     )}
                   </td>
-                  <td>{book.author || 'Unknown'}</td>
-                  <td>{book.collection}</td>
                   <td>
-                    {book.available_copies}/{book.total_copies}
-                    {book.available_copies === 0 && book.total_copies > 0 && (
+                    {getContributorDisplay(book.contributors)}
+                    {book.contributors && book.contributors.length > 1 && (
+                      <div style={{ fontSize: '11px', color: '#888', marginTop: '2px' }}>
+                        +{book.contributors.length - 1} more
+                      </div>
+                    )}
+                  </td>
+                  <td>{book.collection_name || book.collection}</td>
+                  <td>
+                    <div>
+                      <strong>{book.available_items || 0}/{book.total_items || 0}</strong>
+                    </div>
+                    {(book.total_items || 0) === 0 && (
+                      <div style={{ fontSize: '10px', color: '#ff9800', marginTop: '2px' }}>
+                        No items added
+                      </div>
+                    )}
+                    {(book.available_items || 0) === 0 && (book.total_items || 0) > 0 && (
                       <div style={{ fontSize: '10px', color: '#d32f2f', marginTop: '2px' }}>
-                        All copies out
+                        All checked out
                       </div>
                     )}
                   </td>
                   <td>
                     {(() => {
-                      // Determine book status
-                      const hasActiveBorrowings = book.active_borrowings > 0;
+                      const totalItems = book.total_items || 0;
+                      const availableItems = book.available_items || 0;
+                      const checkedOutItems = book.checked_out_items || 0;
 
-                      // Check for Damaged or Lost status first
-                      if (book.status === 'Damaged') {
+                      if (totalItems === 0) {
                         return (
                           <span style={{
                             padding: '3px 8px',
                             borderRadius: '3px',
                             fontSize: '12px',
-                            backgroundColor: '#f39c12',
+                            backgroundColor: '#ff9800',
                             color: 'white'
                           }}>
-                            Damaged
+                            No Items
                           </span>
                         );
-                      } else if (book.status === 'Lost') {
-                        return (
-                          <span style={{
-                            padding: '3px 8px',
-                            borderRadius: '3px',
-                            fontSize: '12px',
-                            backgroundColor: '#95a5a6',
-                            color: 'white'
-                          }}>
-                            Lost
-                          </span>
-                        );
-                      } else if (hasActiveBorrowings && book.earliest_due_date) {
-                        // Checked out status with due date
-                        const dueDate = new Date(book.earliest_due_date).toLocaleDateString();
-                        return (
-                          <span style={{
-                            padding: '3px 8px',
-                            borderRadius: '3px',
-                            fontSize: '12px',
-                            backgroundColor: '#e74c3c',
-                            color: 'white'
-                          }}>
-                            Checked Out (Due: {dueDate})
-                          </span>
-                        );
-                      } else {
-                        // Available status
+                      } else if (availableItems > 0) {
                         return (
                           <span style={{
                             padding: '3px 8px',
@@ -555,7 +440,31 @@ function BookCatalogue() {
                             backgroundColor: '#27ae60',
                             color: 'white'
                           }}>
-                            Available
+                            Available ({availableItems})
+                          </span>
+                        );
+                      } else if (checkedOutItems > 0) {
+                        return (
+                          <span style={{
+                            padding: '3px 8px',
+                            borderRadius: '3px',
+                            fontSize: '12px',
+                            backgroundColor: '#e74c3c',
+                            color: 'white'
+                          }}>
+                            All Out
+                          </span>
+                        );
+                      } else {
+                        return (
+                          <span style={{
+                            padding: '3px 8px',
+                            borderRadius: '3px',
+                            fontSize: '12px',
+                            backgroundColor: '#95a5a6',
+                            color: 'white'
+                          }}>
+                            Unavailable
                           </span>
                         );
                       }
