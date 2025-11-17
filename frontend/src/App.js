@@ -9,6 +9,7 @@ import BrowseBooks from './components/BrowseBooks';
 import MembershipPlans from './components/MembershipPlans';
 import Collections from './components/Collections';
 import Dashboard from './components/Dashboard';
+import CoworkInvoices from './components/CoworkInvoices';
 
 // Context for authentication
 export const AuthContext = createContext();
@@ -188,7 +189,18 @@ function AdminDashboard() {
             )}
           </li>
 
-          <li><Link to="/admin/cowork">Cowork Requests</Link></li>
+          <li className="menu-section">
+            <div className="menu-header" onClick={() => toggleMenu('cowork')}>
+              <span>Cowork</span>
+              <span className="menu-toggle">{expandedMenus.cowork ? '−' : '+'}</span>
+            </div>
+            {expandedMenus.cowork && (
+              <ul className="submenu">
+                <li><Link to="/admin/cowork-requests">Booking Requests</Link></li>
+                <li><Link to="/admin/cowork-invoices">Invoices & Receipts</Link></li>
+              </ul>
+            )}
+          </li>
         </ul>
         <div className="user-info">
           <p>{user?.name}</p>
@@ -207,7 +219,8 @@ function AdminDashboard() {
           <Route path="collections" element={<Collections />} />
           <Route path="checkouts" element={<BorrowingsManagement />} />
           <Route path="invoicing" element={<div>Invoicing - Coming Soon</div>} />
-          <Route path="cowork" element={<div>Cowork Requests - Coming Soon</div>} />
+          <Route path="cowork-requests" element={<div>Cowork Booking Requests - Coming Soon</div>} />
+          <Route path="cowork-invoices" element={<CoworkInvoices />} />
         </Routes>
       </main>
     </div>
