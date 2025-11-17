@@ -1,5 +1,5 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import './styles/App.css';
 import PatronManagement from './components/PatronManagement';
 import BookCatalogue from './components/BookCatalogue';
@@ -24,7 +24,7 @@ function AuthProvider({ children }) {
   useEffect(() => {
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
-    
+
     if (token && userData) {
       setUser(JSON.parse(userData));
     }
@@ -87,127 +87,212 @@ function LoginPage() {
 
   return (
     <div className="login-container">
-      <div className="login-box">
-        <h1>Nuk Library</h1>
-        <h2>Login</h2>
-        
-        {error && <div className="error-message">{error}</div>}
-        
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+      <div className="login-left">
+        <div className="login-left-content">
+          <h1>📚 Nuk Library</h1>
+          <p>Your gateway to knowledge and discovery. Access thousands of books, manage your collection, and explore new worlds through reading.</p>
+        </div>
+      </div>
+
+      <div className="login-right">
+        <div className="login-box">
+          <h1>Nuk Library</h1>
+          <h2>Welcome back</h2>
+
+          {error && <div className="error-message">{error}</div>}
+
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label>Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+
+            <button type="submit" className="btn btn-primary" disabled={loading}>
+              {loading ? 'Logging in...' : 'Login'}
+            </button>
+          </form>
+
+          <div className="login-help">
+            <p>Default patron password: <strong>BookNook313</strong></p>
           </div>
-          
-          <div className="form-group">
-            <label>Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-          
-          <button type="submit" disabled={loading}>
-            {loading ? 'Logging in...' : 'Login'}
-          </button>
-        </form>
-        
-        <div className="login-help">
-          <p>Default patron password: <strong>BookNook313</strong></p>
         </div>
       </div>
     </div>
   );
 }
 
-// Admin Dashboard Component
-function AdminDashboard() {
+// Top Navigation Component for Admin
+function AdminTopNav() {
   const { user, logout } = useAuth();
-  const [expandedMenus, setExpandedMenus] = useState({
-    library: true,
-    lending: true,
-    patrons: true
-  });
+  const location = useLocation();
+  const [showLibraryDropdown, setShowLibraryDropdown] = useState(false);
+  const [showLendingDropdown, setShowLendingDropdown] = useState(false);
+  const [showPatronsDropdown, setShowPatronsDropdown] = useState(false);
+  const [showCoworkDropdown, setShowCoworkDropdown] = useState(false);
 
-  const toggleMenu = (menu) => {
-    setExpandedMenus(prev => ({
-      ...prev,
-      [menu]: !prev[menu]
-    }));
-  };
+  const isActive = (path) => location.pathname.includes(path);
 
   return (
-    <div className="dashboard">
-      <nav className="sidebar">
-        <h2>Nuk Library Admin</h2>
-        <ul>
-          <li><Link to="/admin/dashboard">Dashboard</Link></li>
+    <nav className="top-nav">
+      <div className="nav-brand">📚 Nuk Library</div>
 
-          <li className="menu-section">
-            <div className="menu-header" onClick={() => toggleMenu('library')}>
-              <span>Library</span>
-              <span className="menu-toggle">{expandedMenus.library ? '−' : '+'}</span>
-            </div>
-            {expandedMenus.library && (
-              <ul className="submenu">
-                <li><Link to="/admin/books">Catalogue</Link></li>
-                <li><Link to="/admin/collections">Collections</Link></li>
-              </ul>
-            )}
-          </li>
+      <div className="nav-links">
+        <Link to="/admin/dashboard" className={`nav-link ${isActive('/admin/dashboard') ? 'active' : ''}`}>
+          Dashboard
+        </Link>
 
-          <li className="menu-section">
-            <div className="menu-header" onClick={() => toggleMenu('lending')}>
-              <span>Lending</span>
-              <span className="menu-toggle">{expandedMenus.lending ? '−' : '+'}</span>
+        <div
+          className="nav-dropdown"
+          onMouseEnter={() => setShowLibraryDropdown(true)}
+          onMouseLeave={() => setShowLibraryDropdown(false)}
+        >
+          <span className={`nav-link ${isActive('/admin/books') || isActive('/admin/collections') ? 'active' : ''}`}>
+            Library ▾
+          </span>
+          {showLibraryDropdown && (
+            <div className="nav-dropdown-menu">
+              <Link to="/admin/books" className="nav-dropdown-item">
+                📚 Catalogue
+              </Link>
+              <Link to="/admin/collections" className="nav-dropdown-item">
+                📂 Collections
+              </Link>
             </div>
-            {expandedMenus.lending && (
-              <ul className="submenu">
-                <li><Link to="/admin/checkouts">Checkouts</Link></li>
-              </ul>
-            )}
-          </li>
-
-          <li className="menu-section">
-            <div className="menu-header" onClick={() => toggleMenu('patrons')}>
-              <span>Patrons</span>
-              <span className="menu-toggle">{expandedMenus.patrons ? '−' : '+'}</span>
-            </div>
-            {expandedMenus.patrons && (
-              <ul className="submenu">
-                <li><Link to="/admin/patron-management">Patron Management</Link></li>
-                <li><Link to="/admin/membership-plans">Membership Plans</Link></li>
-                <li><Link to="/admin/invoicing">Invoicing</Link></li>
-              </ul>
-            )}
-          </li>
-
-          <li className="menu-section">
-            <div className="menu-header" onClick={() => toggleMenu('cowork')}>
-              <span>Cowork</span>
-              <span className="menu-toggle">{expandedMenus.cowork ? '−' : '+'}</span>
-            </div>
-            {expandedMenus.cowork && (
-              <ul className="submenu">
-                <li><Link to="/admin/cowork-requests">Booking Requests</Link></li>
-                <li><Link to="/admin/cowork-invoices">Invoices & Receipts</Link></li>
-              </ul>
-            )}
-          </li>
-        </ul>
-        <div className="user-info">
-          <p>{user?.name}</p>
-          <button onClick={logout}>Logout</button>
+          )}
         </div>
-      </nav>
 
+        <div
+          className="nav-dropdown"
+          onMouseEnter={() => setShowLendingDropdown(true)}
+          onMouseLeave={() => setShowLendingDropdown(false)}
+        >
+          <span className={`nav-link ${isActive('/admin/checkouts') ? 'active' : ''}`}>
+            Lending ▾
+          </span>
+          {showLendingDropdown && (
+            <div className="nav-dropdown-menu">
+              <Link to="/admin/checkouts" className="nav-dropdown-item">
+                📖 Checkouts
+              </Link>
+            </div>
+          )}
+        </div>
+
+        <div
+          className="nav-dropdown"
+          onMouseEnter={() => setShowPatronsDropdown(true)}
+          onMouseLeave={() => setShowPatronsDropdown(false)}
+        >
+          <span className={`nav-link ${isActive('/admin/patron') || isActive('/admin/membership') || isActive('/admin/invoicing') ? 'active' : ''}`}>
+            Patrons ▾
+          </span>
+          {showPatronsDropdown && (
+            <div className="nav-dropdown-menu">
+              <Link to="/admin/patron-management" className="nav-dropdown-item">
+                👥 Patron Management
+              </Link>
+              <Link to="/admin/membership-plans" className="nav-dropdown-item">
+                💳 Membership Plans
+              </Link>
+              <Link to="/admin/invoicing" className="nav-dropdown-item">
+                💰 Invoicing
+              </Link>
+            </div>
+          )}
+        </div>
+
+        <div
+          className="nav-dropdown"
+          onMouseEnter={() => setShowCoworkDropdown(true)}
+          onMouseLeave={() => setShowCoworkDropdown(false)}
+        >
+          <span className={`nav-link ${isActive('/admin/cowork') ? 'active' : ''}`}>
+            Cowork ▾
+          </span>
+          {showCoworkDropdown && (
+            <div className="nav-dropdown-menu">
+              <Link to="/admin/cowork-requests" className="nav-dropdown-item">
+                📅 Booking Requests
+              </Link>
+              <Link to="/admin/cowork-invoices" className="nav-dropdown-item">
+                🧾 Invoices & Receipts
+              </Link>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="nav-right">
+        <div className="nav-icon">🔔</div>
+        <div className="nav-user" onClick={logout}>
+          <div className="nav-user-avatar">{user?.name?.charAt(0) || 'A'}</div>
+          <span className="nav-user-name">{user?.name}</span>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+// Top Navigation Component for Patron
+function PatronTopNav() {
+  const { user, logout } = useAuth();
+  const location = useLocation();
+
+  const isActive = (path) => location.pathname.includes(path);
+
+  return (
+    <nav className="top-nav">
+      <div className="nav-brand">📚 Nuk Library</div>
+
+      <div className="nav-links">
+        <Link to="/patron/browse" className={`nav-link ${isActive('/patron/browse') ? 'active' : ''}`}>
+          Browse Books
+        </Link>
+        <Link to="/patron/my-books" className={`nav-link ${isActive('/patron/my-books') ? 'active' : ''}`}>
+          My Borrowings
+        </Link>
+        <Link to="/patron/recommendations" className={`nav-link ${isActive('/patron/recommendations') ? 'active' : ''}`}>
+          Recommendations
+        </Link>
+        <Link to="/patron/cowork" className={`nav-link ${isActive('/patron/cowork') ? 'active' : ''}`}>
+          Cowork Booking
+        </Link>
+        <Link to="/patron/profile" className={`nav-link ${isActive('/patron/profile') ? 'active' : ''}`}>
+          My Profile
+        </Link>
+      </div>
+
+      <div className="nav-right">
+        <div className="nav-icon">🔔</div>
+        <div className="nav-user" onClick={logout}>
+          <div className="nav-user-avatar">{user?.name?.charAt(0) || 'P'}</div>
+          <span className="nav-user-name">{user?.name}</span>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+// Admin Dashboard Component
+function AdminDashboard() {
+  return (
+    <div className="app-container">
+      <AdminTopNav />
       <main className="main-content">
         <Routes>
           <Route index element={<AdminHome />} />
@@ -231,32 +316,16 @@ function AdminHome() {
   return (
     <div>
       <h1>Welcome to Nuk Library Admin Panel</h1>
-      <p>Select an option from the sidebar to get started.</p>
+      <p>Select an option from the navigation to get started.</p>
     </div>
   );
 }
 
 // Patron Dashboard Component
 function PatronDashboard() {
-  const { user, logout } = useAuth();
-
   return (
-    <div className="dashboard">
-      <nav className="sidebar">
-        <h2>Nuk Library</h2>
-        <ul>
-          <li><Link to="/patron/browse">Browse Books</Link></li>
-          <li><Link to="/patron/my-books">My Borrowings</Link></li>
-          <li><Link to="/patron/recommendations">Recommendations</Link></li>
-          <li><Link to="/patron/cowork">Cowork Booking</Link></li>
-          <li><Link to="/patron/profile">My Profile</Link></li>
-        </ul>
-        <div className="user-info">
-          <p>{user?.name}</p>
-          <button onClick={logout}>Logout</button>
-        </div>
-      </nav>
-      
+    <div className="app-container">
+      <PatronTopNav />
       <main className="main-content">
         <Routes>
           <Route index element={<PatronHome />} />
@@ -285,7 +354,7 @@ function ProtectedRoute({ children, requiredRole }) {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div className="loading">Loading...</div>;
   }
 
   if (!user) {
@@ -306,7 +375,7 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          
+
           <Route
             path="/admin/*"
             element={
@@ -315,7 +384,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/patron/*"
             element={
@@ -324,7 +393,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route path="/" element={<Navigate to="/login" />} />
         </Routes>
       </AuthProvider>

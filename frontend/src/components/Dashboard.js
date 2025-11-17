@@ -7,16 +7,16 @@ import {
 } from 'recharts';
 
 const COLORS = {
-  primary: '#5C7CFA',
-  secondary: '#2E3A59',
-  success: '#20C997',
-  warning: '#FFB84D',
-  danger: '#e74c3c',
-  info: '#3498db',
-  purple: '#9b59b6',
-  teal: '#1abc9c',
-  orange: '#e67e22',
-  pink: '#e91e63'
+  primary: '#6366F1',
+  secondary: '#8B5CF6',
+  success: '#10B981',
+  warning: '#F59E0B',
+  danger: '#EF4444',
+  info: '#3B82F6',
+  purple: '#A78BFA',
+  teal: '#14B8A6',
+  orange: '#F97316',
+  pink: '#EC4899'
 };
 
 const CHART_COLORS = [
