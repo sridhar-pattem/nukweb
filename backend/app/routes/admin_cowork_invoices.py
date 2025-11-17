@@ -274,7 +274,9 @@ def get_cowork_invoices():
             }), 200
 
     except Exception as e:
+        import traceback
         print(f"Error fetching invoices: {e}")
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 
