@@ -18,6 +18,7 @@ function BookCatalogue() {
   const [showNewCollectionForm, setShowNewCollectionForm] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState('');
   const [newCollectionDescription, setNewCollectionDescription] = useState('');
+  const [showDamagedLost, setShowDamagedLost] = useState(false);
   const [newBook, setNewBook] = useState({
     isbn: '',
     title: '',
@@ -39,7 +40,7 @@ function BookCatalogue() {
 
   useEffect(() => {
     loadBooks();
-  }, [page, search, selectedCollection]);
+  }, [page, search, selectedCollection, showDamagedLost]);
 
   const loadBooks = async () => {
     try {
@@ -47,6 +48,9 @@ function BookCatalogue() {
       const filters = { search };
       if (selectedCollection) {
         filters.collection = selectedCollection;
+      }
+      if (!showDamagedLost) {
+        filters.exclude_damaged_lost = true;
       }
       const response = await adminBooksAPI.getBooks(page, filters);
       setBooks(response.data.books);
@@ -397,34 +401,47 @@ function BookCatalogue() {
 
       <div className="card">
         {/* Collection Selector */}
-        <div style={{ marginBottom: '15px', display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <div style={{ flex: 1 }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Filter by Collection:</label>
-            <select
-              value={selectedCollection}
-              onChange={(e) => {
-                setSelectedCollection(e.target.value);
-                setPage(1);
-              }}
-              style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}
-            >
-              <option value="">All Collections</option>
-              {collections.map((col) => (
-                <option key={col.collection_id} value={col.collection_id}>
-                  {col.collection_name} ({col.book_count} books)
-                </option>
-              ))}
-            </select>
+        <div style={{ marginBottom: '15px' }}>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '10px' }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Filter by Collection:</label>
+              <select
+                value={selectedCollection}
+                onChange={(e) => {
+                  setSelectedCollection(e.target.value);
+                  setPage(1);
+                }}
+                style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}
+              >
+                <option value="">All Collections</option>
+                {collections.map((col) => (
+                  <option key={col.collection_id} value={col.collection_id}>
+                    {col.collection_name} ({col.book_count} books)
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Search:</label>
+              <input
+                type="text"
+                placeholder="Search by title, author, or ISBN..."
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}
+              />
+            </div>
           </div>
-          <div style={{ flex: 1 }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Search:</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <input
-              type="text"
-              placeholder="Search by title, author, or ISBN..."
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}
+              type="checkbox"
+              id="showDamagedLost"
+              checked={showDamagedLost}
+              onChange={(e) => { setShowDamagedLost(e.target.checked); setPage(1); }}
             />
+            <label htmlFor="showDamagedLost" style={{ margin: 0, cursor: 'pointer' }}>
+              Show Damaged or Lost books
+            </label>
           </div>
         </div>
 
@@ -503,9 +520,6 @@ function BookCatalogue() {
                   </td>
                   <td>
                     {(() => {
-                      // Determine book status
-                      const hasActiveBorrowings = book.active_borrowings > 0;
-
                       // Check for Damaged or Lost status first
                       if (book.status === 'Damaged') {
                         return (
@@ -531,9 +545,9 @@ function BookCatalogue() {
                             Lost
                           </span>
                         );
-                      } else if (hasActiveBorrowings && book.earliest_due_date) {
+                      } else if (book.is_checked_out && book.due_date) {
                         // Checked out status with due date
-                        const dueDate = new Date(book.earliest_due_date).toLocaleDateString();
+                        const dueDate = new Date(book.due_date).toLocaleDateString();
                         return (
                           <span style={{
                             padding: '3px 8px',
