@@ -142,7 +142,8 @@ def generate_cowork_invoice_pdf(invoice_data, line_items, member_data, output_pa
 
         # Right column - Member Details
         right_col_data = []
-        right_col_data.append([Paragraph("<b>Bill To:</b>", label_style), Paragraph("", detail_style)])
+        right_col_data.append([Paragraph("<b>Bill To:</b>", label_style), 
+                            Paragraph(member_data.get('name', 'N/A'), detail_style)])
         right_col_data.append([Paragraph("<b>Name:</b>", label_style),
                               Paragraph(member_data.get('name', 'N/A'), detail_style)])
         right_col_data.append([Paragraph("<b>Email:</b>", label_style),
