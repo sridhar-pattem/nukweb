@@ -92,8 +92,8 @@ def generate_cowork_invoice_pdf(invoice_data, line_items, member_data, output_pa
 
         # Library Contact Details
         library_info = Paragraph("""
-            Bangalore, India<br/>
-            Email: info@nuklibrary.com | Phone: +91-XXXXXXXXXX
+            1st Floor, PGK Chambers, Kasavanahalli, Bengaluru 560035<br/>
+            Email: host@mynuk.com | Phone: +91 72595 28336
         """, header_style)
         elements.append(library_info)
         elements.append(Spacer(1, 0.3*inch))
@@ -186,8 +186,8 @@ def generate_cowork_invoice_pdf(invoice_data, line_items, member_data, output_pa
                 str(idx),
                 item['description'],
                 str(quantity),
-                f"₹{unit_price:.2f}",
-                f"₹{amount:.2f}"
+                f"Rs. {unit_price:.2f}",
+                f"Rs. {amount:.2f}"
             ])
             total_amount += amount
 
@@ -222,8 +222,8 @@ def generate_cowork_invoice_pdf(invoice_data, line_items, member_data, output_pa
 
         # Total Section
         total_data = [
-            ['Subtotal:', f"₹{total_amount:.2f}"],
-            ['<b>Total Amount:</b>', f"<b>₹{total_amount:.2f}</b>"]
+            ['Subtotal:', f"Rs. {total_amount:.2f}"],
+            ['Total Amount:', f"Rs. {total_amount:.2f}"]
         ]
 
         total_table = Table(total_data, colWidths=[4.6*inch, 1.8*inch])
@@ -274,7 +274,7 @@ def generate_cowork_invoice_pdf(invoice_data, line_items, member_data, output_pa
                                      alignment=TA_CENTER, leading=12)
         footer = Paragraph("""
             <i>Thank you for choosing Nuk Library Coworking Space!</i><br/>
-            For any queries, please contact us at info@nuklibrary.com
+            For any queries, please contact us at host@mynuk.com
         """, footer_style)
         elements.append(footer)
 
