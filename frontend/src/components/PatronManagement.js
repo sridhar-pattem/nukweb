@@ -14,12 +14,16 @@ function PatronManagement() {
   const [selectedPatron, setSelectedPatron] = useState(null);
   const [editFormData, setEditFormData] = useState(null);
   const [newPatron, setNewPatron] = useState({
-    patron_id: '',
     email: '',
-    name: '',
+    first_name: '',
+    last_name: '',
     phone: '',
-    mobile_number: '',
     address: '',
+    city: '',
+    state: '',
+    postal_code: '',
+    country: '',
+    date_of_birth: '',
     membership_plan_id: ''
   });
 
@@ -59,12 +63,16 @@ function PatronManagement() {
       const response = await adminPatronsAPI.getPatronDetails(patronId);
       setSelectedPatron(response.data.patron);
       setEditFormData({
-        new_patron_id: response.data.patron.patron_id,
-        name: response.data.patron.name,
+        first_name: response.data.patron.first_name || '',
+        last_name: response.data.patron.last_name || '',
         email: response.data.patron.email,
         phone: response.data.patron.phone || '',
-        mobile_number: response.data.patron.mobile_number || '',
         address: response.data.patron.address || '',
+        city: response.data.patron.city || '',
+        state: response.data.patron.state || '',
+        postal_code: response.data.patron.postal_code || '',
+        country: response.data.patron.country || '',
+        date_of_birth: response.data.patron.date_of_birth || '',
         membership_plan_id: response.data.patron.membership_plan_id || ''
       });
       setViewMode('detail');
@@ -86,12 +94,16 @@ function PatronManagement() {
       await adminPatronsAPI.createPatron(newPatron);
       setShowAddForm(false);
       setNewPatron({
-        patron_id: '',
         email: '',
-        name: '',
+        first_name: '',
+        last_name: '',
         phone: '',
-        mobile_number: '',
         address: '',
+        city: '',
+        state: '',
+        postal_code: '',
+        country: '',
+        date_of_birth: '',
         membership_plan_id: ''
       });
       loadPatrons();
@@ -167,14 +179,12 @@ function PatronManagement() {
           <form onSubmit={handleUpdatePatron}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '20px' }}>
               <div className="form-group">
-                <label>Patron ID *</label>
+                <label>Patron ID</label>
                 <input
                   type="text"
-                  value={editFormData.new_patron_id}
-                  onChange={(e) => setEditFormData({...editFormData, new_patron_id: e.target.value.toUpperCase()})}
-                  pattern="[A-Z0-9]+"
-                  title="Alphanumeric uppercase only"
-                  required
+                  value={selectedPatron.patron_id}
+                  disabled
+                  style={{ backgroundColor: '#f0f0f0' }}
                 />
               </div>
               <div className="form-group">
@@ -182,11 +192,20 @@ function PatronManagement() {
                 <input type="text" value={selectedPatron.status} disabled style={{ backgroundColor: '#f0f0f0' }} />
               </div>
               <div className="form-group">
-                <label>Name *</label>
+                <label>First Name *</label>
                 <input
                   type="text"
-                  value={editFormData.name}
-                  onChange={(e) => setEditFormData({...editFormData, name: e.target.value})}
+                  value={editFormData.first_name}
+                  onChange={(e) => setEditFormData({...editFormData, first_name: e.target.value})}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Last Name *</label>
+                <input
+                  type="text"
+                  value={editFormData.last_name}
+                  onChange={(e) => setEditFormData({...editFormData, last_name: e.target.value})}
                   required
                 />
               </div>
@@ -208,11 +227,43 @@ function PatronManagement() {
                 />
               </div>
               <div className="form-group">
-                <label>Mobile Number</label>
+                <label>Date of Birth</label>
                 <input
-                  type="tel"
-                  value={editFormData.mobile_number}
-                  onChange={(e) => setEditFormData({...editFormData, mobile_number: e.target.value})}
+                  type="date"
+                  value={editFormData.date_of_birth}
+                  onChange={(e) => setEditFormData({...editFormData, date_of_birth: e.target.value})}
+                />
+              </div>
+              <div className="form-group">
+                <label>City</label>
+                <input
+                  type="text"
+                  value={editFormData.city}
+                  onChange={(e) => setEditFormData({...editFormData, city: e.target.value})}
+                />
+              </div>
+              <div className="form-group">
+                <label>State</label>
+                <input
+                  type="text"
+                  value={editFormData.state}
+                  onChange={(e) => setEditFormData({...editFormData, state: e.target.value})}
+                />
+              </div>
+              <div className="form-group">
+                <label>Postal Code</label>
+                <input
+                  type="text"
+                  value={editFormData.postal_code}
+                  onChange={(e) => setEditFormData({...editFormData, postal_code: e.target.value})}
+                />
+              </div>
+              <div className="form-group">
+                <label>Country</label>
+                <input
+                  type="text"
+                  value={editFormData.country}
+                  onChange={(e) => setEditFormData({...editFormData, country: e.target.value})}
                 />
               </div>
               <div className="form-group" style={{ gridColumn: '1 / -1' }}>
@@ -232,7 +283,7 @@ function PatronManagement() {
                   <option value="">Select a plan</option>
                   {membershipPlans.map(plan => (
                     <option key={plan.plan_id} value={plan.plan_id}>
-                      {plan.plan_name} - ₹{plan.price} ({plan.duration_days} days)
+                      {plan.plan_name} - ${plan.price} ({plan.duration_months} months)
                     </option>
                   ))}
                 </select>
@@ -247,10 +298,10 @@ function PatronManagement() {
                 />
               </div>
               <div className="form-group">
-                <label>Membership Expiry Date</label>
+                <label>Membership End Date</label>
                 <input
                   type="text"
-                  value={selectedPatron.membership_expiry_date || 'N/A'}
+                  value={selectedPatron.membership_end_date || 'N/A'}
                   disabled
                   style={{ backgroundColor: '#f0f0f0' }}
                 />
@@ -325,23 +376,20 @@ function PatronManagement() {
           <form onSubmit={handleAddPatron}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
               <div className="form-group">
-                <label>Patron ID * (e.g., NUKG0001000)</label>
+                <label>First Name *</label>
                 <input
                   type="text"
-                  value={newPatron.patron_id}
-                  onChange={(e) => setNewPatron({...newPatron, patron_id: e.target.value.toUpperCase()})}
-                  placeholder="NUKG0001000"
-                  pattern="[A-Z0-9]+"
-                  title="Alphanumeric uppercase only"
+                  value={newPatron.first_name}
+                  onChange={(e) => setNewPatron({...newPatron, first_name: e.target.value})}
                   required
                 />
               </div>
               <div className="form-group">
-                <label>Name *</label>
+                <label>Last Name *</label>
                 <input
                   type="text"
-                  value={newPatron.name}
-                  onChange={(e) => setNewPatron({...newPatron, name: e.target.value})}
+                  value={newPatron.last_name}
+                  onChange={(e) => setNewPatron({...newPatron, last_name: e.target.value})}
                   required
                 />
               </div>
@@ -363,11 +411,44 @@ function PatronManagement() {
                 />
               </div>
               <div className="form-group">
-                <label>Mobile Number</label>
+                <label>Date of Birth</label>
                 <input
-                  type="tel"
-                  value={newPatron.mobile_number}
-                  onChange={(e) => setNewPatron({...newPatron, mobile_number: e.target.value})}
+                  type="date"
+                  value={newPatron.date_of_birth}
+                  onChange={(e) => setNewPatron({...newPatron, date_of_birth: e.target.value})}
+                />
+              </div>
+              <div className="form-group">
+                <label>City</label>
+                <input
+                  type="text"
+                  value={newPatron.city}
+                  onChange={(e) => setNewPatron({...newPatron, city: e.target.value})}
+                />
+              </div>
+              <div className="form-group">
+                <label>State</label>
+                <input
+                  type="text"
+                  value={newPatron.state}
+                  onChange={(e) => setNewPatron({...newPatron, state: e.target.value})}
+                />
+              </div>
+              <div className="form-group">
+                <label>Postal Code</label>
+                <input
+                  type="text"
+                  value={newPatron.postal_code}
+                  onChange={(e) => setNewPatron({...newPatron, postal_code: e.target.value})}
+                />
+              </div>
+              <div className="form-group">
+                <label>Country</label>
+                <input
+                  type="text"
+                  value={newPatron.country}
+                  onChange={(e) => setNewPatron({...newPatron, country: e.target.value})}
+                  placeholder="e.g., India"
                 />
               </div>
               <div className="form-group" style={{ gridColumn: '1 / -1' }}>
@@ -388,7 +469,7 @@ function PatronManagement() {
                   <option value="">Select a plan</option>
                   {membershipPlans.map(plan => (
                     <option key={plan.plan_id} value={plan.plan_id}>
-                      {plan.plan_name} - ₹{plan.price} ({plan.duration_days} days)
+                      {plan.plan_name} - ${plan.price} ({plan.duration_months} months)
                     </option>
                   ))}
                 </select>
@@ -438,11 +519,11 @@ function PatronManagement() {
                       }}
                       style={{ color: '#6c5ce7', textDecoration: 'underline', cursor: 'pointer' }}
                     >
-                      {patron.name}
+                      {patron.first_name} {patron.last_name}
                     </a>
                   </td>
                   <td>{patron.email}</td>
-                  <td>{patron.mobile_number || patron.phone || 'N/A'}</td>
+                  <td>{patron.phone || 'N/A'}</td>
                   <td>
                     <span style={{
                       padding: '3px 8px',
@@ -454,7 +535,7 @@ function PatronManagement() {
                       {patron.status}
                     </span>
                   </td>
-                  <td>{patron.plan_name || patron.membership_type || 'N/A'}</td>
+                  <td>{patron.plan_name || 'N/A'}</td>
                   <td>
                     <div style={{ display: 'flex', gap: '5px', flexWrap: 'nowrap' }}>
                       <button
