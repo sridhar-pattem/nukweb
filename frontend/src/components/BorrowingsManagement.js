@@ -188,12 +188,12 @@ function BorrowingsManagement() {
     }
   };
 
-  const showPatronHistory = async (patronId, patronName) => {
+  const showPatronHistory = async (patronId, patronFirstName, patronLastName) => {
     try {
       setLoading(true);
       const response = await adminBorrowingsAPI.getBorrowingHistory(patronId, null, null);
       setHistoryData(response.data);
-      setHistoryTitle(`Borrowing History - ${patronName}`);
+      setHistoryTitle(`Borrowing History - ${patronFirstName} ${patronLastName}`);
       setShowHistory(true);
     } catch (err) {
       alert('Failed to load history');
@@ -218,7 +218,7 @@ function BorrowingsManagement() {
 
   const selectPatron = (patron) => {
     setSelectedPatron(patron);
-    setPatronSearch(patron.name);
+    setPatronSearch(`${patron.first_name} ${patron.last_name}`);
     setShowPatronDropdown(false);
   };
 
@@ -299,7 +299,7 @@ function BorrowingsManagement() {
                         onMouseEnter={(e) => e.target.style.backgroundColor = '#f5f5f5'}
                         onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
                       >
-                        <div><strong>{patron.name}</strong></div>
+                        <div><strong>{patron.first_name} {patron.last_name}</strong></div>
                         <div style={{ fontSize: '12px', color: '#666' }}>
                           {patron.email} | ID: {patron.patron_id}
                         </div>
@@ -319,7 +319,7 @@ function BorrowingsManagement() {
                 )}
                 {selectedPatron && (
                   <div style={{ marginTop: '5px', padding: '5px', backgroundColor: '#e8f5e9', borderRadius: '3px' }}>
-                    <small>Selected: {selectedPatron.name} ({selectedPatron.patron_id})</small>
+                    <small>Selected: {selectedPatron.first_name} {selectedPatron.last_name} ({selectedPatron.patron_id})</small>
                   </div>
                 )}
               </div>
@@ -483,11 +483,11 @@ function BorrowingsManagement() {
                   return (
                     <tr key={borrowing.borrowing_id} style={{ backgroundColor: isOverdue ? '#ffe6e6' : 'transparent' }}>
                       <td>
-                        <strong>{borrowing.patron_name}</strong><br />
+                        <strong>{borrowing.first_name} {borrowing.last_name}</strong><br />
                         <small>{borrowing.email}</small><br />
                         <small>ID: {borrowing.patron_id}</small><br />
                         <button
-                          onClick={() => showPatronHistory(borrowing.patron_id, borrowing.patron_name)}
+                          onClick={() => showPatronHistory(borrowing.patron_id, borrowing.first_name, borrowing.last_name)}
                           className="btn btn-secondary"
                           style={{ fontSize: '10px', padding: '2px 6px', marginTop: '3px' }}
                         >
@@ -618,7 +618,7 @@ function BorrowingsManagement() {
                           </>
                         ) : (
                           <>
-                            <strong>{record.patron_name}</strong><br />
+                            <strong>{record.first_name} {record.last_name}</strong><br />
                             <small>{record.email}</small>
                           </>
                         )}
