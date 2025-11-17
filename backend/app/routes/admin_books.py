@@ -15,69 +15,75 @@ def get_books():
     page = request.args.get('page', 1, type=int)
     search = request.args.get('search', '')
     collection = request.args.get('collection', '')
-    genre = request.args.get('genre', '')
-    status = request.args.get('status', '')
-    exclude_damaged_lost = request.args.get('exclude_damaged_lost', 'false').lower() == 'true'
+    content_type = request.args.get('content_type', '')
+    language = request.args.get('language', '')
 
     offset = (page - 1) * Config.ITEMS_PER_PAGE
 
     # Build query
-    where_clauses = []
+    where_clauses = ["b.is_active = TRUE"]
     params = []
 
     if search:
         where_clauses.append("""
-            (b.title ILIKE %s OR b.author ILIKE %s OR b.isbn LIKE %s)
+            (b.title ILIKE %s OR b.subtitle ILIKE %s OR b.isbn ILIKE %s OR
+             EXISTS (
+                 SELECT 1 FROM book_contributors bc
+                 JOIN contributors c ON bc.contributor_id = c.contributor_id
+                 WHERE bc.book_id = b.book_id AND c.name ILIKE %s
+             ))
         """)
         search_param = f'%{search}%'
-        params.extend([search_param, search_param, search_param])
+        params.extend([search_param, search_param, search_param, search_param])
 
     if collection:
         where_clauses.append("b.collection_id = %s")
         params.append(collection)
 
-    if genre:
-        where_clauses.append("b.genre = %s")
-        params.append(genre)
+    if content_type:
+        where_clauses.append("b.content_type = %s")
+        params.append(content_type)
 
-    if status:
-        where_clauses.append("b.status = %s")
-        params.append(status)
+    if language:
+        where_clauses.append("b.language = %s")
+        params.append(language)
 
-    # By default, exclude Damaged and Lost books unless explicitly requested
-    if exclude_damaged_lost:
-        where_clauses.append("b.status NOT IN ('Damaged', 'Lost')")
-
-    where_sql = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
+    where_sql = "WHERE " + " AND ".join(where_clauses)
 
     # Get total count
     count_query = f"""
         SELECT COUNT(*) as total
         FROM books b
-        LEFT JOIN collections c ON b.collection_id = c.collection_id
         {where_sql}
     """
-    total_result = execute_query(count_query, tuple(params), fetch_one=True)
+    total_result = execute_query(count_query, tuple(params) if params else None, fetch_one=True)
     total = total_result['total'] if total_result else 0
 
-    # Get books with checkout status
+    # Get books with availability using the view
     query = f"""
-        SELECT b.book_id, b.isbn, b.title, b.author, b.genre, b.sub_genre, b.publisher,
-               b.publication_year, b.collection_id, c.collection_name as collection,
-               b.total_copies, b.available_copies,
-               b.age_rating, b.cover_image_url, b.status, b.created_at,
-               CASE
-                   WHEN EXISTS (
-                       SELECT 1 FROM borrowings br
-                       WHERE br.book_id = b.book_id
-                       AND br.status = 'active'
-                   ) THEN true
-                   ELSE false
-               END as is_checked_out,
-               (SELECT MIN(due_date) FROM borrowings br
-                WHERE br.book_id = b.book_id AND br.status = 'active') as due_date
+        SELECT b.book_id, b.isbn, b.title, b.subtitle,
+               b.publisher, b.publication_year,
+               b.collection_id, c.collection_name,
+               b.content_type, b.media_type, b.carrier_type,
+               b.language, b.subjects,
+               b.age_rating, b.cover_image_url, b.created_at,
+               ba.total_items, ba.available_items,
+               ba.checked_out_items, ba.on_hold_items,
+               (SELECT json_agg(
+                   json_build_object(
+                       'contributor_id', contrib.contributor_id,
+                       'name', contrib.name,
+                       'role', bc.role,
+                       'sequence', bc.sequence_number
+                   ) ORDER BY bc.role, bc.sequence_number
+               )
+                FROM book_contributors bc
+                JOIN contributors contrib ON bc.contributor_id = contrib.contributor_id
+                WHERE bc.book_id = b.book_id
+               ) as contributors
         FROM books b
         LEFT JOIN collections c ON b.collection_id = c.collection_id
+        LEFT JOIN mv_book_availability ba ON b.book_id = ba.book_id
         {where_sql}
         ORDER BY b.created_at DESC
         LIMIT %s OFFSET %s
@@ -85,7 +91,7 @@ def get_books():
     params.extend([Config.ITEMS_PER_PAGE, offset])
 
     books = execute_query(query, tuple(params), fetch_all=True)
-    
+
     return jsonify({
         "books": [dict(b) for b in (books or [])],
         "total": total,
@@ -100,33 +106,25 @@ def get_books():
 def get_book_details(book_id):
     """Get detailed information about a specific book"""
     query = """
-        SELECT b.book_id, b.isbn, b.title, b.author, b.genre, b.sub_genre,
-               b.publisher, b.publication_year, b.description,
+        SELECT b.book_id, b.isbn, b.isbn_10, b.issn, b.other_identifier,
+               b.title, b.subtitle, b.statement_of_responsibility,
+               b.edition_statement, b.place_of_publication,
+               b.publisher, b.publication_year, b.copyright_year,
+               b.series_title, b.series_number,
+               b.extent, b.dimensions,
+               b.content_type, b.media_type, b.carrier_type,
+               b.subjects, b.description, b.notes,
+               b.age_rating, b.target_audience,
+               b.language, b.additional_languages,
                b.collection_id, c.collection_name,
-               b.total_copies, b.available_copies, b.age_rating,
-               b.cover_image_url, b.status, b.created_at, b.updated_at,
-               CASE
-                   WHEN EXISTS (
-                       SELECT 1 FROM borrowings br
-                       WHERE br.book_id = b.book_id AND br.status = 'active'
-                   ) THEN true
-                   ELSE false
-               END as is_checked_out,
-               (SELECT json_agg(json_build_object(
-                   'borrowing_id', br.borrowing_id,
-                   'patron_id', p.patron_id,
-                   'patron_name', u.name,
-                   'checkout_date', br.checkout_date,
-                   'due_date', br.due_date,
-                   'status', br.status
-               ))
-                FROM borrowings br
-                JOIN patrons p ON br.patron_id = p.patron_id
-                JOIN users u ON p.user_id = u.user_id
-                WHERE br.book_id = b.book_id AND br.status = 'active'
-               ) as active_borrowings
+               b.call_number, b.cover_image_url, b.thumbnail_url,
+               b.resource_type, b.cataloged_by,
+               b.created_at, b.updated_at,
+               ba.total_items, ba.available_items,
+               ba.checked_out_items, ba.on_hold_items
         FROM books b
         LEFT JOIN collections c ON b.collection_id = c.collection_id
+        LEFT JOIN mv_book_availability ba ON b.book_id = ba.book_id
         WHERE b.book_id = %s
     """
 
@@ -135,7 +133,41 @@ def get_book_details(book_id):
     if not book:
         return jsonify({"error": "Book not found"}), 404
 
-    return jsonify(dict(book)), 200
+    # Get contributors
+    contributors_query = """
+        SELECT bc.book_contributor_id, bc.contributor_id, bc.role, bc.sequence_number,
+               c.name, c.name_type, c.date_of_birth, c.date_of_death,
+               c.date_established, c.date_terminated
+        FROM book_contributors bc
+        JOIN contributors c ON bc.contributor_id = c.contributor_id
+        WHERE bc.book_id = %s
+        ORDER BY bc.role, bc.sequence_number
+    """
+    contributors = execute_query(contributors_query, (book_id,), fetch_all=True)
+
+    # Get items
+    items_query = """
+        SELECT i.item_id, i.barcode, i.accession_number,
+               i.call_number, i.shelf_location, i.circulation_status,
+               i.condition, i.acquisition_date,
+               CASE
+                   WHEN EXISTS (
+                       SELECT 1 FROM borrowings br
+                       WHERE br.item_id = i.item_id AND br.status = 'active'
+                   ) THEN true
+                   ELSE false
+               END as is_borrowed
+        FROM items i
+        WHERE i.book_id = %s
+        ORDER BY i.barcode
+    """
+    items = execute_query(items_query, (book_id,), fetch_all=True)
+
+    result = dict(book)
+    result['contributors'] = [dict(c) for c in (contributors or [])]
+    result['items'] = [dict(i) for i in (items or [])]
+
+    return jsonify(result), 200
 
 @admin_books_bp.route('/books/fetch-by-isbn', methods=['POST'])
 @jwt_required()
@@ -149,8 +181,9 @@ def fetch_book_details():
         return jsonify({"error": "ISBN is required"}), 400
 
     # Check if book already exists
-    existing_query = "SELECT book_id FROM books WHERE isbn = %s"
-    existing = execute_query(existing_query, (isbn.replace('-', '').replace(' ', ''),), fetch_one=True)
+    existing_query = "SELECT book_id FROM books WHERE isbn = %s OR isbn_10 = %s"
+    isbn_clean = isbn.replace('-', '').replace(' ', '')
+    existing = execute_query(existing_query, (isbn_clean, isbn_clean), fetch_one=True)
 
     if existing:
         return jsonify({"error": "Book with this ISBN already exists"}), 400
@@ -170,16 +203,16 @@ def add_book():
     """Add a new book to the catalogue"""
     data = request.get_json()
 
-    required_fields = ['isbn', 'title', 'collection_id']
+    required_fields = ['title', 'collection_id']
     if not all(field in data for field in required_fields):
-        return jsonify({"error": "Missing required fields"}), 400
+        return jsonify({"error": "Missing required fields: title, collection_id"}), 400
 
-    # Check if ISBN already exists
-    check_query = "SELECT book_id FROM books WHERE isbn = %s"
-    existing = execute_query(check_query, (data['isbn'],), fetch_one=True)
-
-    if existing:
-        return jsonify({"error": "Book with this ISBN already exists"}), 400
+    # Check if ISBN already exists (if provided)
+    if data.get('isbn'):
+        check_query = "SELECT book_id FROM books WHERE isbn = %s"
+        existing = execute_query(check_query, (data['isbn'],), fetch_one=True)
+        if existing:
+            return jsonify({"error": "Book with this ISBN already exists"}), 400
 
     # Validate collection_id exists
     collection_check = "SELECT collection_id FROM collections WHERE collection_id = %s"
@@ -188,35 +221,96 @@ def add_book():
     if not collection_exists:
         return jsonify({"error": "Invalid collection ID"}), 400
 
+    # Validate RDA types if provided
+    if data.get('content_type'):
+        ct_check = "SELECT code FROM rda_content_types WHERE code = %s"
+        if not execute_query(ct_check, (data['content_type'],), fetch_one=True):
+            return jsonify({"error": "Invalid content_type"}), 400
+
+    if data.get('media_type'):
+        mt_check = "SELECT code FROM rda_media_types WHERE code = %s"
+        if not execute_query(mt_check, (data['media_type'],), fetch_one=True):
+            return jsonify({"error": "Invalid media_type"}), 400
+
+    if data.get('carrier_type'):
+        car_check = "SELECT code FROM rda_carrier_types WHERE code = %s"
+        if not execute_query(car_check, (data['carrier_type'],), fetch_one=True):
+            return jsonify({"error": "Invalid carrier_type"}), 400
+
     query = """
         INSERT INTO books
-        (isbn, title, author, genre, sub_genre, publisher, publication_year,
-         description, collection_id, total_copies, available_copies, age_rating,
-         cover_image_url, status)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'Available')
+        (isbn, isbn_10, issn, other_identifier,
+         title, subtitle, statement_of_responsibility,
+         edition_statement, place_of_publication,
+         publisher, publication_year, copyright_year,
+         series_title, series_number,
+         extent, dimensions,
+         content_type, media_type, carrier_type,
+         subjects, description, notes,
+         age_rating, target_audience,
+         language, additional_languages,
+         collection_id, call_number,
+         cover_image_url, thumbnail_url,
+         resource_type, cataloged_by)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING book_id
     """
 
-    total_copies = data.get('total_copies', 1)
-
     with get_db_cursor() as cursor:
         cursor.execute(query, (
-            data['isbn'],
+            data.get('isbn'),
+            data.get('isbn_10'),
+            data.get('issn'),
+            data.get('other_identifier'),
             data['title'],
-            data.get('author'),
-            data.get('genre'),
-            data.get('sub_genre'),
+            data.get('subtitle'),
+            data.get('statement_of_responsibility'),
+            data.get('edition_statement'),
+            data.get('place_of_publication'),
             data.get('publisher'),
             data.get('publication_year'),
+            data.get('copyright_year'),
+            data.get('series_title'),
+            data.get('series_number'),
+            data.get('extent'),
+            data.get('dimensions'),
+            data.get('content_type', 'txt'),
+            data.get('media_type', 'n'),
+            data.get('carrier_type', 'nc'),
+            data.get('subjects'),
             data.get('description'),
-            data['collection_id'],
-            total_copies,
-            total_copies,  # available_copies = total_copies initially
+            data.get('notes'),
             data.get('age_rating'),
-            data.get('cover_image_url')
+            data.get('target_audience'),
+            data.get('language', 'eng'),
+            data.get('additional_languages'),
+            data['collection_id'],
+            data.get('call_number'),
+            data.get('cover_image_url'),
+            data.get('thumbnail_url'),
+            data.get('resource_type', 'book'),
+            data.get('cataloged_by')
         ))
 
         book_id = cursor.fetchone()['book_id']
+
+        # Add contributors if provided
+        if data.get('contributors'):
+            for contrib in data['contributors']:
+                cursor.execute("""
+                    INSERT INTO book_contributors
+                    (book_id, contributor_id, role, sequence_number)
+                    VALUES (%s, %s, %s, %s)
+                """, (
+                    book_id,
+                    contrib['contributor_id'],
+                    contrib.get('role', 'author'),
+                    contrib.get('sequence_number', 1)
+                ))
+
+        # Refresh materialized view
+        cursor.execute("REFRESH MATERIALIZED VIEW mv_book_availability")
 
         return jsonify({
             "message": "Book added successfully",
@@ -229,107 +323,170 @@ def add_book():
 def update_book(book_id):
     """Update book information"""
     data = request.get_json()
-    
+
     # Check if book exists
     check_query = "SELECT book_id FROM books WHERE book_id = %s"
     book = execute_query(check_query, (book_id,), fetch_one=True)
-    
+
     if not book:
         return jsonify({"error": "Book not found"}), 404
-    
+
     # Build update query dynamically
     update_fields = []
     params = []
-    
+
     updatable_fields = [
-        'title', 'author', 'genre', 'sub_genre', 'publisher', 'publication_year',
-        'description', 'collection_id', 'total_copies', 'age_rating', 'cover_image_url'
+        'isbn', 'isbn_10', 'issn', 'other_identifier',
+        'title', 'subtitle', 'statement_of_responsibility',
+        'edition_statement', 'place_of_publication',
+        'publisher', 'publication_year', 'copyright_year',
+        'series_title', 'series_number',
+        'extent', 'dimensions',
+        'content_type', 'media_type', 'carrier_type',
+        'subjects', 'description', 'notes',
+        'age_rating', 'target_audience',
+        'language', 'additional_languages',
+        'collection_id', 'call_number',
+        'cover_image_url', 'thumbnail_url',
+        'resource_type', 'cataloged_by'
     ]
-    
+
     for field in updatable_fields:
         if field in data:
             update_fields.append(f"{field} = %s")
             params.append(data[field])
-    
+
     if not update_fields:
         return jsonify({"error": "No fields to update"}), 400
-    
+
     params.append(book_id)
-    
+
     query = f"""
-        UPDATE books 
+        UPDATE books
         SET {', '.join(update_fields)}
         WHERE book_id = %s
     """
-    
+
     execute_query(query, tuple(params))
-    
+
     return jsonify({"message": "Book updated successfully"}), 200
 
-@admin_books_bp.route('/books/<int:book_id>/status', methods=['PATCH'])
+@admin_books_bp.route('/books/<int:book_id>/contributors', methods=['POST'])
 @jwt_required()
 @admin_required
-def update_book_status(book_id):
-    """Update book status (Lost, Damaged, Phased Out)"""
+def add_book_contributor(book_id):
+    """Add a contributor to a book"""
     data = request.get_json()
-    status = data.get('status')
-    
-    if status not in ['Available', 'Lost', 'Damaged', 'Phased Out']:
-        return jsonify({"error": "Invalid status"}), 400
-    
-    query = "UPDATE books SET status = %s WHERE book_id = %s"
-    rows_affected = execute_query(query, (status, book_id))
-    
+
+    required_fields = ['contributor_id', 'role']
+    if not all(field in data for field in required_fields):
+        return jsonify({"error": "Missing required fields: contributor_id, role"}), 400
+
+    # Check if book exists
+    book_check = "SELECT book_id FROM books WHERE book_id = %s"
+    if not execute_query(book_check, (book_id,), fetch_one=True):
+        return jsonify({"error": "Book not found"}), 404
+
+    # Check if contributor exists
+    contrib_check = "SELECT contributor_id FROM contributors WHERE contributor_id = %s"
+    if not execute_query(contrib_check, (data['contributor_id'],), fetch_one=True):
+        return jsonify({"error": "Contributor not found"}), 404
+
+    # Check if this relationship already exists
+    existing_query = """
+        SELECT book_contributor_id FROM book_contributors
+        WHERE book_id = %s AND contributor_id = %s AND role = %s
+    """
+    existing = execute_query(existing_query, (book_id, data['contributor_id'], data['role']), fetch_one=True)
+
+    if existing:
+        return jsonify({"error": "This contributor relationship already exists"}), 400
+
+    query = """
+        INSERT INTO book_contributors (book_id, contributor_id, role, sequence_number)
+        VALUES (%s, %s, %s, %s)
+        RETURNING book_contributor_id
+    """
+
+    with get_db_cursor() as cursor:
+        cursor.execute(query, (
+            book_id,
+            data['contributor_id'],
+            data['role'],
+            data.get('sequence_number', 1)
+        ))
+
+        bc_id = cursor.fetchone()['book_contributor_id']
+
+        return jsonify({
+            "message": "Contributor added to book successfully",
+            "book_contributor_id": bc_id
+        }), 201
+
+@admin_books_bp.route('/books/<int:book_id>/contributors/<int:book_contributor_id>', methods=['DELETE'])
+@jwt_required()
+@admin_required
+def remove_book_contributor(book_id, book_contributor_id):
+    """Remove a contributor from a book"""
+    query = """
+        DELETE FROM book_contributors
+        WHERE book_id = %s AND book_contributor_id = %s
+    """
+    rows_affected = execute_query(query, (book_id, book_contributor_id))
+
+    if rows_affected == 0:
+        return jsonify({"error": "Contributor relationship not found"}), 404
+
+    return jsonify({"message": "Contributor removed from book successfully"}), 200
+
+@admin_books_bp.route('/books/<int:book_id>/contributors/<int:book_contributor_id>', methods=['PUT'])
+@jwt_required()
+@admin_required
+def update_book_contributor(book_id, book_contributor_id):
+    """Update contributor relationship (role, sequence)"""
+    data = request.get_json()
+
+    update_fields = []
+    params = []
+
+    if 'role' in data:
+        update_fields.append("role = %s")
+        params.append(data['role'])
+
+    if 'sequence_number' in data:
+        update_fields.append("sequence_number = %s")
+        params.append(data['sequence_number'])
+
+    if not update_fields:
+        return jsonify({"error": "No fields to update"}), 400
+
+    params.extend([book_id, book_contributor_id])
+
+    query = f"""
+        UPDATE book_contributors
+        SET {', '.join(update_fields)}
+        WHERE book_id = %s AND book_contributor_id = %s
+    """
+
+    rows_affected = execute_query(query, tuple(params))
+
+    if rows_affected == 0:
+        return jsonify({"error": "Contributor relationship not found"}), 404
+
+    return jsonify({"message": "Contributor relationship updated successfully"}), 200
+
+@admin_books_bp.route('/books/<int:book_id>', methods=['DELETE'])
+@jwt_required()
+@admin_required
+def delete_book(book_id):
+    """Soft delete a book (set is_active to false)"""
+    query = "UPDATE books SET is_active = FALSE WHERE book_id = %s"
+    rows_affected = execute_query(query, (book_id,))
+
     if rows_affected == 0:
         return jsonify({"error": "Book not found"}), 404
-    
-    return jsonify({"message": "Book status updated successfully"}), 200
 
-@admin_books_bp.route('/books/<int:book_id>/copies', methods=['PATCH'])
-@jwt_required()
-@admin_required
-def update_book_copies(book_id):
-    """Add or remove book copies"""
-    data = request.get_json()
-    action = data.get('action')  # 'add' or 'remove'
-    count = data.get('count', 1)
-    
-    if action not in ['add', 'remove']:
-        return jsonify({"error": "Invalid action"}), 400
-    
-    if action == 'add':
-        query = """
-            UPDATE books 
-            SET total_copies = total_copies + %s,
-                available_copies = available_copies + %s
-            WHERE book_id = %s
-        """
-    else:  # remove
-        query = """
-            UPDATE books 
-            SET total_copies = total_copies - %s,
-                available_copies = GREATEST(available_copies - %s, 0)
-            WHERE book_id = %s AND total_copies >= %s
-        """
-        
-    with get_db_cursor() as cursor:
-        if action == 'add':
-            cursor.execute(query, (count, count, book_id))
-        else:
-            cursor.execute(query, (count, count, book_id, count))
-        
-        if cursor.rowcount == 0:
-            return jsonify({"error": "Book not found or insufficient copies"}), 404
-        
-        return jsonify({"message": f"Book copies {action}ed successfully"}), 200
-
-@admin_books_bp.route('/books/genres', methods=['GET'])
-@jwt_required()
-def get_genres():
-    """Get all unique genres"""
-    query = "SELECT DISTINCT genre FROM books WHERE genre IS NOT NULL ORDER BY genre"
-    genres = execute_query(query, fetch_all=True)
-    return jsonify([g['genre'] for g in (genres or [])]), 200
+    return jsonify({"message": "Book deleted successfully"}), 200
 
 @admin_books_bp.route('/age-ratings', methods=['GET'])
 @jwt_required()
@@ -345,17 +502,17 @@ def get_age_ratings():
 def add_age_rating():
     """Add a new age rating"""
     data = request.get_json()
-    
+
     required_fields = ['rating_name', 'min_age']
     if not all(field in data for field in required_fields):
         return jsonify({"error": "Missing required fields"}), 400
-    
+
     query = """
         INSERT INTO age_ratings (rating_name, min_age, max_age, description)
         VALUES (%s, %s, %s, %s)
         RETURNING rating_id
     """
-    
+
     with get_db_cursor() as cursor:
         cursor.execute(query, (
             data['rating_name'],
@@ -363,9 +520,9 @@ def add_age_rating():
             data.get('max_age'),
             data.get('description')
         ))
-        
+
         rating_id = cursor.fetchone()['rating_id']
-        
+
         return jsonify({
             "message": "Age rating added successfully",
             "rating_id": rating_id

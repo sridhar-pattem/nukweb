@@ -10,46 +10,66 @@ patron_bp = Blueprint('patron', __name__)
 @jwt_required()
 def browse_books():
     """Browse books by collection"""
-    collection = request.args.get('collection')
+    collection_id = request.args.get('collection')
     search = request.args.get('search', '')
     page = request.args.get('page', 1, type=int)
-    
+
     offset = (page - 1) * Config.ITEMS_PER_PAGE
-    
-    where_clauses = ["status = 'Available'"]
+
+    where_clauses = ["b.is_active = TRUE"]
     params = []
-    
-    if collection:
-        where_clauses.append("collection = %s")
-        params.append(collection)
-    
+
+    if collection_id:
+        where_clauses.append("b.collection_id = %s")
+        params.append(collection_id)
+
     if search:
-        where_clauses.append("(title ILIKE %s OR author ILIKE %s)")
+        where_clauses.append("""
+            (b.title ILIKE %s OR b.subtitle ILIKE %s OR
+             EXISTS (
+                 SELECT 1 FROM book_contributors bc
+                 JOIN contributors c ON bc.contributor_id = c.contributor_id
+                 WHERE bc.book_id = b.book_id AND c.name ILIKE %s
+             ))
+        """)
         search_param = f'%{search}%'
-        params.extend([search_param, search_param])
-    
+        params.extend([search_param, search_param, search_param])
+
     where_sql = "WHERE " + " AND ".join(where_clauses)
-    
+
     # Get total count
-    count_query = f"SELECT COUNT(*) as total FROM books {where_sql}"
-    total_result = execute_query(count_query, tuple(params), fetch_one=True)
+    count_query = f"SELECT COUNT(*) as total FROM books b {where_sql}"
+    total_result = execute_query(count_query, tuple(params) if params else None, fetch_one=True)
     total = total_result['total'] if total_result else 0
-    
-    # Get books
+
+    # Get books with contributors and availability
     query = f"""
-        SELECT book_id, isbn, title, author, genre, collection,
-               available_copies, age_rating, cover_image_url,
-               (SELECT AVG(rating) FROM reviews WHERE book_id = books.book_id) as avg_rating,
-               (SELECT COUNT(*) FROM reviews WHERE book_id = books.book_id) as review_count
-        FROM books
+        SELECT b.book_id, b.isbn, b.title, b.subtitle,
+               b.publisher, b.publication_year,
+               b.collection_id, c.collection_name,
+               b.age_rating, b.cover_image_url,
+               ba.available_items, ba.total_items,
+               (SELECT json_agg(
+                   json_build_object('name', contrib.name, 'role', bc.role)
+                   ORDER BY bc.role, bc.sequence_number
+               )
+                FROM book_contributors bc
+                JOIN contributors contrib ON bc.contributor_id = contrib.contributor_id
+                WHERE bc.book_id = b.book_id
+               ) as contributors,
+               (SELECT AVG(rating) FROM reviews WHERE book_id = b.book_id) as avg_rating,
+               (SELECT COUNT(*) FROM reviews WHERE book_id = b.book_id) as review_count
+        FROM books b
+        LEFT JOIN collections c ON b.collection_id = c.collection_id
+        LEFT JOIN mv_book_availability ba ON b.book_id = ba.book_id
         {where_sql}
-        ORDER BY title
+        ORDER BY b.title
         LIMIT %s OFFSET %s
     """
     params.extend([Config.ITEMS_PER_PAGE, offset])
-    
+
     books = execute_query(query, tuple(params), fetch_all=True)
-    
+
     return jsonify({
         "books": [dict(b) for b in (books or [])],
         "total": total,
@@ -63,16 +83,30 @@ def get_book_details(book_id):
     """Get detailed book information"""
     query = """
         SELECT b.*,
+               ba.available_items, ba.total_items,
+               ba.checked_out_items, ba.on_hold_items,
                (SELECT AVG(rating) FROM reviews WHERE book_id = b.book_id) as avg_rating,
                (SELECT COUNT(*) FROM reviews WHERE book_id = b.book_id) as review_count
         FROM books b
-        WHERE b.book_id = %s
+        LEFT JOIN mv_book_availability ba ON b.book_id = ba.book_id
+        WHERE b.book_id = %s AND b.is_active = TRUE
     """
     book = execute_query(query, (book_id,), fetch_one=True)
-    
+
     if not book:
         return jsonify({"error": "Book not found"}), 404
-    
+
+    # Get contributors
+    contributors_query = """
+        SELECT c.name, c.name_type, bc.role, bc.sequence_number,
+               c.date_of_birth, c.date_of_death
+        FROM book_contributors bc
+        JOIN contributors c ON bc.contributor_id = c.contributor_id
+        WHERE bc.book_id = %s
+        ORDER BY bc.role, bc.sequence_number
+    """
+    contributors = execute_query(contributors_query, (book_id,), fetch_all=True)
+
     # Get reviews
     reviews_query = """
         SELECT r.*, u.name as patron_name
@@ -84,11 +118,12 @@ def get_book_details(book_id):
         LIMIT 10
     """
     reviews = execute_query(reviews_query, (book_id,), fetch_all=True)
-    
-    return jsonify({
-        "book": dict(book),
-        "reviews": [dict(r) for r in (reviews or [])]
-    }), 200
+
+    result = dict(book)
+    result['contributors'] = [dict(c) for c in (contributors or [])]
+    result['reviews'] = [dict(r) for r in (reviews or [])]
+
+    return jsonify(result), 200
 
 @patron_bp.route('/books/<int:book_id>/review', methods=['POST'])
 @jwt_required()
@@ -96,29 +131,29 @@ def add_review(book_id):
     """Add or update a review for a book"""
     user_id = int(get_jwt_identity())
     data = request.get_json()
-    
+
     rating = data.get('rating')
     comment = data.get('comment', '')
-    
+
     if not rating or rating < 1 or rating > 5:
         return jsonify({"error": "Rating must be between 1 and 5"}), 400
-    
+
     # Get patron_id
     patron_query = "SELECT patron_id FROM patrons WHERE user_id = %s"
     patron = execute_query(patron_query, (user_id,), fetch_one=True)
-    
+
     if not patron:
         return jsonify({"error": "Patron not found"}), 404
-    
+
     with get_db_cursor() as cursor:
         # Check if review already exists
         cursor.execute("""
-            SELECT review_id FROM reviews 
+            SELECT review_id FROM reviews
             WHERE patron_id = %s AND book_id = %s
         """, (patron['patron_id'], book_id))
-        
+
         existing = cursor.fetchone()
-        
+
         if existing:
             # Update existing review
             cursor.execute("""
@@ -135,14 +170,14 @@ def add_review(book_id):
                 RETURNING review_id
             """, (patron['patron_id'], book_id, rating, comment))
             message = "Review added successfully"
-        
+
         # Add to reading history if not already there
         cursor.execute("""
             INSERT INTO reading_history (patron_id, book_id)
             VALUES (%s, %s)
             ON CONFLICT DO NOTHING
         """, (patron['patron_id'], book_id))
-        
+
         return jsonify({"message": message}), 200
 
 @patron_bp.route('/my-borrowings', methods=['GET'])
@@ -151,17 +186,28 @@ def get_my_borrowings():
     """Get current patron's borrowings"""
     user_id = int(get_jwt_identity())
     status = request.args.get('status', 'active')
-    
+
     query = """
-        SELECT b.*, bk.title, bk.author, bk.isbn, bk.cover_image_url
-        FROM borrowings b
-        JOIN books bk ON b.book_id = bk.book_id
-        JOIN patrons p ON b.patron_id = p.patron_id
-        WHERE p.user_id = %s AND b.status = %s
-        ORDER BY b.checkout_date DESC
+        SELECT br.*,
+               b.title, b.subtitle, b.isbn, b.cover_image_url,
+               i.barcode, i.call_number,
+               (SELECT json_agg(
+                   json_build_object('name', c.name, 'role', bc.role)
+                   ORDER BY bc.role, bc.sequence_number
+               )
+                FROM book_contributors bc
+                JOIN contributors c ON bc.contributor_id = c.contributor_id
+                WHERE bc.book_id = b.book_id
+               ) as contributors
+        FROM borrowings br
+        JOIN items i ON br.item_id = i.item_id
+        JOIN books b ON i.book_id = b.book_id
+        JOIN patrons p ON br.patron_id = p.patron_id
+        WHERE p.user_id = %s AND br.status = %s
+        ORDER BY br.checkout_date DESC
     """
     borrowings = execute_query(query, (user_id, status), fetch_all=True)
-    
+
     return jsonify([dict(b) for b in (borrowings or [])]), 200
 
 @patron_bp.route('/recommendations', methods=['GET'])
@@ -169,16 +215,16 @@ def get_my_borrowings():
 def get_recommendations():
     """Get personalized book recommendations"""
     user_id = int(get_jwt_identity())
-    
+
     # Get patron_id
     patron_query = "SELECT patron_id FROM patrons WHERE user_id = %s"
     patron = execute_query(patron_query, (user_id,), fetch_one=True)
-    
+
     if not patron:
         return jsonify({"error": "Patron not found"}), 404
-    
+
     recommendations = get_recommendations_for_patron(patron['patron_id'], limit=10)
-    
+
     return jsonify([dict(r) for r in recommendations]), 200
 
 @patron_bp.route('/cowork-booking', methods=['POST'])
@@ -187,25 +233,25 @@ def request_cowork_booking():
     """Request a cowork space booking"""
     user_id = int(get_jwt_identity())
     data = request.get_json()
-    
+
     required_fields = ['booking_date', 'time_slot', 'booking_type']
     if not all(field in data for field in required_fields):
         return jsonify({"error": "Missing required fields"}), 400
-    
+
     # Get patron_id
     patron_query = "SELECT patron_id FROM patrons WHERE user_id = %s"
     patron = execute_query(patron_query, (user_id,), fetch_one=True)
-    
+
     if not patron:
         return jsonify({"error": "Patron not found"}), 404
-    
+
     query = """
-        INSERT INTO cowork_bookings 
+        INSERT INTO cowork_bookings
         (patron_id, booking_date, time_slot, booking_type, request_message, status)
         VALUES (%s, %s, %s, %s, %s, 'pending')
         RETURNING booking_id
     """
-    
+
     with get_db_cursor() as cursor:
         cursor.execute(query, (
             patron['patron_id'],
@@ -214,11 +260,9 @@ def request_cowork_booking():
             data['booking_type'],
             data.get('request_message', '')
         ))
-        
+
         booking_id = cursor.fetchone()['booking_id']
-        
-        # TODO: Send email notification to admin
-        
+
         return jsonify({
             "message": "Cowork booking request submitted",
             "booking_id": booking_id
@@ -229,7 +273,7 @@ def request_cowork_booking():
 def get_my_cowork_bookings():
     """Get current patron's cowork bookings"""
     user_id = int(get_jwt_identity())
-    
+
     query = """
         SELECT cb.*
         FROM cowork_bookings cb
@@ -238,5 +282,5 @@ def get_my_cowork_bookings():
         ORDER BY cb.booking_date DESC
     """
     bookings = execute_query(query, (user_id,), fetch_all=True)
-    
+
     return jsonify([dict(b) for b in (bookings or [])]), 200
