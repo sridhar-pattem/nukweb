@@ -92,7 +92,7 @@ def generate_cowork_invoice_pdf(invoice_data, line_items, member_data, output_pa
 
         # Library Contact Details
         library_info = Paragraph("""
-            Bangalore, India<br/>
+            1st Floor, PGK Chambers, Kasavanahalli, Bengaluru 560035<br/>
             Email: host@mynuk.com | Phone: +91 72595 28336
         """, header_style)
         elements.append(library_info)
