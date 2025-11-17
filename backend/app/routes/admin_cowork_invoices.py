@@ -247,21 +247,21 @@ def get_cowork_invoices():
             invoices = []
             for row in rows:
                 invoice = {
-                    'invoice_id': row[0],
-                    'invoice_number': row[1],
-                    'amount': float(row[2]),
-                    'payment_mode': row[3],
-                    'payment_status': row[4],
-                    'issue_date': str(row[5]) if row[5] else None,
-                    'due_date': str(row[6]) if row[6] else None,
-                    'payment_date': str(row[7]) if row[7] else None,
-                    'member_name': row[8],
-                    'member_email': row[9],
-                    'member_phone': row[10],
-                    'member_address': row[11],
-                    'notes': row[12],
-                    'pdf_url': row[13],
-                    'created_at': str(row[14]) if row[14] else None
+                    'invoice_id': row['invoice_id'],
+                    'invoice_number': row['invoice_number'],
+                    'amount': float(row['amount']) if row['amount'] is not None else 0.0,
+                    'payment_mode': row['payment_mode'],
+                    'payment_status': row['payment_status'],
+                    'issue_date': str(row['issue_date']) if row['issue_date'] else None,
+                    'due_date': str(row['due_date']) if row['due_date'] else None,
+                    'payment_date': str(row['payment_date']) if row['payment_date'] else None,
+                    'member_name': row['custom_member_name'],
+                    'member_email': row['custom_member_email'],
+                    'member_phone': row['custom_member_phone'],
+                    'member_address': row['custom_member_address'],
+                    'notes': row['notes'],
+                    'pdf_url': row['pdf_url'],
+                    'created_at': str(row['created_at']) if row['created_at'] else None
                 }
                 invoices.append(invoice)
 
@@ -305,21 +305,21 @@ def get_cowork_invoice(invoice_id):
                 return jsonify({'error': 'Invoice not found'}), 404
 
             invoice = {
-                'invoice_id': row[0],
-                'invoice_number': row[1],
-                'amount': float(row[2]),
-                'payment_mode': row[3],
-                'payment_status': row[4],
-                'issue_date': str(row[5]) if row[5] else None,
-                'due_date': str(row[6]) if row[6] else None,
-                'payment_date': str(row[7]) if row[7] else None,
-                'member_name': row[8],
-                'member_email': row[9],
-                'member_phone': row[10],
-                'member_address': row[11],
-                'notes': row[12],
-                'pdf_url': row[13],
-                'created_at': str(row[14]) if row[14] else None
+                'invoice_id': row['invoice_id'],
+                'invoice_number': row['invoice_number'],
+                'amount': float(row['amount']) if row['amount'] is not None else 0.0,
+                'payment_mode': row['payment_mode'],
+                'payment_status': row['payment_status'],
+                'issue_date': str(row['issue_date']) if row['issue_date'] else None,
+                'due_date': str(row['due_date']) if row['due_date'] else None,
+                'payment_date': str(row['payment_date']) if row['payment_date'] else None,
+                'member_name': row['custom_member_name'],
+                'member_email': row['custom_member_email'],
+                'member_phone': row['custom_member_phone'],
+                'member_address': row['custom_member_address'],
+                'notes': row['notes'],
+                'pdf_url': row['pdf_url'],
+                'created_at': str(row['created_at']) if row['created_at'] else None
             }
 
             # Get line items
@@ -335,12 +335,12 @@ def get_cowork_invoice(invoice_id):
             line_items = []
             for item_row in cur.fetchall():
                 line_items.append({
-                    'line_item_id': item_row[0],
-                    'description': item_row[1],
-                    'quantity': float(item_row[2]),
-                    'unit_price': float(item_row[3]),
-                    'amount': float(item_row[4]),
-                    'item_order': item_row[5]
+                    'line_item_id': item_row['line_item_id'],
+                    'description': item_row['description'],
+                    'quantity': float(item_row['quantity']),
+                    'unit_price': float(item_row['unit_price']),
+                    'amount': float(item_row['amount']),
+                    'item_order': item_row['item_order']
                 })
 
             invoice['line_items'] = line_items
@@ -376,22 +376,22 @@ def download_invoice_pdf(invoice_id):
                 return jsonify({'error': 'Invoice not found'}), 404
 
             invoice_data = {
-                'invoice_number': row[0],
+                'invoice_number': row['invoice_number'],
                 'invoice_type': 'cowork',
-                'issue_date': str(row[4]) if row[4] else None,
-                'due_date': str(row[5]) if row[5] else None,
-                'payment_status': row[3],
-                'payment_date': str(row[6]) if row[6] else None,
-                'payment_mode': row[2],
-                'notes': row[11],
-                'document_type': 'receipt' if row[3] == 'paid' else 'invoice'
+                'issue_date': str(row['issue_date']) if row['issue_date'] else None,
+                'due_date': str(row['due_date']) if row['due_date'] else None,
+                'payment_status': row['payment_status'],
+                'payment_date': str(row['payment_date']) if row['payment_date'] else None,
+                'payment_mode': row['payment_mode'],
+                'notes': row['notes'],
+                'document_type': 'receipt' if row['payment_status'] == 'paid' else 'invoice'
             }
 
             member_data = {
-                'name': row[7],
-                'email': row[8],
-                'phone': row[9] or '',
-                'address': row[10] or ''
+                'name': row['custom_member_name'],
+                'email': row['custom_member_email'],
+                'phone': row['custom_member_phone'] or '',
+                'address': row['custom_member_address'] or ''
             }
 
             # Get line items
@@ -405,10 +405,10 @@ def download_invoice_pdf(invoice_id):
             line_items = []
             for item_row in cur.fetchall():
                 line_items.append({
-                    'description': item_row[0],
-                    'quantity': float(item_row[1]),
-                    'unit_price': float(item_row[2]),
-                    'amount': float(item_row[3])
+                    'description': item_row['description'],
+                    'quantity': float(item_row['quantity']),
+                    'unit_price': float(item_row['unit_price']),
+                    'amount': float(item_row['amount'])
                 })
 
         # Generate PDF
@@ -514,7 +514,7 @@ def delete_cowork_invoice(invoice_id):
                 if not row:
                     return jsonify({'error': 'Invoice not found'}), 404
 
-                invoice_number = row[0]
+                invoice_number = row['invoice_number']
 
                 # Delete invoice (cascade will delete line items)
                 cur.execute("DELETE FROM invoices WHERE invoice_id = %s", (invoice_id,))
