@@ -177,14 +177,19 @@ def generate_cowork_invoice_pdf(invoice_data, line_items, member_data, output_pa
 
         total_amount = 0
         for idx, item in enumerate(line_items, start=1):
+            # Convert to float if string
+            quantity = float(item.get('quantity', 1))
+            unit_price = float(item['unit_price'])
+            amount = float(item['amount'])
+
             items_data.append([
                 str(idx),
                 item['description'],
-                str(item.get('quantity', 1)),
-                f"₹{item['unit_price']:.2f}",
-                f"₹{item['amount']:.2f}"
+                str(quantity),
+                f"₹{unit_price:.2f}",
+                f"₹{amount:.2f}"
             ])
-            total_amount += item['amount']
+            total_amount += amount
 
         items_table = Table(items_data, colWidths=[0.4*inch, 3.2*inch, 0.6*inch, 1.0*inch, 1.2*inch])
         items_table.setStyle(TableStyle([
