@@ -109,6 +109,9 @@ def create_cowork_invoice():
 
                 conn.commit()
 
+        # Initialize pdf_url
+        pdf_url = f"/api/admin/cowork-invoices/{invoice_id}/pdf"
+
         # Generate PDF
         try:
             # Create uploads directory if it doesn't exist
@@ -151,7 +154,6 @@ def create_cowork_invoice():
             generate_cowork_invoice_pdf(invoice_data, data['line_items'], member_data, pdf_path, logo_path)
 
             # Update PDF URL in database
-            pdf_url = f"/api/admin/cowork-invoices/{invoice_id}/pdf"
             with get_db_connection() as conn:
                 with conn.cursor() as cur:
                     cur.execute(
@@ -162,6 +164,8 @@ def create_cowork_invoice():
 
         except Exception as pdf_error:
             print(f"Error generating PDF: {pdf_error}")
+            import traceback
+            traceback.print_exc()
             # Continue anyway, PDF can be regenerated later
 
         return jsonify({
