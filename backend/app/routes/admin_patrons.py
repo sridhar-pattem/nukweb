@@ -23,11 +23,11 @@ def get_patrons():
     
     if search:
         where_clauses.append("""
-            (u.name ILIKE %s OR u.email ILIKE %s OR 
-             CAST(p.patron_id AS TEXT) LIKE %s OR p.mobile_number LIKE %s)
+            (p.first_name ILIKE %s OR p.last_name ILIKE %s OR u.email ILIKE %s OR
+             CAST(p.patron_id AS TEXT) LIKE %s OR p.phone LIKE %s)
         """)
         search_param = f'%{search}%'
-        params.extend([search_param, search_param, search_param, search_param])
+        params.extend([search_param, search_param, search_param, search_param, search_param])
     
     if status:
         where_clauses.append("u.status = %s")
@@ -47,10 +47,10 @@ def get_patrons():
     
     # Get patrons
     query = f"""
-        SELECT p.patron_id, p.membership_type, p.membership_start_date, 
-               p.membership_expiry_date, p.address, p.mobile_number,
-               u.user_id, u.email, u.name, u.phone, u.status,
-               mp.plan_name, mp.plan_type
+        SELECT p.patron_id, p.first_name, p.last_name, p.membership_start_date,
+               p.membership_end_date, p.address, p.phone, p.city, p.state,
+               u.user_id, u.email, u.status,
+               mp.plan_name, mp.duration_months, mp.price, p.membership_plan_id
         FROM patrons p
         JOIN users u ON p.user_id = u.user_id
         LEFT JOIN membership_plans mp ON p.membership_plan_id = mp.plan_id
@@ -76,8 +76,8 @@ def get_patrons():
 def get_patron_details(patron_id):
     """Get detailed information about a patron"""
     query = """
-        SELECT p.*, u.email, u.name, u.phone, u.status,
-               mp.plan_name, mp.plan_type, mp.price, mp.borrowing_limit
+        SELECT p.*, u.email, u.status,
+               mp.plan_name, mp.duration_months, mp.price, mp.borrowing_limit
         FROM patrons p
         JOIN users u ON p.user_id = u.user_id
         LEFT JOIN membership_plans mp ON p.membership_plan_id = mp.plan_id
@@ -113,21 +113,11 @@ def create_patron():
     """Create a new patron"""
     data = request.get_json()
 
-    required_fields = ['email', 'name', 'membership_plan_id', 'patron_id']
+    required_fields = ['email', 'first_name', 'last_name', 'membership_plan_id']
     if not all(field in data for field in required_fields):
-        return jsonify({"error": "Missing required fields"}), 400
-
-    # Validate patron_id format
-    import re
-    if not re.match(r'^[A-Z0-9]+$', data['patron_id']):
-        return jsonify({"error": "Patron ID must be alphanumeric (uppercase letters and numbers only)"}), 400
+        return jsonify({"error": "Missing required fields: email, first_name, last_name, membership_plan_id"}), 400
 
     with get_db_cursor() as cursor:
-        # Check if patron_id already exists
-        cursor.execute("SELECT patron_id FROM patrons WHERE patron_id = %s", (data['patron_id'],))
-        if cursor.fetchone():
-            return jsonify({"error": "Patron ID already exists"}), 400
-
         # Check if email already exists
         cursor.execute("SELECT user_id FROM users WHERE email = %s", (data['email'],))
         if cursor.fetchone():
@@ -138,16 +128,16 @@ def create_patron():
         password_hash = hash_password(default_password)
 
         cursor.execute("""
-            INSERT INTO users (email, password_hash, role, name, phone, status)
-            VALUES (%s, %s, 'patron', %s, %s, 'active')
+            INSERT INTO users (email, password_hash, role, status)
+            VALUES (%s, %s, 'patron', 'active')
             RETURNING user_id
-        """, (data['email'], password_hash, data['name'], data.get('phone')))
+        """, (data['email'], password_hash))
 
         user_id = cursor.fetchone()['user_id']
 
         # Get membership plan details
         cursor.execute("""
-            SELECT duration_days, plan_name
+            SELECT duration_months, plan_name
             FROM membership_plans
             WHERE plan_id = %s
         """, (data['membership_plan_id'],))
@@ -156,18 +146,31 @@ def create_patron():
         if not plan:
             return jsonify({"error": "Invalid membership plan"}), 400
 
+        # Calculate membership end date
+        from datetime import date
+        from dateutil.relativedelta import relativedelta
+        start_date = date.today()
+        end_date = start_date + relativedelta(months=plan['duration_months'])
+
         # Create patron record
         cursor.execute("""
             INSERT INTO patrons
-            (patron_id, user_id, membership_plan_id, membership_type, membership_start_date,
-             membership_expiry_date, address, mobile_number)
-            VALUES (%s, %s, %s, %s, CURRENT_DATE, CURRENT_DATE + INTERVAL '%s days', %s, %s)
-        """, (data['patron_id'], user_id, data['membership_plan_id'], plan['plan_name'],
-              plan['duration_days'], data.get('address'), data.get('mobile_number')))
+            (user_id, membership_plan_id, first_name, last_name, date_of_birth,
+             phone, address, city, state, postal_code, country,
+             membership_start_date, membership_end_date)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING patron_id
+        """, (user_id, data['membership_plan_id'],
+              data.get('first_name'), data.get('last_name'), data.get('date_of_birth'),
+              data.get('phone'), data.get('address'), data.get('city'),
+              data.get('state'), data.get('postal_code'), data.get('country'),
+              start_date, end_date))
+
+        patron_id = cursor.fetchone()['patron_id']
 
         return jsonify({
             "message": "Patron created successfully",
-            "patron_id": data['patron_id'],
+            "patron_id": patron_id,
             "default_password": default_password
         }), 201
 
@@ -304,8 +307,9 @@ def update_patron_status(patron_id):
 def get_membership_plans():
     """Get all available membership plans"""
     query = """
-        SELECT plan_id, plan_name, plan_type, duration_days, price, description, borrowing_limit
+        SELECT plan_id, plan_name, duration_months, price, description, borrowing_limit, is_active
         FROM membership_plans
+        WHERE is_active = TRUE
         ORDER BY price ASC
     """
     plans = execute_query(query, fetch_all=True)
@@ -319,9 +323,9 @@ def create_membership_plan():
     """Create a new membership plan"""
     data = request.get_json()
 
-    required_fields = ['plan_name', 'plan_type', 'duration_days', 'price']
+    required_fields = ['plan_name', 'duration_months', 'price']
     if not all(field in data for field in required_fields):
-        return jsonify({"error": "Missing required fields"}), 400
+        return jsonify({"error": "Missing required fields: plan_name, duration_months, price"}), 400
 
     with get_db_cursor() as cursor:
         # Check if plan name already exists
@@ -330,11 +334,11 @@ def create_membership_plan():
             return jsonify({"error": "Plan name already exists"}), 400
 
         cursor.execute("""
-            INSERT INTO membership_plans (plan_name, plan_type, duration_days, price, description, borrowing_limit)
+            INSERT INTO membership_plans (plan_name, duration_months, price, description, borrowing_limit, is_active)
             VALUES (%s, %s, %s, %s, %s, %s)
             RETURNING plan_id
-        """, (data['plan_name'], data['plan_type'], data['duration_days'],
-              data['price'], data.get('description'), data.get('borrowing_limit', 3)))
+        """, (data['plan_name'], data['duration_months'], data['price'],
+              data.get('description'), data.get('borrowing_limit', 3), data.get('is_active', True)))
 
         plan_id = cursor.fetchone()['plan_id']
 
@@ -362,12 +366,9 @@ def update_membership_plan(plan_id):
         if 'plan_name' in data:
             update_fields.append("plan_name = %s")
             params.append(data['plan_name'])
-        if 'plan_type' in data:
-            update_fields.append("plan_type = %s")
-            params.append(data['plan_type'])
-        if 'duration_days' in data:
-            update_fields.append("duration_days = %s")
-            params.append(data['duration_days'])
+        if 'duration_months' in data:
+            update_fields.append("duration_months = %s")
+            params.append(data['duration_months'])
         if 'price' in data:
             update_fields.append("price = %s")
             params.append(data['price'])
@@ -377,6 +378,9 @@ def update_membership_plan(plan_id):
         if 'borrowing_limit' in data:
             update_fields.append("borrowing_limit = %s")
             params.append(data['borrowing_limit'])
+        if 'is_active' in data:
+            update_fields.append("is_active = %s")
+            params.append(data['is_active'])
 
         if not update_fields:
             return jsonify({"error": "No fields to update"}), 400
@@ -395,19 +399,29 @@ def update_membership_plan(plan_id):
 @jwt_required()
 @admin_required
 def delete_membership_plan(plan_id):
-    """Delete a membership plan"""
+    """Soft delete a membership plan (set is_active to false)"""
     with get_db_cursor() as cursor:
-        # Check if plan is being used by any patrons
-        cursor.execute("SELECT COUNT(*) as count FROM patrons WHERE membership_plan_id = %s", (plan_id,))
+        # Check if plan is being used by any active patrons
+        cursor.execute("""
+            SELECT COUNT(*) as count FROM patrons p
+            JOIN users u ON p.user_id = u.user_id
+            WHERE p.membership_plan_id = %s AND u.status = 'active'
+        """, (plan_id,))
         result = cursor.fetchone()
 
         if result and result['count'] > 0:
-            return jsonify({"error": "Cannot delete plan - it is being used by patrons"}), 400
+            return jsonify({"error": "Cannot delete plan - it is being used by active patrons"}), 400
 
-        cursor.execute("DELETE FROM membership_plans WHERE plan_id = %s RETURNING plan_id", (plan_id,))
+        # Soft delete - set is_active to false
+        cursor.execute("""
+            UPDATE membership_plans
+            SET is_active = FALSE
+            WHERE plan_id = %s
+            RETURNING plan_id
+        """, (plan_id,))
         deleted = cursor.fetchone()
 
         if not deleted:
             return jsonify({"error": "Membership plan not found"}), 404
 
-        return jsonify({"message": "Membership plan deleted successfully"}), 200
+        return jsonify({"message": "Membership plan deactivated successfully"}), 200
