@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuk Library - Modern UI Preview</title>
+    <style>
+        /* Import Inter font */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #FAFAFA;
+            color: #111827;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .preview-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .preview-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .preview-header h1 {
+            font-size: 48px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .preview-header p {
+            font-size: 18px;
+            color: #6B7280;
+        }
+
+        .section {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            margin-bottom: 40px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #F3F4F6;
+        }
+
+        /* Top Navigation */
+        .top-nav {
+            background: white;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .nav-brand {
+            font-size: 20px;
+            font-weight: 700;
+            color: #6366F1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+        }
+
+        .nav-link {
+            color: #6B7280;
+            text-decoration: none;
+            font-weight: 500;
+            position: relative;
+            transition: color 0.2s;
+        }
+
+        .nav-link:hover {
+            color: #6366F1;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #6366F1;
+            transition: width 0.2s;
+        }
+
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .kpi-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #6366F1;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #6366F1, #8B5CF6);
+            opacity: 0.05;
+            border-radius: 50%;
+            transform: translate(30%, -30%);
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .kpi-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .kpi-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 4px;
+        }
+
+        .kpi-label {
+            font-size: 14px;
+            color: #6B7280;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .kpi-meta {
+            font-size: 12px;
+            color: #9CA3AF;
+        }
+
+        .kpi-trend {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            font-size: 12px;
+            color: #10B981;
+            font-weight: 600;
+        }
+
+        /* Buttons */
+        .buttons-demo {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6366F1, #8B5CF6);
+            color: white;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #6B7280;
+            border: 2px solid #E5E7EB;
+        }
+
+        .btn-secondary:hover {
+            border-color: #6366F1;
+            color: #6366F1;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: #6366F1;
+        }
+
+        .btn-ghost:hover {
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        /* Input Fields */
+        .input-group {
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #E5E7EB;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #6366F1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .input-label {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9CA3AF;
+            font-size: 16px;
+            pointer-events: none;
+            transition: all 0.2s;
+        }
+
+        .input-field:focus + .input-label,
+        .input-field:not(:placeholder-shown) + .input-label {
+            top: -10px;
+            font-size: 12px;
+            background: white;
+            padding: 0 4px;
+            color: #6366F1;
+        }
+
+        /* Book Cards */
+        .book-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 24px;
+        }
+
+        .book-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .book-card:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .book-cover {
+            width: 100%;
+            height: 280px;
+            background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 48px;
+        }
+
+        .book-info {
+            padding: 16px;
+        }
+
+        .book-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 4px;
+        }
+
+        .book-author {
+            font-size: 14px;
+            color: #6B7280;
+            margin-bottom: 8px;
+        }
+
+        .book-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+        }
+
+        .book-genre {
+            font-size: 12px;
+            color: #9CA3AF;
+        }
+
+        .book-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            color: #10B981;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #10B981;
+            border-radius: 50%;
+        }
+
+        /* Search Bar */
+        .search-container {
+            position: relative;
+            margin-bottom: 24px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 14px 16px 14px 48px;
+            border: 2px solid #E5E7EB;
+            border-radius: 12px;
+            font-size: 16px;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #6366F1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9CA3AF;
+            font-size: 20px;
+        }
+
+        /* Table */
+        .modern-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .modern-table thead tr {
+            border-bottom: 2px solid #F3F4F6;
+        }
+
+        .modern-table th {
+            text-align: left;
+            padding: 16px;
+            font-weight: 600;
+            font-size: 14px;
+            color: #6B7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .modern-table td {
+            padding: 16px;
+            border-bottom: 1px solid #F3F4F6;
+        }
+
+        .modern-table tbody tr {
+            transition: background 0.2s;
+        }
+
+        .modern-table tbody tr:hover {
+            background: #F9FAFB;
+        }
+
+        /* Status Badge */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-badge.success {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+
+        .status-badge.warning {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+
+        .status-badge.danger {
+            background: #FEE2E2;
+            color: #991B1B;
+        }
+
+        /* Color Palette Display */
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+        }
+
+        .color-swatch {
+            text-align: center;
+        }
+
+        .color-box {
+            height: 100px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .color-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .color-value {
+            font-size: 12px;
+            color: #6B7280;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-container">
+        <div class="preview-header">
+            <h1>Nuk Library Modern UI</h1>
+            <p>A preview of the redesigned interface with contemporary design elements</p>
+        </div>
+
+        <!-- Top Navigation -->
+        <div class="section">
+            <div class="section-title">Top Navigation Bar</div>
+            <div class="top-nav">
+                <div class="nav-brand">📚 Nuk Library</div>
+                <nav class="nav-links">
+                    <a href="#" class="nav-link">Dashboard</a>
+                    <a href="#" class="nav-link">Library</a>
+                    <a href="#" class="nav-link">Patrons</a>
+                    <a href="#" class="nav-link">Cowork</a>
+                </nav>
+                <div class="nav-right">
+                    <span>🔔</span>
+                    <span>👤 Admin</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Color Palette -->
+        <div class="section">
+            <div class="section-title">Modern Color Palette</div>
+            <div class="color-grid">
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #6366F1;"></div>
+                    <div class="color-label">Primary</div>
+                    <div class="color-value">#6366F1</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #8B5CF6;"></div>
+                    <div class="color-label">Secondary</div>
+                    <div class="color-value">#8B5CF6</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #10B981;"></div>
+                    <div class="color-label">Success</div>
+                    <div class="color-value">#10B981</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #F59E0B;"></div>
+                    <div class="color-label">Warning</div>
+                    <div class="color-value">#F59E0B</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #EF4444;"></div>
+                    <div class="color-label">Danger</div>
+                    <div class="color-value">#EF4444</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);"></div>
+                    <div class="color-label">Gradient</div>
+                    <div class="color-value">Indigo-Purple</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="section">
+            <div class="section-title">Dashboard KPI Cards</div>
+            <div class="kpi-grid">
+                <div class="kpi-card" style="border-left-color: #6366F1;">
+                    <span class="kpi-trend">↗ +12%</span>
+                    <div class="kpi-icon">📚</div>
+                    <div class="kpi-value">1,247</div>
+                    <div class="kpi-label">Total Books</div>
+                    <div class="kpi-meta">3,891 copies in catalog</div>
+                </div>
+                <div class="kpi-card" style="border-left-color: #10B981;">
+                    <span class="kpi-trend">↗ +8%</span>
+                    <div class="kpi-icon">👥</div>
+                    <div class="kpi-value">342</div>
+                    <div class="kpi-label">Active Patrons</div>
+                    <div class="kpi-meta">456 total members</div>
+                </div>
+                <div class="kpi-card" style="border-left-color: #3B82F6;">
+                    <span class="kpi-trend">→ 0%</span>
+                    <div class="kpi-icon">📖</div>
+                    <div class="kpi-value">89</div>
+                    <div class="kpi-label">Active Checkouts</div>
+                    <div class="kpi-meta">234 total returns</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="section">
+            <div class="section-title">Button Styles</div>
+            <div class="buttons-demo">
+                <button class="btn btn-primary">Primary Action</button>
+                <button class="btn btn-secondary">Secondary Action</button>
+                <button class="btn btn-ghost">Ghost Button</button>
+            </div>
+        </div>
+
+        <!-- Search -->
+        <div class="section">
+            <div class="section-title">Search Bar</div>
+            <div class="search-container">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="search-input" placeholder="Search books by title, author, or ISBN...">
+            </div>
+        </div>
+
+        <!-- Input Fields -->
+        <div class="section">
+            <div class="section-title">Form Inputs (Floating Labels)</div>
+            <div style="max-width: 500px;">
+                <div class="input-group">
+                    <input type="text" class="input-field" placeholder=" " id="book-title">
+                    <label class="input-label" for="book-title">Book Title</label>
+                </div>
+                <div class="input-group">
+                    <input type="text" class="input-field" placeholder=" " id="author">
+                    <label class="input-label" for="author">Author Name</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Book Cards -->
+        <div class="section">
+            <div class="section-title">Book Cards</div>
+            <div class="book-grid">
+                <div class="book-card">
+                    <div class="book-cover">📚</div>
+                    <div class="book-info">
+                        <div class="book-title">The Great Gatsby</div>
+                        <div class="book-author">F. Scott Fitzgerald</div>
+                        <div class="book-meta">
+                            <div class="book-genre">Classic Fiction</div>
+                            <div class="book-status">
+                                <span class="status-dot"></span>
+                                Available
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="book-card">
+                    <div class="book-cover" style="background: linear-gradient(135deg, #F093FB 0%, #F5576C 100%);">📖</div>
+                    <div class="book-info">
+                        <div class="book-title">To Kill a Mockingbird</div>
+                        <div class="book-author">Harper Lee</div>
+                        <div class="book-meta">
+                            <div class="book-genre">Literary Fiction</div>
+                            <div class="book-status" style="color: #F59E0B;">
+                                <span class="status-dot" style="background: #F59E0B;"></span>
+                                Borrowed
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="book-card">
+                    <div class="book-cover" style="background: linear-gradient(135deg, #A8EDEA 0%, #FED6E3 100%);">📕</div>
+                    <div class="book-info">
+                        <div class="book-title">1984</div>
+                        <div class="book-author">George Orwell</div>
+                        <div class="book-meta">
+                            <div class="book-genre">Dystopian</div>
+                            <div class="book-status">
+                                <span class="status-dot"></span>
+                                Available
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="section">
+            <div class="section-title">Modern Table Design</div>
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th>Book Title</th>
+                        <th>Author</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>The Great Gatsby</td>
+                        <td>F. Scott Fitzgerald</td>
+                        <td><span class="status-badge success">Available</span></td>
+                        <td><a href="#" style="color: #6366F1; text-decoration: none; font-weight: 600;">View</a></td>
+                    </tr>
+                    <tr>
+                        <td>To Kill a Mockingbird</td>
+                        <td>Harper Lee</td>
+                        <td><span class="status-badge warning">Borrowed</span></td>
+                        <td><a href="#" style="color: #6366F1; text-decoration: none; font-weight: 600;">View</a></td>
+                    </tr>
+                    <tr>
+                        <td>1984</td>
+                        <td>George Orwell</td>
+                        <td><span class="status-badge danger">Overdue</span></td>
+                        <td><a href="#" style="color: #6366F1; text-decoration: none; font-weight: 600;">View</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</body>
+</html>
