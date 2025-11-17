@@ -166,23 +166,24 @@ def search_borrowings():
             SELECT br.*,
                    b.title, b.isbn, b.cover_image_url,
                    i.barcode, i.call_number,
-                   p.patron_id, u.name as patron_name, u.email
+                   p.patron_id, p.first_name, p.last_name, u.email
             FROM borrowings br
             JOIN items i ON br.item_id = i.item_id
             JOIN books b ON i.book_id = b.book_id
             JOIN patrons p ON br.patron_id = p.patron_id
             JOIN users u ON p.user_id = u.user_id
             WHERE (CAST(p.patron_id AS TEXT) LIKE %s
-                   OR u.name ILIKE %s
+                   OR p.first_name ILIKE %s
+                   OR p.last_name ILIKE %s
                    OR u.email ILIKE %s
-                   OR p.mobile_number LIKE %s)
+                   OR p.phone LIKE %s)
               AND br.status = %s
             ORDER BY br.checkout_date DESC
         """
         search_param = f'%{search_value}%'
         borrowings = execute_query(
             query,
-            (search_param, search_param, search_param, search_param, status),
+            (search_param, search_param, search_param, search_param, search_param, status),
             fetch_all=True
         )
     else:  # book
@@ -190,7 +191,7 @@ def search_borrowings():
             SELECT br.*,
                    b.title, b.isbn, b.cover_image_url,
                    i.barcode, i.call_number,
-                   p.patron_id, u.name as patron_name, u.email
+                   p.patron_id, p.first_name, p.last_name, u.email
             FROM borrowings br
             JOIN items i ON br.item_id = i.item_id
             JOIN books b ON i.book_id = b.book_id
@@ -218,7 +219,7 @@ def get_overdue_borrowings():
         SELECT br.*,
                b.title, b.isbn,
                i.barcode, i.call_number,
-               p.patron_id, u.name as patron_name, u.email, p.mobile_number
+               p.patron_id, p.first_name, p.last_name, u.email, p.phone
         FROM borrowings br
         JOIN items i ON br.item_id = i.item_id
         JOIN books b ON i.book_id = b.book_id
@@ -241,19 +242,19 @@ def search_patrons():
         return jsonify([]), 200
 
     query = """
-        SELECT p.patron_id, u.name, u.email, u.status,
+        SELECT p.patron_id, p.first_name, p.last_name, u.email, u.status,
                mp.plan_name,
                (SELECT COUNT(*) FROM borrowings br
                 WHERE br.patron_id = p.patron_id AND br.status = 'active') as active_borrowings
         FROM patrons p
         JOIN users u ON p.user_id = u.user_id
         LEFT JOIN membership_plans mp ON p.membership_plan_id = mp.plan_id
-        WHERE u.name ILIKE %s AND u.status = 'active'
-        ORDER BY u.name
+        WHERE (p.first_name ILIKE %s OR p.last_name ILIKE %s OR u.email ILIKE %s) AND u.status = 'active'
+        ORDER BY p.first_name, p.last_name
         LIMIT 10
     """
     search_param = f'%{search}%'
-    patrons = execute_query(query, (search_param,), fetch_all=True)
+    patrons = execute_query(query, (search_param, search_param, search_param), fetch_all=True)
 
     return jsonify([dict(p) for p in (patrons or [])]), 200
 
@@ -305,7 +306,7 @@ def get_all_borrowings():
         SELECT br.*,
                b.title, b.isbn,
                i.barcode, i.call_number,
-               p.patron_id, u.name as patron_name, u.email
+               p.patron_id, p.first_name, p.last_name, u.email
         FROM borrowings br
         JOIN items i ON br.item_id = i.item_id
         JOIN books b ON i.book_id = b.book_id
@@ -317,7 +318,8 @@ def get_all_borrowings():
     params = []
 
     if patron_filter:
-        query += " AND u.name ILIKE %s"
+        query += " AND (p.first_name ILIKE %s OR p.last_name ILIKE %s)"
+        params.append(f'%{patron_filter}%')
         params.append(f'%{patron_filter}%')
 
     if book_filter:
@@ -346,7 +348,7 @@ def get_borrowing_history():
             SELECT br.*,
                    b.title, b.isbn, b.cover_image_url,
                    i.barcode, i.call_number,
-                   u.name as patron_name, u.email
+                   p.first_name, p.last_name, u.email
             FROM borrowings br
             JOIN items i ON br.item_id = i.item_id
             JOIN books b ON i.book_id = b.book_id
@@ -360,7 +362,7 @@ def get_borrowing_history():
     elif item_id:
         query = """
             SELECT br.*,
-                   p.patron_id, u.name as patron_name, u.email,
+                   p.patron_id, p.first_name, p.last_name, u.email,
                    b.title, b.isbn,
                    i.barcode
             FROM borrowings br
@@ -376,7 +378,7 @@ def get_borrowing_history():
     else:  # book_id
         query = """
             SELECT br.*,
-                   p.patron_id, u.name as patron_name, u.email,
+                   p.patron_id, p.first_name, p.last_name, u.email,
                    b.title, b.isbn,
                    i.barcode, i.call_number
             FROM borrowings br
