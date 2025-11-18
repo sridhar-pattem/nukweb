@@ -90,13 +90,22 @@ def get_patron_details(patron_id):
     
     # Get borrowing history
     borrowing_query = """
-        SELECT b.borrowing_id, b.checkout_date, b.due_date, b.return_date, 
-               b.renewal_count, b.status,
-               bk.title, bk.author, bk.isbn
-        FROM borrowings b
-        JOIN books bk ON b.book_id = bk.book_id
-        WHERE b.patron_id = %s
-        ORDER BY b.checkout_date DESC
+        SELECT br.borrowing_id, br.checkout_date, br.due_date, br.return_date,
+               br.renewal_count, br.status,
+               bk.title, bk.isbn, i.barcode,
+               COALESCE((SELECT json_agg(
+                   json_build_object('name', c.name, 'role', bc.role)
+                   ORDER BY bc.role, bc.sequence_number
+               )
+                FROM book_contributors bc
+                JOIN contributors c ON bc.contributor_id = c.contributor_id
+                WHERE bc.book_id = bk.book_id
+               ), '[]'::json) as contributors
+        FROM borrowings br
+        JOIN items i ON br.item_id = i.item_id
+        JOIN books bk ON i.book_id = bk.book_id
+        WHERE br.patron_id = %s
+        ORDER BY br.checkout_date DESC
         LIMIT 10
     """
     borrowings = execute_query(borrowing_query, (patron_id,), fetch_all=True)
