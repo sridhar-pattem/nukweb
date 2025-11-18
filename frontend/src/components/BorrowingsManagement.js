@@ -76,15 +76,30 @@ function BorrowingsManagement() {
     const searchItems = async () => {
       if (itemSearch.length < 2) {
         setItemResults([]);
+        setShowItemDropdown(false);
         return;
       }
 
       try {
         const response = await adminBorrowingsAPI.searchItems(itemSearch);
-        setItemResults(response.data);
-        setShowItemDropdown(true);
+        console.log('Item search response:', response);
+        console.log('Item search data:', response.data);
+        console.log('Item search data type:', Array.isArray(response.data));
+        console.log('Item results count:', response.data ? response.data.length : 0);
+
+        if (response.data && Array.isArray(response.data)) {
+          setItemResults(response.data);
+          setShowItemDropdown(true);
+          console.log('Item dropdown should show now, results:', response.data.length);
+        } else {
+          console.error('Response data is not an array:', response.data);
+          setItemResults([]);
+          setShowItemDropdown(false);
+        }
       } catch (err) {
         console.error('Failed to search items:', err);
+        setItemResults([]);
+        setShowItemDropdown(false);
       }
     };
 
@@ -230,12 +245,31 @@ function BorrowingsManagement() {
 
   // Helper function to display contributors
   const getContributorDisplay = (contributors) => {
-    if (!contributors || contributors.length === 0) return 'Unknown';
-    const authors = contributors.filter(c => c.role === 'author');
-    if (authors.length > 0) {
-      return authors.map(a => a.name).join(', ');
+    try {
+      console.log('getContributorDisplay called with:', contributors);
+
+      // Handle null, undefined, or empty array
+      if (!contributors || !Array.isArray(contributors) || contributors.length === 0) {
+        return 'Unknown';
+      }
+
+      // Find authors
+      const authors = contributors.filter(c => c && c.role === 'author');
+      if (authors.length > 0) {
+        const authorNames = authors.map(a => a && a.name ? a.name : 'Unknown').join(', ');
+        return authorNames;
+      }
+
+      // Fall back to first contributor
+      if (contributors[0] && contributors[0].name) {
+        return contributors[0].name;
+      }
+
+      return 'Unknown';
+    } catch (error) {
+      console.error('Error in getContributorDisplay:', error);
+      return 'Unknown';
     }
-    return contributors[0].name;
   };
 
   return (
@@ -331,6 +365,7 @@ function BorrowingsManagement() {
                   type="text"
                   value={itemSearch}
                   onChange={(e) => {
+                    console.log('Item search input changed:', e.target.value);
                     setItemSearch(e.target.value);
                     setSelectedItem(null);
                   }}
@@ -338,6 +373,7 @@ function BorrowingsManagement() {
                   required
                   style={{ width: '100%', padding: '10px' }}
                 />
+                {console.log('Rendering item dropdown section - showItemDropdown:', showItemDropdown, 'itemResults.length:', itemResults.length)}
                 {showItemDropdown && itemResults.length > 0 && (
                   <div style={{
                     position: 'absolute',
@@ -351,7 +387,10 @@ function BorrowingsManagement() {
                     marginTop: '2px',
                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                   }}>
-                    {itemResults.map((item) => (
+                    {console.log('About to map itemResults:', itemResults)}
+                    {itemResults.map((item) => {
+                      console.log('Rendering item:', item);
+                      return (
                       <div
                         key={item.item_id}
                         onClick={() => selectItem(item)}
@@ -390,7 +429,8 @@ function BorrowingsManagement() {
                           Barcode: {item.barcode} | Available: {item.available_items || 0}/{item.total_items || 0}
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
                 {selectedItem && (
