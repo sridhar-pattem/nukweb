@@ -198,64 +198,63 @@ def update_patron(patron_id):
         if not patron:
             return jsonify({"error": "Patron not found"}), 404
 
-        # Update user information
-        if any(k in data for k in ['name', 'phone', 'email']):
+        # Update user information (only email is in users table)
+        if 'email' in data:
+            cursor.execute("""
+                UPDATE users
+                SET email = %s
+                WHERE user_id = %s
+            """, (data['email'], patron['user_id']))
+
+        # Update patron information
+        patron_fields = [
+            'first_name', 'last_name', 'phone', 'address', 'city',
+            'state', 'postal_code', 'country', 'date_of_birth', 'membership_plan_id'
+        ]
+
+        if any(k in data for k in patron_fields):
             update_fields = []
             params = []
 
-            if 'name' in data:
-                update_fields.append("name = %s")
-                params.append(data['name'])
+            if 'first_name' in data:
+                update_fields.append("first_name = %s")
+                params.append(data['first_name'])
+            if 'last_name' in data:
+                update_fields.append("last_name = %s")
+                params.append(data['last_name'])
             if 'phone' in data:
                 update_fields.append("phone = %s")
                 params.append(data['phone'])
-            if 'email' in data:
-                update_fields.append("email = %s")
-                params.append(data['email'])
-
-            params.append(patron['user_id'])
-
-            cursor.execute(f"""
-                UPDATE users
-                SET {', '.join(update_fields)}
-                WHERE user_id = %s
-            """, tuple(params))
-
-        # Update patron information
-        if any(k in data for k in ['address', 'mobile_number', 'membership_plan_id', 'new_patron_id']):
-            update_fields = []
-            params = []
-
             if 'address' in data:
                 update_fields.append("address = %s")
                 params.append(data['address'])
-            if 'mobile_number' in data:
-                update_fields.append("mobile_number = %s")
-                params.append(data['mobile_number'])
+            if 'city' in data:
+                update_fields.append("city = %s")
+                params.append(data['city'])
+            if 'state' in data:
+                update_fields.append("state = %s")
+                params.append(data['state'])
+            if 'postal_code' in data:
+                update_fields.append("postal_code = %s")
+                params.append(data['postal_code'])
+            if 'country' in data:
+                update_fields.append("country = %s")
+                params.append(data['country'])
+            if 'date_of_birth' in data:
+                update_fields.append("date_of_birth = %s")
+                params.append(data['date_of_birth'])
             if 'membership_plan_id' in data:
                 update_fields.append("membership_plan_id = %s")
                 params.append(data['membership_plan_id'])
-            if 'new_patron_id' in data:
-                # Validate new patron_id format
-                import re
-                if not re.match(r'^[A-Z0-9]+$', data['new_patron_id']):
-                    return jsonify({"error": "Patron ID must be alphanumeric (uppercase letters and numbers only)"}), 400
 
-                # Check if new patron_id already exists
-                cursor.execute("SELECT patron_id FROM patrons WHERE patron_id = %s", (data['new_patron_id'],))
-                if cursor.fetchone():
-                    return jsonify({"error": "Patron ID already exists"}), 400
+            if update_fields:
+                params.append(patron_id)
 
-                update_fields.append("patron_id = %s")
-                params.append(data['new_patron_id'])
-
-            params.append(patron_id)
-
-            cursor.execute(f"""
-                UPDATE patrons
-                SET {', '.join(update_fields)}
-                WHERE patron_id = %s
-            """, tuple(params))
+                cursor.execute(f"""
+                    UPDATE patrons
+                    SET {', '.join(update_fields)}
+                    WHERE patron_id = %s
+                """, tuple(params))
 
         return jsonify({"message": "Patron updated successfully"}), 200
 
