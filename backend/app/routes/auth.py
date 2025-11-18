@@ -18,34 +18,41 @@ def login():
     
     # Get user from database
     query = """
-        SELECT u.user_id, u.email, u.password_hash, u.role, u.name, u.status,
-               p.patron_id
+        SELECT u.user_id, u.email, u.password_hash, u.role, u.status,
+               p.patron_id, p.first_name, p.last_name
         FROM users u
         LEFT JOIN patrons p ON u.user_id = p.user_id
         WHERE u.email = %s
     """
     user = execute_query(query, (email,), fetch_one=True)
-    
+
     if not user:
         return jsonify({"error": "Invalid credentials"}), 401
-    
+
     # Check if account is active
     if user['status'] != 'active':
         return jsonify({"error": f"Account is {user['status']}"}), 403
-    
+
     # Verify password
     if not verify_password(password, user['password_hash']):
         return jsonify({"error": "Invalid credentials"}), 401
-    
+
     # Create access token
     access_token = create_access_token(identity=str(user['user_id']))
-    
+
+    # Build display name
+    if user.get('first_name') and user.get('last_name'):
+        display_name = f"{user['first_name']} {user['last_name']}"
+    else:
+        # For admin users without patron records, use email prefix
+        display_name = user['email'].split('@')[0]
+
     return jsonify({
         "access_token": access_token,
         "user": {
             "user_id": user['user_id'],
             "email": user['email'],
-            "name": user['name'],
+            "name": display_name,
             "role": user['role'],
             "patron_id": user.get('patron_id')
         }
@@ -84,18 +91,27 @@ def change_password():
 def get_current_user_info():
     """Get current user information"""
     user_id = int(get_jwt_identity())
-    
+
     query = """
-        SELECT u.user_id, u.email, u.name, u.phone, u.role, u.status,
-               p.patron_id, p.membership_type, p.membership_expiry_date,
-               p.address, p.mobile_number
+        SELECT u.user_id, u.email, u.role, u.status,
+               p.patron_id, p.first_name, p.last_name, p.phone,
+               p.address, p.city, p.state, p.postal_code, p.country,
+               p.membership_plan_id, p.membership_start_date, p.membership_end_date,
+               mp.plan_name, mp.duration_months, mp.price
         FROM users u
         LEFT JOIN patrons p ON u.user_id = p.user_id
+        LEFT JOIN membership_plans mp ON p.membership_plan_id = mp.plan_id
         WHERE u.user_id = %s
     """
     user = execute_query(query, (user_id,), fetch_one=True)
-    
+
     if not user:
         return jsonify({"error": "User not found"}), 404
-    
+
+    # Build display name
+    if user.get('first_name') and user.get('last_name'):
+        user['name'] = f"{user['first_name']} {user['last_name']}"
+    else:
+        user['name'] = user['email'].split('@')[0]
+
     return jsonify(dict(user)), 200
