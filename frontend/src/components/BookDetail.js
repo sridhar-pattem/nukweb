@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { adminBooksAPI } from '../services/api';
+import { adminBooksAPI, adminItemsAPI } from '../services/api';
 
 function BookDetail() {
   const { bookId } = useParams();
@@ -26,28 +26,72 @@ function BookDetail() {
     }
   };
 
-  const handleUpdateStatus = async (status) => {
-    if (window.confirm(`Mark this book as ${status}?`)) {
-      try {
-        await adminBooksAPI.updateBookStatus(book.book_id, status);
-        await loadBookDetails();
-        alert(`Book status updated to ${status}`);
-      } catch (err) {
-        alert('Failed to update book status');
-      }
+  const handleAddItem = async () => {
+    const barcode = prompt('Enter barcode for the new item:');
+    if (!barcode || barcode.trim() === '') return;
+
+    const callNumber = prompt('Enter call number (optional):', book.call_number || '');
+    const shelfLocation = prompt('Enter shelf location (optional):', '');
+
+    try {
+      await adminItemsAPI.addItem({
+        book_id: book.book_id,
+        barcode: barcode.trim(),
+        call_number: callNumber || null,
+        shelf_location: shelfLocation || null,
+        circulation_status: 'available',
+        condition: 'good'
+      });
+      await loadBookDetails();
+      alert('Item added successfully!');
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to add item');
     }
   };
 
-  const handleUpdateCopies = async (action) => {
-    const count = parseInt(prompt(`How many copies to ${action}?`, '1'));
-    if (!count || count <= 0) return;
+  const handleRemoveItem = async () => {
+    if (!book.items || book.items.length === 0) {
+      alert('No items to remove');
+      return;
+    }
+
+    // Show list of items to choose from
+    const itemList = book.items.map(item =>
+      `${item.barcode} - ${item.circulation_status}${item.is_borrowed ? ' (BORROWED)' : ''}`
+    ).join('\n');
+
+    const barcode = prompt(`Select item to remove by entering barcode:\n\n${itemList}`);
+    if (!barcode) return;
+
+    const itemToRemove = book.items.find(i => i.barcode === barcode.trim());
+    if (!itemToRemove) {
+      alert('Item not found');
+      return;
+    }
+
+    if (itemToRemove.is_borrowed) {
+      alert('Cannot remove item that is currently borrowed');
+      return;
+    }
+
+    if (!window.confirm(`Remove item ${barcode}?`)) return;
 
     try {
-      await adminBooksAPI.updateCopies(book.book_id, action, count);
+      await adminItemsAPI.deleteItem(itemToRemove.item_id);
       await loadBookDetails();
-      alert(`Book copies ${action === 'add' ? 'added' : 'removed'} successfully!`);
+      alert('Item removed successfully!');
     } catch (err) {
-      alert(err.response?.data?.error || `Failed to ${action} copies`);
+      alert(err.response?.data?.error || 'Failed to remove item');
+    }
+  };
+
+  const handleUpdateItemStatus = async (itemId, newStatus) => {
+    try {
+      await adminItemsAPI.updateItemStatus(itemId, newStatus);
+      await loadBookDetails();
+      alert(`Item status updated to ${newStatus}`);
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to update item status');
     }
   };
 
@@ -134,38 +178,24 @@ function BookDetail() {
               <h3>Availability</h3>
               <div className="availability-info">
                 <div className="availability-stat">
-                  <span className="stat-label">Status:</span>
-                  <span
-                    className="stat-value"
-                    style={{
-                      padding: '5px 12px',
-                      borderRadius: '5px',
-                      backgroundColor: book.status === 'Available' ? '#27ae60' : '#e74c3c',
-                      color: 'white',
-                      fontSize: '14px'
-                    }}
-                  >
-                    {book.status}
-                  </span>
-                </div>
-                <div className="availability-stat">
-                  <span className="stat-label">Available Copies:</span>
+                  <span className="stat-label">Available Items:</span>
                   <span className="stat-value" style={{ fontSize: '24px', fontWeight: 'bold', color: '#667eea' }}>
-                    {book.available_copies} / {book.total_copies}
+                    {book.available_items || 0} / {book.total_items || 0}
                   </span>
                 </div>
-                {book.is_checked_out && (
+                {book.checked_out_items > 0 && (
                   <div className="availability-stat">
-                    <span
-                      style={{
-                        padding: '4px 10px',
-                        borderRadius: '4px',
-                        backgroundColor: '#ff9800',
-                        color: 'white',
-                        fontSize: '12px'
-                      }}
-                    >
-                      Currently Checked Out
+                    <span className="stat-label">Checked Out:</span>
+                    <span className="stat-value" style={{ fontSize: '18px', color: '#e74c3c' }}>
+                      {book.checked_out_items}
+                    </span>
+                  </div>
+                )}
+                {book.on_hold_items > 0 && (
+                  <div className="availability-stat">
+                    <span className="stat-label">On Hold:</span>
+                    <span className="stat-value" style={{ fontSize: '18px', color: '#ff9800' }}>
+                      {book.on_hold_items}
                     </span>
                   </div>
                 )}
@@ -215,47 +245,96 @@ function BookDetail() {
             </div>
           )}
 
+          {/* Items List */}
+          {book.items && book.items.length > 0 && (
+            <div className="book-items">
+              <h3>Items ({book.items.length})</h3>
+              <div style={{ overflowX: 'auto' }}>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Barcode</th>
+                      <th>Call Number</th>
+                      <th>Status</th>
+                      <th>Condition</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {book.items.map((item) => (
+                      <tr key={item.item_id}>
+                        <td><code>{item.barcode}</code></td>
+                        <td>{item.call_number || '-'}</td>
+                        <td>
+                          <span style={{
+                            padding: '3px 8px',
+                            borderRadius: '3px',
+                            fontSize: '12px',
+                            backgroundColor: item.circulation_status === 'available' ? '#27ae60' :
+                                           item.circulation_status === 'checked_out' ? '#e74c3c' : '#95a5a6',
+                            color: 'white'
+                          }}>
+                            {item.circulation_status.replace('_', ' ')}
+                          </span>
+                          {item.is_borrowed && <small style={{ marginLeft: '5px', color: '#e74c3c' }}>(Borrowed)</small>}
+                        </td>
+                        <td>{item.condition || '-'}</td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                            {item.circulation_status !== 'available' && !item.is_borrowed && (
+                              <button
+                                onClick={() => handleUpdateItemStatus(item.item_id, 'available')}
+                                className="btn btn-success"
+                                style={{ fontSize: '11px', padding: '4px 8px' }}
+                              >
+                                Mark Available
+                              </button>
+                            )}
+                            {item.circulation_status === 'available' && (
+                              <>
+                                <button
+                                  onClick={() => handleUpdateItemStatus(item.item_id, 'lost')}
+                                  className="btn btn-danger"
+                                  style={{ fontSize: '11px', padding: '4px 8px' }}
+                                >
+                                  Lost
+                                </button>
+                                <button
+                                  onClick={() => handleUpdateItemStatus(item.item_id, 'damaged')}
+                                  className="btn btn-danger"
+                                  style={{ fontSize: '11px', padding: '4px 8px' }}
+                                >
+                                  Damaged
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           {/* Action Buttons */}
           <div className="book-actions">
             <h3>Actions</h3>
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
               <button
-                onClick={() => handleUpdateCopies('add')}
+                onClick={handleAddItem}
                 className="btn btn-success"
               >
-                Add Copies
+                Add Item (Copy)
               </button>
               <button
-                onClick={() => handleUpdateCopies('remove')}
+                onClick={handleRemoveItem}
                 className="btn btn-secondary"
-                disabled={book.total_copies <= 0}
+                disabled={!book.items || book.items.length === 0}
               >
-                Remove Copies
+                Remove Item
               </button>
-              {book.status === 'Available' && (
-                <button
-                  onClick={() => handleUpdateStatus('Lost')}
-                  className="btn btn-danger"
-                >
-                  Mark as Lost
-                </button>
-              )}
-              {book.status === 'Available' && (
-                <button
-                  onClick={() => handleUpdateStatus('Damaged')}
-                  className="btn btn-danger"
-                >
-                  Mark as Damaged
-                </button>
-              )}
-              {book.status !== 'Available' && book.status !== 'Phased Out' && (
-                <button
-                  onClick={() => handleUpdateStatus('Available')}
-                  className="btn btn-success"
-                >
-                  Mark as Available
-                </button>
-              )}
             </div>
           </div>
 
