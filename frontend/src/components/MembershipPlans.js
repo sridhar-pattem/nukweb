@@ -9,11 +9,11 @@ function MembershipPlans() {
   const [editingPlan, setEditingPlan] = useState(null);
   const [formData, setFormData] = useState({
     plan_name: '',
-    plan_type: 'Active',
-    duration_days: '',
+    duration_months: '',
     price: '',
     description: '',
-    borrowing_limit: 3
+    borrowing_limit: 3,
+    is_active: true
   });
 
   useEffect(() => {
@@ -48,11 +48,11 @@ function MembershipPlans() {
       setEditingPlan(null);
       setFormData({
         plan_name: '',
-        plan_type: 'Active',
-        duration_days: '',
+        duration_months: '',
         price: '',
         description: '',
-        borrowing_limit: 3
+        borrowing_limit: 3,
+        is_active: true
       });
       loadPlans();
     } catch (err) {
@@ -64,11 +64,11 @@ function MembershipPlans() {
     setEditingPlan(plan);
     setFormData({
       plan_name: plan.plan_name,
-      plan_type: plan.plan_type,
-      duration_days: plan.duration_days,
+      duration_months: plan.duration_months,
       price: plan.price,
       description: plan.description || '',
-      borrowing_limit: plan.borrowing_limit || 3
+      borrowing_limit: plan.borrowing_limit || 3,
+      is_active: plan.is_active !== undefined ? plan.is_active : true
     });
     setShowAddForm(true);
   };
@@ -90,11 +90,11 @@ function MembershipPlans() {
     setEditingPlan(null);
     setFormData({
       plan_name: '',
-      plan_type: 'Active',
-      duration_days: '',
+      duration_months: '',
       price: '',
       description: '',
-      borrowing_limit: 3
+      borrowing_limit: 3,
+      is_active: true
     });
   };
 
@@ -136,29 +136,27 @@ function MembershipPlans() {
               </div>
 
               <div className="form-group">
-                <label>Plan Type *</label>
-                <select
-                  value={formData.plan_type}
-                  onChange={(e) => setFormData({...formData, plan_type: e.target.value})}
-                  required
-                >
-                  <option value="Active">Active</option>
-                  <option value="Renewal Due">Renewal Due</option>
-                  <option value="Freeze">Freeze</option>
-                  <option value="Closed">Closed</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Duration (Days) *</label>
+                <label>Duration (Months) *</label>
                 <input
                   type="number"
                   min="1"
-                  value={formData.duration_days}
-                  onChange={(e) => setFormData({...formData, duration_days: e.target.value})}
-                  placeholder="e.g., 30"
+                  value={formData.duration_months}
+                  onChange={(e) => setFormData({...formData, duration_months: e.target.value})}
+                  placeholder="e.g., 1 for monthly, 12 for yearly"
                   required
                 />
+              </div>
+
+              <div className="form-group">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={formData.is_active}
+                    onChange={(e) => setFormData({...formData, is_active: e.target.checked})}
+                    style={{ marginRight: '8px' }}
+                  />
+                  Active (available for new subscriptions)
+                </label>
               </div>
 
               <div className="form-group">
@@ -223,10 +221,10 @@ function MembershipPlans() {
                 <tr>
                   <th>ID</th>
                   <th>Plan Name</th>
-                  <th>Type</th>
                   <th>Duration</th>
                   <th>Price</th>
                   <th>Borrowing Limit</th>
+                  <th>Status</th>
                   <th>Description</th>
                   <th>Actions</th>
                 </tr>
@@ -236,20 +234,20 @@ function MembershipPlans() {
                   <tr key={plan.plan_id}>
                     <td>{plan.plan_id}</td>
                     <td><strong>{plan.plan_name}</strong></td>
+                    <td>{plan.duration_months} month{plan.duration_months !== 1 ? 's' : ''}</td>
+                    <td>₹{parseFloat(plan.price).toFixed(2)}</td>
+                    <td>{plan.borrowing_limit || 3} books</td>
                     <td>
                       <span style={{
                         padding: '3px 8px',
                         borderRadius: '3px',
                         fontSize: '12px',
-                        backgroundColor: plan.plan_type === 'Active' ? '#27ae60' : '#95a5a6',
+                        backgroundColor: plan.is_active ? '#27ae60' : '#95a5a6',
                         color: 'white'
                       }}>
-                        {plan.plan_type}
+                        {plan.is_active ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td>{plan.duration_days} days</td>
-                    <td>₹{parseFloat(plan.price).toFixed(2)}</td>
-                    <td>{plan.borrowing_limit || 3} books</td>
                     <td>{plan.description || 'N/A'}</td>
                     <td>
                       <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
