@@ -74,12 +74,12 @@ def get_items():
                (SELECT json_build_object(
                    'borrowing_id', br.borrowing_id,
                    'patron_id', p.patron_id,
-                   'patron_name', u.name,
+                   'patron_first_name', p.first_name,
+                   'patron_last_name', p.last_name,
                    'due_date', br.due_date
                )
                 FROM borrowings br
                 JOIN patrons p ON br.patron_id = p.patron_id
-                JOIN users u ON p.user_id = u.user_id
                 WHERE br.item_id = i.item_id AND br.status = 'active'
                ) as active_borrowing
         FROM items i
@@ -128,10 +128,9 @@ def get_item_details(item_id):
     history_query = """
         SELECT br.borrowing_id, br.checkout_date, br.due_date, br.return_date,
                br.status, br.renewal_count,
-               p.patron_id, u.name as patron_name
+               p.patron_id, p.first_name, p.last_name
         FROM borrowings br
         JOIN patrons p ON br.patron_id = p.patron_id
-        JOIN users u ON p.user_id = u.user_id
         WHERE br.item_id = %s
         ORDER BY br.checkout_date DESC
         LIMIT 20
@@ -164,13 +163,13 @@ def get_item_by_barcode(barcode):
                (SELECT json_build_object(
                    'borrowing_id', br.borrowing_id,
                    'patron_id', p.patron_id,
-                   'patron_name', u.name,
+                   'patron_first_name', p.first_name,
+                   'patron_last_name', p.last_name,
                    'checkout_date', br.checkout_date,
                    'due_date', br.due_date
                )
                 FROM borrowings br
                 JOIN patrons p ON br.patron_id = p.patron_id
-                JOIN users u ON p.user_id = u.user_id
                 WHERE br.item_id = i.item_id AND br.status = 'active'
                ) as active_borrowing
         FROM items i
