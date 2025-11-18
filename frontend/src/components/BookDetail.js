@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { adminBooksAPI, adminItemsAPI } from '../services/api';
+import { adminBooksAPI, adminItemsAPI, adminContributorsAPI } from '../services/api';
 
 function BookDetail() {
   const { bookId } = useParams();
@@ -8,6 +8,11 @@ function BookDetail() {
   const [book, setBook] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [showAddContributor, setShowAddContributor] = useState(false);
+  const [contributorSearch, setContributorSearch] = useState('');
+  const [contributorResults, setContributorResults] = useState([]);
+  const [editFormData, setEditFormData] = useState(null);
 
   useEffect(() => {
     loadBookDetails();
@@ -95,6 +100,91 @@ function BookDetail() {
     }
   };
 
+  const handleEditBook = () => {
+    setEditFormData({
+      title: book.title || '',
+      subtitle: book.subtitle || '',
+      isbn: book.isbn || '',
+      publisher: book.publisher || '',
+      publication_year: book.publication_year || '',
+      description: book.description || '',
+      language: book.language || 'eng',
+      age_rating: book.age_rating || '',
+      cover_image_url: book.cover_image_url || '',
+      collection_id: book.collection_id || ''
+    });
+    setShowEditForm(true);
+  };
+
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    try {
+      await adminBooksAPI.updateBook(book.book_id, editFormData);
+      setShowEditForm(false);
+      await loadBookDetails();
+      alert('Book updated successfully!');
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to update book');
+    }
+  };
+
+  const handleSearchContributors = async (query) => {
+    setContributorSearch(query);
+    if (query.length < 2) {
+      setContributorResults([]);
+      return;
+    }
+
+    try {
+      const response = await adminContributorsAPI.searchContributors(query);
+      setContributorResults(response.data);
+    } catch (err) {
+      console.error('Failed to search contributors:', err);
+    }
+  };
+
+  const handleAddContributor = async (contributor, role) => {
+    const sequence = (book.contributors || []).filter(c => c.role === role).length + 1;
+
+    try {
+      await adminBooksAPI.addBookContributor(book.book_id, {
+        contributor_id: contributor.contributor_id,
+        role: role,
+        sequence_number: sequence
+      });
+      await loadBookDetails();
+      setShowAddContributor(false);
+      setContributorSearch('');
+      setContributorResults([]);
+      alert('Contributor added successfully!');
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to add contributor');
+    }
+  };
+
+  const handleRemoveContributor = async (bookContributorId) => {
+    if (!window.confirm('Remove this contributor?')) return;
+
+    try {
+      await adminBooksAPI.removeBookContributor(book.book_id, bookContributorId);
+      await loadBookDetails();
+      alert('Contributor removed successfully!');
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to remove contributor');
+    }
+  };
+
+  const getContributorDisplay = (contributors) => {
+    if (!contributors || !Array.isArray(contributors) || contributors.length === 0) {
+      return 'Unknown';
+    }
+    const authors = contributors.filter(c => c && c.role === 'author');
+    if (authors.length > 0) {
+      return authors.map(a => a.name).join(', ');
+    }
+    return contributors[0] && contributors[0].name ? contributors[0].name : 'Unknown';
+  };
+
   if (loading) {
     return <div className="loading">Loading book details...</div>;
   }
@@ -118,9 +208,101 @@ function BookDetail() {
 
   return (
     <div className="book-detail-container">
-      <button onClick={() => navigate(-1)} className="btn btn-secondary" style={{ marginBottom: '20px' }}>
-        ← Back to Catalogue
-      </button>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <button onClick={() => navigate(-1)} className="btn btn-secondary">
+          ← Back to Catalogue
+        </button>
+        <button onClick={handleEditBook} className="btn btn-primary">
+          Edit Book Details
+        </button>
+      </div>
+
+      {showEditForm && editFormData && (
+        <div className="card" style={{ marginBottom: '20px', padding: '20px' }}>
+          <h3>Edit Book Details</h3>
+          <form onSubmit={handleSaveEdit}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+              <div className="form-group">
+                <label>Title *</label>
+                <input
+                  type="text"
+                  value={editFormData.title}
+                  onChange={(e) => setEditFormData({...editFormData, title: e.target.value})}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Subtitle</label>
+                <input
+                  type="text"
+                  value={editFormData.subtitle}
+                  onChange={(e) => setEditFormData({...editFormData, subtitle: e.target.value})}
+                />
+              </div>
+              <div className="form-group">
+                <label>ISBN</label>
+                <input
+                  type="text"
+                  value={editFormData.isbn}
+                  onChange={(e) => setEditFormData({...editFormData, isbn: e.target.value})}
+                />
+              </div>
+              <div className="form-group">
+                <label>Publisher</label>
+                <input
+                  type="text"
+                  value={editFormData.publisher}
+                  onChange={(e) => setEditFormData({...editFormData, publisher: e.target.value})}
+                />
+              </div>
+              <div className="form-group">
+                <label>Publication Year</label>
+                <input
+                  type="number"
+                  value={editFormData.publication_year}
+                  onChange={(e) => setEditFormData({...editFormData, publication_year: e.target.value})}
+                />
+              </div>
+              <div className="form-group">
+                <label>Language</label>
+                <input
+                  type="text"
+                  value={editFormData.language}
+                  onChange={(e) => setEditFormData({...editFormData, language: e.target.value})}
+                />
+              </div>
+              <div className="form-group">
+                <label>Age Rating</label>
+                <input
+                  type="text"
+                  value={editFormData.age_rating}
+                  onChange={(e) => setEditFormData({...editFormData, age_rating: e.target.value})}
+                />
+              </div>
+              <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                <label>Cover Image URL</label>
+                <input
+                  type="url"
+                  value={editFormData.cover_image_url}
+                  onChange={(e) => setEditFormData({...editFormData, cover_image_url: e.target.value})}
+                />
+              </div>
+              <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                <label>Description</label>
+                <textarea
+                  value={editFormData.description}
+                  onChange={(e) => setEditFormData({...editFormData, description: e.target.value})}
+                  rows="4"
+                />
+              </div>
+            </div>
+            <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
+              <button type="submit" className="btn btn-success">Save Changes</button>
+              <button type="button" onClick={() => setShowEditForm(false)} className="btn btn-secondary">Cancel</button>
+            </div>
+          </form>
+        </div>
+      )}
 
       <div className="book-detail-content">
         {/* Book Cover */}
@@ -136,7 +318,8 @@ function BookDetail() {
         {/* Book Information */}
         <div className="book-info-section">
           <h1>{book.title}</h1>
-          <p className="book-author">by {book.author || 'Unknown Author'}</p>
+          {book.subtitle && <h3 style={{ color: '#666', fontWeight: 'normal', marginTop: '-10px' }}>{book.subtitle}</h3>}
+          <p className="book-author">by {getContributorDisplay(book.contributors)}</p>
 
           <div className="book-meta">
             <div className="meta-item">
@@ -210,6 +393,113 @@ function BookDetail() {
               <p>{book.description}</p>
             </div>
           )}
+
+          {/* Contributors Section */}
+          <div className="book-contributors" style={{ marginTop: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3>Contributors</h3>
+              <button
+                onClick={() => setShowAddContributor(!showAddContributor)}
+                className="btn btn-primary"
+                style={{ fontSize: '14px', padding: '8px 15px' }}
+              >
+                {showAddContributor ? 'Cancel' : 'Add Contributor'}
+              </button>
+            </div>
+
+            {showAddContributor && (
+              <div style={{ marginTop: '15px', padding: '15px', backgroundColor: '#f5f5f5', borderRadius: '5px' }}>
+                <h4>Search for Contributor</h4>
+                <input
+                  type="text"
+                  placeholder="Search by name..."
+                  value={contributorSearch}
+                  onChange={(e) => handleSearchContributors(e.target.value)}
+                  style={{ width: '100%', padding: '10px', marginBottom: '10px' }}
+                />
+                {contributorResults.length > 0 && (
+                  <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #ddd', borderRadius: '4px', backgroundColor: 'white' }}>
+                    {contributorResults.map((contributor) => (
+                      <div
+                        key={contributor.contributor_id}
+                        style={{
+                          padding: '10px',
+                          borderBottom: '1px solid #eee',
+                          cursor: 'pointer',
+                          ':hover': { backgroundColor: '#f0f0f0' }
+                        }}
+                      >
+                        <div><strong>{contributor.name}</strong></div>
+                        <div style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
+                          <button
+                            onClick={() => handleAddContributor(contributor, 'author')}
+                            className="btn btn-success"
+                            style={{ fontSize: '11px', padding: '4px 8px', marginRight: '5px' }}
+                          >
+                            Add as Author
+                          </button>
+                          <button
+                            onClick={() => handleAddContributor(contributor, 'editor')}
+                            className="btn btn-secondary"
+                            style={{ fontSize: '11px', padding: '4px 8px', marginRight: '5px' }}
+                          >
+                            Add as Editor
+                          </button>
+                          <button
+                            onClick={() => handleAddContributor(contributor, 'illustrator')}
+                            className="btn btn-secondary"
+                            style={{ fontSize: '11px', padding: '4px 8px' }}
+                          >
+                            Add as Illustrator
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div style={{ marginTop: '10px', fontSize: '12px', color: '#666' }}>
+                  Don't see the contributor? Create a new one in the Contributors page first.
+                </div>
+              </div>
+            )}
+
+            {book.contributors && book.contributors.length > 0 ? (
+              <div style={{ marginTop: '15px' }}>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Role</th>
+                      <th>Sequence</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {book.contributors.map((contributor) => (
+                      <tr key={contributor.book_contributor_id}>
+                        <td><strong>{contributor.name}</strong></td>
+                        <td style={{ textTransform: 'capitalize' }}>{contributor.role}</td>
+                        <td>{contributor.sequence}</td>
+                        <td>
+                          <button
+                            onClick={() => handleRemoveContributor(contributor.book_contributor_id)}
+                            className="btn btn-danger"
+                            style={{ fontSize: '11px', padding: '4px 8px' }}
+                          >
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div style={{ marginTop: '15px', padding: '15px', backgroundColor: '#fff3cd', borderRadius: '5px', border: '1px solid #ffc107' }}>
+                <p style={{ margin: 0 }}>No contributors added yet. Click "Add Contributor" to add authors, editors, or illustrators.</p>
+              </div>
+            )}
+          </div>
 
           {/* Active Borrowings */}
           {book.active_borrowings && book.active_borrowings.length > 0 && (
