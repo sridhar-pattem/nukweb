@@ -272,14 +272,14 @@ def search_items():
         SELECT i.item_id, i.barcode, i.call_number, i.circulation_status,
                b.book_id, b.isbn, b.title, b.cover_image_url,
                ba.available_items, ba.total_items,
-               (SELECT json_agg(
+               COALESCE((SELECT json_agg(
                    json_build_object('name', c.name, 'role', bc.role)
                    ORDER BY bc.role, bc.sequence_number
                )
                 FROM book_contributors bc
                 JOIN contributors c ON bc.contributor_id = c.contributor_id
                 WHERE bc.book_id = b.book_id
-               ) as contributors
+               ), '[]'::json) as contributors
         FROM items i
         JOIN books b ON i.book_id = b.book_id
         LEFT JOIN mv_book_availability ba ON b.book_id = ba.book_id
