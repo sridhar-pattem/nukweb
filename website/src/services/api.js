@@ -278,6 +278,27 @@ export const eventManagementAPI = {
 };
 
 // ===================================
+// PATRON LIBRARY APIs
+// ===================================
+
+export const patronLibraryAPI = {
+  // Browse Books
+  getBrowseBooks: (params) => apiClient.get('/patron/books', { params }),
+  getBookDetails: (bookId) => apiClient.get(`/patron/books/${bookId}`),
+  addBookReview: (bookId, data) => apiClient.post(`/patron/books/${bookId}/review`, data),
+
+  // Borrowings
+  getMyBorrowings: (status = 'active') => apiClient.get('/patron/my-borrowings', { params: { status } }),
+
+  // Recommendations
+  getRecommendations: () => apiClient.get('/patron/recommendations'),
+
+  // Cowork Bookings
+  requestCoworkBooking: (data) => apiClient.post('/patron/cowork-booking', data),
+  getMyCoworkBookings: () => apiClient.get('/patron/my-cowork-bookings'),
+};
+
+// ===================================
 // HELPER FUNCTIONS
 // ===================================
 
