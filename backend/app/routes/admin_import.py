@@ -2,7 +2,8 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
 from app.utils.auth import admin_required
 from app.utils.database import execute_query, get_db_cursor
-from app.utils.googlebooks import fetch_book_by_isbn
+from app.utils.googlebooks import fetch_book_by_isbn as fetch_google
+from app.utils.openlibrary import fetch_book_by_isbn as fetch_openlibrary
 import csv
 import io
 
@@ -74,8 +75,47 @@ def preview_book_import():
                     'message': 'Book already in database'
                 })
             else:
-                # Fetch from Google Books
-                book_info = fetch_book_by_isbn(isbn)
+                # Try multiple sources: Google Books -> Open Library -> CSV data
+                book_info = None
+                source = None
+
+                # Try Google Books first
+                book_info = fetch_google(isbn)
+                if book_info:
+                    source = 'Google Books'
+                else:
+                    # Try Open Library as fallback
+                    book_info = fetch_openlibrary(isbn)
+                    if book_info:
+                        source = 'Open Library'
+                    else:
+                        # Use CSV data as last resort (libib column names)
+                        title = row.get('title')
+                        creators = row.get('creators')  # libib uses 'creators' for author
+                        publisher = row.get('publisher')
+                        publish_date = row.get('publish_date')
+                        description = row.get('description')
+
+                        # Extract year from publish_date if available
+                        publication_year = None
+                        if publish_date:
+                            # Try to extract year (could be "2020", "2020-01-01", "January 2020", etc.)
+                            import re
+                            year_match = re.search(r'\b(19|20)\d{2}\b', str(publish_date))
+                            if year_match:
+                                publication_year = int(year_match.group(0))
+
+                        if title:  # At minimum we need a title
+                            book_info = {
+                                'isbn': isbn,
+                                'title': title,
+                                'author': creators or 'Unknown',
+                                'publisher': publisher or '',
+                                'publication_year': publication_year,
+                                'description': description or '',
+                                'cover_image_url': '',
+                            }
+                            source = 'CSV data'
 
                 if book_info:
                     books_preview.append({
@@ -87,14 +127,15 @@ def preview_book_import():
                         'publisher': book_info.get('publisher', ''),
                         'year': book_info.get('publication_year', ''),
                         'cover_url': book_info.get('cover_image_url', ''),
-                        'message': 'Ready to import'
+                        'source': source,
+                        'message': f'Ready to import (from {source})'
                     })
                 else:
                     books_preview.append({
                         'row': idx,
                         'isbn': isbn,
                         'status': 'not_found',
-                        'message': 'Book not found in Google Books'
+                        'message': 'Book not found (no APIs or CSV data)'
                     })
 
         return jsonify({
@@ -152,13 +193,19 @@ def execute_book_import():
                     })
                     continue
 
-                # Fetch from Google Books
-                book_info = fetch_book_by_isbn(isbn)
+                # Try multiple sources: Google Books -> Open Library
+                book_info = fetch_google(isbn)
+                source = 'Google Books'
+
+                if not book_info:
+                    # Try Open Library as fallback
+                    book_info = fetch_openlibrary(isbn)
+                    source = 'Open Library' if book_info else None
 
                 if not book_info:
                     results['errors'].append({
                         'isbn': isbn,
-                        'reason': 'Not found in Google Books'
+                        'reason': 'Not found in Google Books or Open Library'
                     })
                     continue
 
@@ -221,7 +268,8 @@ def execute_book_import():
                 results['imported'].append({
                     'isbn': isbn,
                     'book_id': book_id,
-                    'title': book_info.get('title')
+                    'title': book_info.get('title'),
+                    'source': source
                 })
 
             except Exception as e:
