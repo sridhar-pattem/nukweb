@@ -375,6 +375,13 @@ export const adminLibraryAPI = {
   getContentTypes: () => apiClient.get('/admin/content-types'),
   getLanguages: () => apiClient.get('/admin/languages'),
   getItemStatuses: () => apiClient.get('/admin/item-statuses'),
+
+  // Book Import
+  previewBookImport: (formData) => apiClient.post('/admin/import/books/preview', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  executeBookImport: (data) => apiClient.post('/admin/import/books/execute', data),
+  importFromISBNList: (data) => apiClient.post('/admin/import/books/isbn-list', data),
 };
 
 // ===================================
