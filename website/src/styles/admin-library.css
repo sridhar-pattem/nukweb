@@ -803,6 +803,82 @@ textarea.form-control {
   color: var(--accent-peru, #CD853F);
 }
 
+/* Autocomplete Dropdown for Circulation */
+.autocomplete-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 300px;
+  overflow-y: auto;
+  background: white;
+  border: 2px solid var(--accent-peru, #CD853F);
+  border-radius: 8px;
+  margin-top: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+}
+
+.autocomplete-item {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid var(--light-gray, #e0e0e0);
+  transition: background-color 0.2s;
+}
+
+.autocomplete-item:hover {
+  background-color: var(--light-beige, #F5F5DC);
+}
+
+.autocomplete-item:last-child {
+  border-bottom: none;
+}
+
+.autocomplete-item-main {
+  margin-bottom: 0.25rem;
+}
+
+.autocomplete-item-main strong {
+  color: var(--text-charcoal, #333);
+  font-size: 1rem;
+}
+
+.autocomplete-item-sub {
+  color: #6c757d;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.selected-info {
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(40, 167, 69, 0.1);
+  border-left: 3px solid #28a745;
+  border-radius: 4px;
+  color: var(--text-charcoal, #333);
+  font-size: 0.875rem;
+}
+
+.selected-info strong {
+  color: #28a745;
+}
+
+/* Collection Select Group */
+.collection-select-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.collection-select-group select {
+  flex: 1;
+}
+
+.collection-select-group .btn-icon {
+  flex-shrink: 0;
+  margin-top: 0;
+}
+
 /* Position relative for dropdowns */
 .form-group {
   position: relative;

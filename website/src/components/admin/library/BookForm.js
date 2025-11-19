@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { adminLibraryAPI } from '../../../services/api';
-import { FaBook, FaSearch, FaPlus, FaTrash, FaArrowLeft } from 'react-icons/fa';
+import { FaBook, FaSearch, FaPlus, FaTrash, FaArrowLeft, FaTimes } from 'react-icons/fa';
 import '../../../styles/admin-library.css';
 
 const BookForm = () => {
@@ -18,6 +18,11 @@ const BookForm = () => {
   const [contributors, setContributors] = useState([]);
   const [isbnLookup, setIsbnLookup] = useState('');
   const [lookupLoading, setLookupLoading] = useState(false);
+  const [showCollectionModal, setShowCollectionModal] = useState(false);
+  const [newCollection, setNewCollection] = useState({
+    collection_name: '',
+    description: '',
+  });
 
   const [formData, setFormData] = useState({
     isbn: '',
@@ -48,6 +53,36 @@ const BookForm = () => {
       setCollections(response.data || []);
     } catch (err) {
       console.error('Error fetching collections:', err);
+    }
+  };
+
+  const handleAddCollection = async (e) => {
+    e.preventDefault();
+
+    if (!newCollection.collection_name) {
+      setError('Collection name is required');
+      return;
+    }
+
+    try {
+      setError('');
+      const response = await adminLibraryAPI.createCollection(newCollection);
+      const createdCollection = response.data;
+
+      // Refresh collections list
+      await fetchCollections();
+
+      // Auto-select the newly created collection
+      setFormData({ ...formData, collection_id: createdCollection.collection_id });
+
+      // Reset and close modal
+      setNewCollection({ collection_name: '', description: '' });
+      setShowCollectionModal(false);
+      setSuccess('Collection added successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error('Error adding collection:', err);
+      setError(err.response?.data?.error || 'Failed to add collection');
     }
   };
 
@@ -247,20 +282,30 @@ const BookForm = () => {
 
             <div className="form-group">
               <label htmlFor="collection_id">Collection</label>
-              <select
-                id="collection_id"
-                name="collection_id"
-                value={formData.collection_id}
-                onChange={handleChange}
-                className="form-control"
-              >
-                <option value="">Select Collection</option>
-                {collections.map((collection) => (
-                  <option key={collection.collection_id} value={collection.collection_id}>
-                    {collection.collection_name}
-                  </option>
-                ))}
-              </select>
+              <div className="collection-select-group">
+                <select
+                  id="collection_id"
+                  name="collection_id"
+                  value={formData.collection_id}
+                  onChange={handleChange}
+                  className="form-control"
+                >
+                  <option value="">Select Collection</option>
+                  {collections.map((collection) => (
+                    <option key={collection.collection_id} value={collection.collection_id}>
+                      {collection.collection_name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setShowCollectionModal(true)}
+                  className="btn btn-icon"
+                  title="Add New Collection"
+                >
+                  <FaPlus />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -451,6 +496,67 @@ const BookForm = () => {
           </button>
         </div>
       </form>
+
+      {/* Add Collection Modal */}
+      {showCollectionModal && (
+        <div className="modal-overlay" onClick={() => setShowCollectionModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Add New Collection</h2>
+              <button onClick={() => setShowCollectionModal(false)} className="btn btn-icon">
+                <FaTimes />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddCollection}>
+              <div className="form-group">
+                <label htmlFor="collection_name">Collection Name *</label>
+                <input
+                  type="text"
+                  id="collection_name"
+                  value={newCollection.collection_name}
+                  onChange={(e) =>
+                    setNewCollection({ ...newCollection, collection_name: e.target.value })
+                  }
+                  className="form-control"
+                  required
+                  placeholder="e.g., Fiction, Non-Fiction, Children's Books"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="collection_description">Description</label>
+                <textarea
+                  id="collection_description"
+                  value={newCollection.description}
+                  onChange={(e) =>
+                    setNewCollection({ ...newCollection, description: e.target.value })
+                  }
+                  className="form-control"
+                  rows="3"
+                  placeholder="Brief description of this collection..."
+                />
+              </div>
+
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCollectionModal(false);
+                    setNewCollection({ collection_name: '', description: '' });
+                  }}
+                  className="btn btn-outline"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Add Collection
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
