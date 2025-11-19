@@ -1,11 +1,13 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
-from app.utils.auth import admin_required
+from app.utils.auth import admin_required, hash_password
 from app.utils.database import execute_query, get_db_cursor
 from app.utils.googlebooks import fetch_book_by_isbn as fetch_google
 from app.utils.openlibrary import fetch_book_by_isbn as fetch_openlibrary
 import csv
 import io
+import re
+from datetime import datetime
 
 admin_import_bp = Blueprint('admin_import', __name__)
 
@@ -351,3 +353,242 @@ def import_from_isbn_list():
 
     # Use the execute import function
     return execute_book_import()
+
+@admin_import_bp.route('/import/patrons/preview', methods=['POST'])
+@jwt_required()
+@admin_required
+def preview_patron_import():
+    """Preview patrons from CSV file before importing"""
+    if 'file' not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+
+    file = request.files['file']
+
+    if file.filename == '':
+        return jsonify({"error": "No file selected"}), 400
+
+    if not file.filename.endswith('.csv'):
+        return jsonify({"error": "Only CSV files are supported"}), 400
+
+    try:
+        # Read CSV file
+        stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
+        csv_reader = csv.DictReader(stream)
+
+        patrons_preview = []
+        errors = []
+        column_names = []
+
+        for idx, row in enumerate(csv_reader, start=1):
+            # Store column names from first row
+            if idx == 1:
+                column_names = list(row.keys())
+                print(f"CSV Columns found: {column_names}")
+
+            # Extract patron data
+            patron_id = row.get('patron_id', '').strip()
+            first_name = row.get('first_name', '').strip()
+            last_name = row.get('last_name', '').strip()
+            email = row.get('email', '').strip()
+            phone = row.get('phone', '').strip()
+            freeze = row.get('freeze', '').strip()
+
+            # Validate required fields
+            if not patron_id:
+                errors.append(f"Row {idx}: Missing patron_id")
+                continue
+
+            if not email:
+                errors.append(f"Row {idx}: Missing email")
+                continue
+
+            if not first_name or not last_name:
+                errors.append(f"Row {idx}: Missing first_name or last_name")
+                continue
+
+            # Validate email format
+            email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+            if not re.match(email_pattern, email):
+                errors.append(f"Row {idx}: Invalid email format ({email})")
+                continue
+
+            # Check if patron_id already exists
+            check_query = "SELECT patron_id FROM patrons WHERE patron_id = %s"
+            existing_patron = execute_query(check_query, (patron_id,), fetch_one=True)
+
+            # Check if email already exists
+            email_check = "SELECT user_id, email FROM users WHERE email = %s"
+            existing_email = execute_query(email_check, (email,), fetch_one=True)
+
+            if existing_patron:
+                patrons_preview.append({
+                    'row': idx,
+                    'patron_id': patron_id,
+                    'name': f"{first_name} {last_name}",
+                    'email': email,
+                    'status': 'exists',
+                    'message': 'Patron ID already exists'
+                })
+            elif existing_email:
+                patrons_preview.append({
+                    'row': idx,
+                    'patron_id': patron_id,
+                    'name': f"{first_name} {last_name}",
+                    'email': email,
+                    'status': 'email_conflict',
+                    'message': 'Email already exists'
+                })
+            else:
+                # Consolidate address
+                address_parts = [
+                    row.get('address1', '').strip(),
+                    row.get('address2', '').strip(),
+                    row.get('city', '').strip(),
+                    row.get('state', '').strip(),
+                    row.get('country', '').strip(),
+                    row.get('zip', '').strip()
+                ]
+                full_address = ', '.join([part for part in address_parts if part])
+
+                # Determine status
+                user_status = 'frozen' if freeze.lower() in ['1', 'true', 'yes'] else 'active'
+
+                # Parse join date from created field
+                join_date = None
+                created_str = row.get('created', '').strip()
+                if created_str:
+                    try:
+                        join_date = datetime.strptime(created_str, '%Y-%m-%d').date()
+                    except ValueError:
+                        try:
+                            # Try alternative format
+                            join_date = datetime.strptime(created_str, '%m/%d/%Y').date()
+                        except ValueError:
+                            pass  # Use default (today)
+
+                patrons_preview.append({
+                    'row': idx,
+                    'patron_id': patron_id,
+                    'name': f"{first_name} {last_name}",
+                    'email': email,
+                    'phone': phone,
+                    'address': full_address,
+                    'status': 'ready',
+                    'user_status': user_status,
+                    'join_date': str(join_date) if join_date else None,
+                    'message': f'Ready to import (status: {user_status})'
+                })
+
+        return jsonify({
+            "total_rows": idx if 'idx' in locals() else 0,
+            "ready_to_import": len([p for p in patrons_preview if p['status'] == 'ready']),
+            "already_exists": len([p for p in patrons_preview if p['status'] == 'exists']),
+            "email_conflicts": len([p for p in patrons_preview if p['status'] == 'email_conflict']),
+            "errors": errors,
+            "columns_found": column_names,
+            "preview": patrons_preview[:50]  # Show first 50 for preview
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": f"Error processing file: {str(e)}"}), 500
+
+@admin_import_bp.route('/import/patrons/execute', methods=['POST'])
+@jwt_required()
+@admin_required
+def execute_patron_import():
+    """Execute bulk import of patrons from CSV data"""
+    data = request.get_json()
+
+    patrons_data = data.get('patrons', [])  # List of patron objects from preview
+
+    if not patrons_data:
+        return jsonify({"error": "No patrons provided"}), 400
+
+    results = {
+        'imported': [],
+        'skipped': [],
+        'errors': []
+    }
+
+    # Default password for all imported patrons
+    default_password = "BookNook313"
+    password_hash = hash_password(default_password)
+
+    with get_db_cursor() as cursor:
+        for patron_data in patrons_data:
+            patron_id = patron_data.get('patron_id')
+            email = patron_data.get('email')
+
+            try:
+                # Check if patron already exists
+                check_query = "SELECT patron_id FROM patrons WHERE patron_id = %s"
+                cursor.execute(check_query, (patron_id,))
+                existing_patron = cursor.fetchone()
+
+                if existing_patron:
+                    results['skipped'].append({
+                        'patron_id': patron_id,
+                        'email': email,
+                        'reason': 'Patron ID already exists'
+                    })
+                    continue
+
+                # Check if email already exists
+                email_check = "SELECT user_id FROM users WHERE email = %s"
+                cursor.execute(email_check, (email,))
+                existing_email = cursor.fetchone()
+
+                if existing_email:
+                    results['skipped'].append({
+                        'patron_id': patron_id,
+                        'email': email,
+                        'reason': 'Email already exists'
+                    })
+                    continue
+
+                # Extract name from combined field
+                name = patron_data.get('name', '')
+                phone = patron_data.get('phone', '')
+                address = patron_data.get('address', '')
+                user_status = patron_data.get('user_status', 'active')
+                join_date = patron_data.get('join_date')
+
+                # Create user account
+                cursor.execute("""
+                    INSERT INTO users (email, password_hash, role, name, phone, status)
+                    VALUES (%s, %s, 'patron', %s, %s, %s)
+                    RETURNING user_id
+                """, (email, password_hash, name, phone, user_status))
+
+                user_id = cursor.fetchone()['user_id']
+
+                # Create patron record
+                cursor.execute("""
+                    INSERT INTO patrons
+                    (patron_id, user_id, address, join_date, mobile_number)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (patron_id, user_id, address, join_date, phone))
+
+                results['imported'].append({
+                    'patron_id': patron_id,
+                    'email': email,
+                    'name': name,
+                    'status': user_status
+                })
+
+            except Exception as e:
+                results['errors'].append({
+                    'patron_id': patron_id,
+                    'email': email,
+                    'reason': str(e)
+                })
+
+    return jsonify({
+        "message": "Patron import completed",
+        "total": len(patrons_data),
+        "imported": len(results['imported']),
+        "skipped": len(results['skipped']),
+        "errors": len(results['errors']),
+        "details": results,
+        "default_password": default_password
+    }), 200

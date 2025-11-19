@@ -382,6 +382,12 @@ export const adminLibraryAPI = {
   }),
   executeBookImport: (data) => apiClient.post('/admin/import/books/execute', data),
   importFromISBNList: (data) => apiClient.post('/admin/import/books/isbn-list', data),
+
+  // Patron Import
+  previewPatronImport: (formData) => apiClient.post('/admin/import/patrons/preview', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  executePatronImport: (data) => apiClient.post('/admin/import/patrons/execute', data),
 };
 
 // ===================================
