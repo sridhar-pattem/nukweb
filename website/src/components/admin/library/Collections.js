@@ -23,10 +23,15 @@ const Collections = () => {
     try {
       setLoading(true);
       const response = await adminLibraryAPI.getCollections();
-      setCollections(response.data || []);
+      // Handle different response formats from backend
+      const collectionsData = Array.isArray(response.data)
+        ? response.data
+        : (response.data?.collections || []);
+      setCollections(collectionsData);
     } catch (err) {
       console.error('Error fetching collections:', err);
       setError('Failed to load collections');
+      setCollections([]); // Set empty array on error
     } finally {
       setLoading(false);
     }

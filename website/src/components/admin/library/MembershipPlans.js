@@ -28,10 +28,15 @@ const MembershipPlans = () => {
     try {
       setLoading(true);
       const response = await adminLibraryAPI.getMembershipPlans();
-      setPlans(response.data || []);
+      // Handle different response formats from backend
+      const plansData = Array.isArray(response.data)
+        ? response.data
+        : (response.data?.membership_plans || response.data?.plans || []);
+      setPlans(plansData);
     } catch (err) {
       console.error('Error fetching membership plans:', err);
       setError('Failed to load membership plans');
+      setPlans([]); // Set empty array on error
     } finally {
       setLoading(false);
     }

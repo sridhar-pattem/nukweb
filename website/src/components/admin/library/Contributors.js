@@ -32,16 +32,27 @@ const Contributors = () => {
     try {
       setLoading(true);
       const response = await adminLibraryAPI.getContributors();
-      setContributors(response.data || []);
+      // Handle different response formats from backend
+      const contributorsData = Array.isArray(response.data)
+        ? response.data
+        : (response.data?.contributors || []);
+      setContributors(contributorsData);
     } catch (err) {
       console.error('Error fetching contributors:', err);
       setError('Failed to load contributors');
+      setContributors([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
   };
 
   const filterContributors = () => {
+    // Ensure contributors is an array before filtering
+    if (!Array.isArray(contributors)) {
+      setFilteredContributors([]);
+      return;
+    }
+
     let filtered = [...contributors];
 
     if (searchTerm) {

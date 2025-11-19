@@ -39,9 +39,14 @@ const MemberForm = () => {
   const fetchMembershipPlans = async () => {
     try {
       const response = await adminLibraryAPI.getMembershipPlans();
-      setMembershipPlans(response.data || []);
+      // Handle different response formats from backend
+      const plansData = Array.isArray(response.data)
+        ? response.data
+        : (response.data?.membership_plans || response.data?.plans || []);
+      setMembershipPlans(plansData);
     } catch (err) {
       console.error('Error fetching membership plans:', err);
+      setMembershipPlans([]); // Set empty array on error
     }
   };
 
