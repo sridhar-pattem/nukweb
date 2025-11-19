@@ -74,7 +74,16 @@ const Home = () => {
   return (
     <div className="home-page">
       {/* Hero Section */}
-      <section className="hero">
+      <section
+        className="hero"
+        style={{
+          backgroundImage: 'url(/assets/images/Home_Banner.jpeg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          position: 'relative'
+        }}
+      >
         <div className="hero-overlay"></div>
         <div className="hero-content fade-in">
           <h1>Welcome to Nuk Library</h1>
@@ -86,7 +95,7 @@ const Home = () => {
             <Link to="/membership" className="btn btn-primary btn-large">
               Become a Member
             </Link>
-            <Link to="/catalogue" className="btn btn-outline btn-large" style={{ marginLeft: '1rem', color: 'white', borderColor: 'white' }}>
+            <Link to="/catalogue" className="btn btn-outline btn-large" style={{ marginLeft: '1rem' }}>
               Browse Books
             </Link>
           </div>
