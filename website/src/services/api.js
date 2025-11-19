@@ -14,7 +14,7 @@ const apiClient = axios.create({
 // Request interceptor to add auth token if available
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -31,8 +31,10 @@ apiClient.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Handle unauthorized access
-      localStorage.removeItem('authToken');
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
       // Optionally redirect to login
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }
@@ -281,14 +283,15 @@ export const eventManagementAPI = {
 
 export const setAuthToken = (token) => {
   if (token) {
-    localStorage.setItem('authToken', token);
+    localStorage.setItem('token', token);
   } else {
-    localStorage.removeItem('authToken');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
   }
 };
 
 export const getAuthToken = () => {
-  return localStorage.getItem('authToken');
+  return localStorage.getItem('token');
 };
 
 export const isAuthenticated = () => {
