@@ -299,6 +299,73 @@ export const patronLibraryAPI = {
 };
 
 // ===================================
+// ADMIN LIBRARY APIs
+// ===================================
+
+export const adminLibraryAPI = {
+  // Books Management
+  getBooks: (params) => apiClient.get('/admin/books', { params }),
+  getBookById: (id) => apiClient.get(`/admin/books/${id}`),
+  fetchBookByISBN: (isbn) => apiClient.post('/admin/books/fetch-by-isbn', { isbn }),
+  createBook: (data) => apiClient.post('/admin/books', data),
+  updateBook: (id, data) => apiClient.put(`/admin/books/${id}`, data),
+  deleteBook: (id) => apiClient.delete(`/admin/books/${id}`),
+
+  // Book Contributors
+  addBookContributor: (bookId, data) => apiClient.post(`/admin/books/${bookId}/contributors`, data),
+  updateBookContributor: (bookId, contributorId, data) => apiClient.put(`/admin/books/${bookId}/contributors/${contributorId}`, data),
+  removeBookContributor: (bookId, contributorId) => apiClient.delete(`/admin/books/${bookId}/contributors/${contributorId}`),
+
+  // Items Management
+  getItems: (params) => apiClient.get('/admin/items', { params }),
+  getItemById: (id) => apiClient.get(`/admin/items/${id}`),
+  createItem: (data) => apiClient.post('/admin/items', data),
+  updateItem: (id, data) => apiClient.put(`/admin/items/${id}`, data),
+  deleteItem: (id) => apiClient.delete(`/admin/items/${id}`),
+  getItemsByBookId: (bookId) => apiClient.get(`/admin/items/book/${bookId}`),
+
+  // Circulation (Borrowings)
+  getBorrowings: (params) => apiClient.get('/admin/borrowings', { params }),
+  getBorrowingById: (id) => apiClient.get(`/admin/borrowings/${id}`),
+  checkoutItem: (data) => apiClient.post('/admin/borrowings/checkout', data),
+  returnItem: (borrowingId, data) => apiClient.post(`/admin/borrowings/${borrowingId}/return`, data),
+  renewBorrowing: (borrowingId) => apiClient.post(`/admin/borrowings/${borrowingId}/renew`),
+  getOverdueBorrowings: () => apiClient.get('/admin/borrowings/overdue'),
+
+  // Patrons Management
+  getPatrons: (params) => apiClient.get('/admin/patrons', { params }),
+  getPatronById: (id) => apiClient.get(`/admin/patrons/${id}`),
+  createPatron: (data) => apiClient.post('/admin/patrons', data),
+  updatePatron: (id, data) => apiClient.put(`/admin/patrons/${id}`, data),
+  deactivatePatron: (id) => apiClient.post(`/admin/patrons/${id}/deactivate`),
+  reactivatePatron: (id) => apiClient.post(`/admin/patrons/${id}/reactivate`),
+  getPatronBorrowings: (patronId) => apiClient.get(`/admin/patrons/${patronId}/borrowings`),
+
+  // Contributors Management
+  getContributors: (params) => apiClient.get('/admin/contributors', { params }),
+  getContributorById: (id) => apiClient.get(`/admin/contributors/${id}`),
+  createContributor: (data) => apiClient.post('/admin/contributors', data),
+  updateContributor: (id, data) => apiClient.put(`/admin/contributors/${id}`, data),
+  deleteContributor: (id) => apiClient.delete(`/admin/contributors/${id}`),
+
+  // Collections Management
+  getCollections: () => apiClient.get('/admin/collections'),
+  getCollectionById: (id) => apiClient.get(`/admin/collections/${id}`),
+  createCollection: (data) => apiClient.post('/admin/collections', data),
+  updateCollection: (id, data) => apiClient.put(`/admin/collections/${id}`, data),
+  deleteCollection: (id) => apiClient.delete(`/admin/collections/${id}`),
+
+  // Library Dashboard Stats
+  getLibraryDashboardStats: () => apiClient.get('/admin/library/dashboard/stats'),
+
+  // Reference Data
+  getAgeRatings: () => apiClient.get('/admin/age-ratings'),
+  getContentTypes: () => apiClient.get('/admin/content-types'),
+  getLanguages: () => apiClient.get('/admin/languages'),
+  getItemStatuses: () => apiClient.get('/admin/item-statuses'),
+};
+
+// ===================================
 // HELPER FUNCTIONS
 // ===================================
 
