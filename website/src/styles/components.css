@@ -56,6 +56,54 @@
   color: var(--muted);
 }
 
+.book-card-collection,
+.book-card-age-rating {
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--paper);
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+
+/* Compact book card - reduced by one-third */
+.book-card-compact .book-card-image {
+  aspect-ratio: 2/3;
+}
+
+.book-card-compact .book-card-content {
+  padding: 13px;
+}
+
+.book-card-compact .book-card-title {
+  font-size: 14px;
+  margin: 0 0 6px 0;
+}
+
+.book-card-compact .book-card-author {
+  font-size: 11px;
+  margin-bottom: 6px;
+}
+
+.book-card-compact .book-card-meta {
+  margin-top: 8px;
+  font-size: 10px;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.book-card-compact .book-card-collection,
+.book-card-compact .book-card-age-rating {
+  font-size: 10px;
+  padding: 2px 6px;
+}
+
+.book-card-compact .btn {
+  margin-top: 0.5rem !important;
+  padding: 4px 8px !important;
+  font-size: 10px !important;
+}
+
 /* ===================================
    EVENT CARD
    =================================== */
