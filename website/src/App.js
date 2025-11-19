@@ -33,6 +33,12 @@ import BlogPostEditor from './components/patron/BlogPostEditor';
 import BookSuggestionForm from './components/patron/BookSuggestionForm';
 import TestimonialForm from './components/patron/TestimonialForm';
 
+// Patron Library Components
+import LibraryDashboard from './components/patron/library/LibraryDashboard';
+import BorrowingsList from './components/patron/library/BorrowingsList';
+import BookBrowse from './components/patron/library/BookBrowse';
+import BookDetail from './components/patron/library/BookDetail';
+
 // Admin Components
 import AdminDashboard from './components/admin/AdminDashboard';
 import ModerationQueue from './components/admin/ModerationQueue';
@@ -115,6 +121,40 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <TestimonialForm />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Patron Library Routes (Protected) */}
+              <Route
+                path="/patron/library/borrowing"
+                element={
+                  <ProtectedRoute>
+                    <LibraryDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/patron/library/all-borrowings"
+                element={
+                  <ProtectedRoute>
+                    <BorrowingsList />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/patron/library/browse"
+                element={
+                  <ProtectedRoute>
+                    <BookBrowse />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/patron/library/book/:id"
+                element={
+                  <ProtectedRoute>
+                    <BookDetail />
                   </ProtectedRoute>
                 }
               />
