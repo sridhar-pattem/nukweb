@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { adminLibraryAPI } from '../../services/api';
 
 const BookImport = () => {
-  const { getAuthHeaders } = useAuth();
   const [collections, setCollections] = useState([]);
   const [selectedCollection, setSelectedCollection] = useState('');
   const [csvFile, setCsvFile] = useState(null);
@@ -18,13 +17,13 @@ const BookImport = () => {
 
   const fetchCollections = async () => {
     try {
-      const response = await fetch('http://localhost:5001/api/admin/collections', {
-        headers: getAuthHeaders(),
-      });
-      const data = await response.json();
-      setCollections(data.collections || []);
-      if (data.collections && data.collections.length > 0) {
-        setSelectedCollection(data.collections[0].collection_id);
+      const response = await adminLibraryAPI.getCollections();
+      const collectionsData = Array.isArray(response.data)
+        ? response.data
+        : (response.data?.collections || []);
+      setCollections(collectionsData);
+      if (collectionsData.length > 0) {
+        setSelectedCollection(collectionsData[0].collection_id);
       }
     } catch (error) {
       console.error('Error fetching collections:', error);
@@ -48,21 +47,10 @@ const BookImport = () => {
     formData.append('file', csvFile);
 
     try {
-      const response = await fetch('http://localhost:5001/api/admin/import/books/preview', {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: formData,
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to preview');
-      }
-
-      setPreview(data);
+      const response = await adminLibraryAPI.previewBookImport(formData);
+      setPreview(response.data);
     } catch (error) {
-      alert(`Error: ${error.message}`);
+      alert(`Error: ${error.response?.data?.error || error.message || 'Failed to preview'}`);
     } finally {
       setLoading(false);
     }
@@ -87,29 +75,16 @@ const BookImport = () => {
       .map(book => book.isbn);
 
     try {
-      const response = await fetch('http://localhost:5001/api/admin/import/books/execute', {
-        method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          collection_id: selectedCollection,
-          isbns: isbnsToImport,
-        }),
+      const response = await adminLibraryAPI.executeBookImport({
+        collection_id: selectedCollection,
+        isbns: isbnsToImport,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to import');
-      }
-
-      setImportResult(data);
+      setImportResult(response.data);
       setPreview(null);
       setCsvFile(null);
     } catch (error) {
-      alert(`Error: ${error.message}`);
+      alert(`Error: ${error.response?.data?.error || error.message || 'Failed to import'}`);
     } finally {
       setLoading(false);
     }
@@ -135,28 +110,15 @@ const BookImport = () => {
       .filter(isbn => isbn);
 
     try {
-      const response = await fetch('http://localhost:5001/api/admin/import/books/execute', {
-        method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          collection_id: selectedCollection,
-          isbns: isbns,
-        }),
+      const response = await adminLibraryAPI.executeBookImport({
+        collection_id: selectedCollection,
+        isbns: isbns,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to import');
-      }
-
-      setImportResult(data);
+      setImportResult(response.data);
       setIsbnList('');
     } catch (error) {
-      alert(`Error: ${error.message}`);
+      alert(`Error: ${error.response?.data?.error || error.message || 'Failed to import'}`);
     } finally {
       setLoading(false);
     }
