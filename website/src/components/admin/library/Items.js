@@ -40,7 +40,11 @@ const Items = () => {
     try {
       setLoading(true);
       const response = await adminLibraryAPI.getItems();
-      setItems(response.data || []);
+      // Handle different response formats from backend
+      const itemsData = Array.isArray(response.data)
+        ? response.data
+        : (response.data?.items || []);
+      setItems(itemsData);
     } catch (err) {
       console.error('Error fetching items:', err);
       setError('Failed to load items');
@@ -50,6 +54,12 @@ const Items = () => {
   };
 
   const filterItems = () => {
+    // Ensure items is an array before filtering
+    if (!Array.isArray(items)) {
+      setFilteredItems([]);
+      return;
+    }
+
     let filtered = [...items];
 
     if (searchTerm) {
