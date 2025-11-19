@@ -16,8 +16,8 @@
 }
 
 .spinner {
-  border: 4px solid var(--light-gray, #f3f3f3);
-  border-top: 4px solid var(--accent-peru, #CD853F);
+  border: 4px solid var(--line);
+  border-top: 4px solid var(--teal);
   border-radius: 50%;
   width: 50px;
   height: 50px;
@@ -35,13 +35,13 @@
 }
 
 .dashboard-header h1 {
-  color: var(--secondary-brown, #8B7355);
+  color: var(--ink);
   margin-bottom: 0.5rem;
   font-size: 2rem;
 }
 
 .dashboard-header p {
-  color: var(--text-charcoal, #666);
+  color: var(--ink);
   font-size: 1rem;
 }
 
@@ -82,7 +82,7 @@
 
 .stat-icon.active {
   background: rgba(205, 133, 63, 0.1);
-  color: var(--accent-peru, #CD853F);
+  color: var(--teal);
 }
 
 .stat-icon.overdue {
@@ -102,12 +102,12 @@
 
 .stat-content h3 {
   font-size: 2rem;
-  color: var(--secondary-brown, #8B7355);
+  color: var(--ink);
   margin-bottom: 0.25rem;
 }
 
 .stat-content p {
-  color: var(--text-charcoal, #666);
+  color: var(--ink);
   font-size: 0.9rem;
   margin: 0;
 }
@@ -125,19 +125,19 @@
 }
 
 .section-header h2 {
-  color: var(--secondary-brown, #8B7355);
+  color: var(--ink);
   font-size: 1.5rem;
 }
 
 .view-all-link {
-  color: var(--accent-peru, #CD853F);
+  color: var(--teal);
   text-decoration: none;
   font-weight: 600;
   transition: color 0.2s;
 }
 
 .view-all-link:hover {
-  color: var(--secondary-brown, #8B7355);
+  color: var(--ink);
 }
 
 /* Borrowing Cards */
@@ -164,7 +164,7 @@
 }
 
 .borrowing-card.active {
-  border-left-color: var(--accent-peru, #CD853F);
+  border-left-color: var(--teal);
 }
 
 .borrowing-card.due-soon {
@@ -196,7 +196,7 @@
 .cover-placeholder {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, var(--primary-beige, #F5F5DC), var(--secondary-brown, #8B7355));
+  background: linear-gradient(135deg, var(--primary-beige, #F5F5DC), var(--ink));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -209,19 +209,19 @@
 }
 
 .borrowing-info h3 {
-  color: var(--secondary-brown, #8B7355);
+  color: var(--ink);
   margin-bottom: 0.25rem;
   font-size: 1.1rem;
 }
 
 .borrowing-info .subtitle {
-  color: var(--text-charcoal, #666);
+  color: var(--ink);
   font-size: 0.9rem;
   margin-bottom: 0.5rem;
 }
 
 .borrowing-info .contributors {
-  color: var(--accent-peru, #CD853F);
+  color: var(--teal);
   font-size: 0.9rem;
   margin-bottom: 1rem;
 }
@@ -234,7 +234,7 @@
 }
 
 .borrowing-meta .barcode {
-  color: var(--text-charcoal, #666);
+  color: var(--ink);
 }
 
 .borrowing-meta .due-date {
@@ -244,7 +244,7 @@
 }
 
 .borrowing-meta .due-date.active {
-  color: var(--accent-peru, #CD853F);
+  color: var(--teal);
 }
 
 .borrowing-meta .due-date.due-soon {
@@ -260,7 +260,7 @@
 .renewal-info {
   margin-top: 0.5rem;
   font-size: 0.85rem;
-  color: var(--text-charcoal, #666);
+  color: var(--ink);
 }
 
 /* Recommendations Grid */
@@ -295,7 +295,7 @@
 }
 
 .recommendation-card h4 {
-  color: var(--secondary-brown, #8B7355);
+  color: var(--ink);
   font-size: 0.95rem;
   margin-bottom: 0.5rem;
   line-height: 1.3;
@@ -306,7 +306,7 @@
 }
 
 .recommendation-card .author {
-  color: var(--accent-peru, #CD853F);
+  color: var(--teal);
   font-size: 0.85rem;
   margin-bottom: 0.5rem;
 }
@@ -331,7 +331,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.875rem 1.5rem;
-  background: var(--accent-peru, #CD853F);
+  background: var(--teal);
   color: white;
   border: none;
   border-radius: 8px;
@@ -341,7 +341,7 @@
 }
 
 .action-btn:hover {
-  background: var(--secondary-brown, #8B7355);
+  background: var(--ink);
 }
 
 /* Empty State */
@@ -355,12 +355,12 @@
 
 .empty-state svg {
   font-size: 4rem;
-  color: var(--light-gray, #ddd);
+  color: var(--line);
   margin-bottom: 1rem;
 }
 
 .empty-state p {
-  color: var(--text-charcoal, #666);
+  color: var(--ink);
   margin-bottom: 1.5rem;
 }
 
@@ -369,7 +369,7 @@
   display: flex;
   gap: 0.5rem;
   margin-bottom: 1.5rem;
-  border-bottom: 2px solid var(--light-gray, #e0e0e0);
+  border-bottom: 2px solid var(--line);
 }
 
 .tab-button {
@@ -377,19 +377,19 @@
   background: none;
   border: none;
   border-bottom: 3px solid transparent;
-  color: var(--text-charcoal, #666);
+  color: var(--ink);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .tab-button:hover {
-  color: var(--secondary-brown, #8B7355);
+  color: var(--ink);
 }
 
 .tab-button.active {
-  color: var(--accent-peru, #CD853F);
-  border-bottom-color: var(--accent-peru, #CD853F);
+  color: var(--teal);
+  border-bottom-color: var(--teal);
 }
 
 .borrowings-toolbar {
@@ -410,13 +410,13 @@
 .search-box svg {
   position: absolute;
   left: 1rem;
-  color: var(--text-charcoal, #666);
+  color: var(--ink);
 }
 
 .search-box input {
   width: 100%;
   padding: 0.875rem 1rem 0.875rem 3rem;
-  border: 2px solid var(--light-gray, #e0e0e0);
+  border: 2px solid var(--line);
   border-radius: 8px;
   font-size: 1rem;
   transition: border-color 0.2s;
@@ -424,7 +424,7 @@
 
 .search-box input:focus {
   outline: none;
-  border-color: var(--accent-peru, #CD853F);
+  border-color: var(--teal);
 }
 
 .borrowings-detailed-list {
@@ -466,7 +466,7 @@
 }
 
 .book-title-link:hover h3 {
-  color: var(--accent-peru, #CD853F);
+  color: var(--teal);
 }
 
 .status-badge {
@@ -479,7 +479,7 @@
 
 .status-badge.active {
   background: rgba(205, 133, 63, 0.1);
-  color: var(--accent-peru, #CD853F);
+  color: var(--teal);
 }
 
 .status-badge.due-soon {
@@ -511,11 +511,11 @@
 
 .meta-item {
   font-size: 0.9rem;
-  color: var(--text-charcoal, #666);
+  color: var(--ink);
 }
 
 .meta-item strong {
-  color: var(--secondary-brown, #8B7355);
+  color: var(--ink);
 }
 
 .due-indicator {
@@ -526,7 +526,7 @@
 
 .renewal-badge {
   background: rgba(205, 133, 63, 0.1);
-  color: var(--accent-peru, #CD853F);
+  color: var(--teal);
   padding: 0.25rem 0.75rem;
   border-radius: 12px;
   font-size: 0.85rem;
@@ -536,7 +536,7 @@
 .borrowings-summary {
   text-align: center;
   padding: 1.5rem;
-  color: var(--text-charcoal, #666);
+  color: var(--ink);
   font-size: 0.9rem;
 }
 
@@ -566,16 +566,16 @@
 }
 
 .filter-section label {
-  color: var(--secondary-brown, #8B7355);
+  color: var(--ink);
   font-weight: 600;
 }
 
 .collection-select {
   padding: 0.75rem 1rem;
-  border: 2px solid var(--light-gray, #e0e0e0);
+  border: 2px solid var(--line);
   border-radius: 8px;
   font-size: 1rem;
-  color: var(--text-charcoal, #666);
+  color: var(--ink);
   background: white;
   cursor: pointer;
   transition: border-color 0.2s;
@@ -583,7 +583,7 @@
 
 .collection-select:focus {
   outline: none;
-  border-color: var(--accent-peru, #CD853F);
+  border-color: var(--teal);
 }
 
 .search-summary {
@@ -598,7 +598,7 @@
 
 .search-summary p {
   margin: 0;
-  color: var(--text-charcoal, #666);
+  color: var(--ink);
 }
 
 /* Books Grid */
@@ -671,7 +671,7 @@
 }
 
 .book-title {
-  color: var(--secondary-brown, #8B7355);
+  color: var(--ink);
   font-size: 1rem;
   margin-bottom: 0.5rem;
   line-height: 1.3;
@@ -682,7 +682,7 @@
 }
 
 .book-subtitle {
-  color: var(--text-charcoal, #666);
+  color: var(--ink);
   font-size: 0.85rem;
   margin-bottom: 0.5rem;
   display: -webkit-box;
@@ -692,13 +692,13 @@
 }
 
 .book-author {
-  color: var(--accent-peru, #CD853F);
+  color: var(--teal);
   font-size: 0.85rem;
   margin-bottom: 0.5rem;
 }
 
 .book-collection {
-  color: var(--text-charcoal, #666);
+  color: var(--ink);
   font-size: 0.8rem;
   margin-bottom: 0.5rem;
 }
@@ -713,7 +713,7 @@
 }
 
 .review-count {
-  color: var(--text-charcoal, #666);
+  color: var(--ink);
   margin-left: 0.25rem;
 }
 
@@ -734,9 +734,9 @@
 
 .page-button {
   padding: 0.5rem 0.875rem;
-  border: 2px solid var(--light-gray, #e0e0e0);
+  border: 2px solid var(--line);
   background: white;
-  color: var(--text-charcoal, #666);
+  color: var(--ink);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
@@ -744,18 +744,18 @@
 }
 
 .page-button:hover {
-  border-color: var(--accent-peru, #CD853F);
-  color: var(--accent-peru, #CD853F);
+  border-color: var(--teal);
+  color: var(--teal);
 }
 
 .page-button.active {
-  background: var(--accent-peru, #CD853F);
+  background: var(--teal);
   color: white;
-  border-color: var(--accent-peru, #CD853F);
+  border-color: var(--teal);
 }
 
 .page-ellipsis {
-  color: var(--text-charcoal, #666);
+  color: var(--ink);
   padding: 0 0.25rem;
 }
 
@@ -796,7 +796,7 @@
 .cover-placeholder-large {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, var(--primary-beige, #F5F5DC), var(--secondary-brown, #8B7355));
+  background: linear-gradient(135deg, var(--primary-beige, #F5F5DC), var(--ink));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -809,13 +809,13 @@
 }
 
 .book-detail-info h1 {
-  color: var(--secondary-brown, #8B7355);
+  color: var(--ink);
   font-size: 2rem;
   margin-bottom: 0.5rem;
 }
 
 .book-detail-info .subtitle {
-  color: var(--text-charcoal, #666);
+  color: var(--ink);
   font-size: 1.1rem;
   margin-bottom: 1.5rem;
 }
@@ -825,24 +825,24 @@
 }
 
 .contributors-list h3 {
-  color: var(--secondary-brown, #8B7355);
+  color: var(--ink);
   font-size: 1rem;
   margin-bottom: 0.75rem;
 }
 
 .contributor-item {
-  color: var(--accent-peru, #CD853F);
+  color: var(--teal);
   margin-bottom: 0.5rem;
   font-size: 0.95rem;
 }
 
 .contributor-item .role {
-  color: var(--text-charcoal, #666);
+  color: var(--ink);
   font-weight: normal;
 }
 
 .contributor-item .dates {
-  color: var(--text-charcoal, #666);
+  color: var(--ink);
   font-size: 0.85rem;
 }
 
@@ -852,7 +852,7 @@
   gap: 1.5rem;
   margin-bottom: 1.5rem;
   padding-bottom: 1.5rem;
-  border-bottom: 1px solid var(--light-gray, #e0e0e0);
+  border-bottom: 1px solid var(--line);
 }
 
 .availability-section {
@@ -899,7 +899,7 @@
 
 .availability-section p {
   margin: 0;
-  color: var(--text-charcoal, #666);
+  color: var(--ink);
   font-size: 0.9rem;
 }
 
@@ -916,7 +916,7 @@
 }
 
 .rating-number {
-  color: var(--secondary-brown, #8B7355);
+  color: var(--ink);
   font-weight: 600;
   font-size: 1.1rem;
 }
@@ -931,13 +931,13 @@
 }
 
 .book-section h2 {
-  color: var(--secondary-brown, #8B7355);
+  color: var(--ink);
   font-size: 1.5rem;
   margin-bottom: 1.5rem;
 }
 
 .book-description {
-  color: var(--text-charcoal, #666);
+  color: var(--ink);
   line-height: 1.6;
 }
 
@@ -955,13 +955,13 @@
 }
 
 .form-group label {
-  color: var(--secondary-brown, #8B7355);
+  color: var(--ink);
   font-weight: 600;
 }
 
 .form-group textarea {
   padding: 0.875rem;
-  border: 2px solid var(--light-gray, #e0e0e0);
+  border: 2px solid var(--line);
   border-radius: 8px;
   font-size: 1rem;
   font-family: inherit;
@@ -971,7 +971,7 @@
 
 .form-group textarea:focus {
   outline: none;
-  border-color: var(--accent-peru, #CD853F);
+  border-color: var(--teal);
 }
 
 /* Star Rating */
@@ -1024,7 +1024,7 @@
 .reviewer-icon {
   width: 40px;
   height: 40px;
-  background: var(--accent-peru, #CD853F);
+  background: var(--teal);
   color: white;
   border-radius: 50%;
   display: flex;
@@ -1034,12 +1034,12 @@
 }
 
 .reviewer-info strong {
-  color: var(--secondary-brown, #8B7355);
+  color: var(--ink);
   display: block;
 }
 
 .review-date {
-  color: var(--text-charcoal, #666);
+  color: var(--ink);
   font-size: 0.85rem;
   display: block;
   margin-top: 0.25rem;
@@ -1050,7 +1050,7 @@
 }
 
 .review-comment {
-  color: var(--text-charcoal, #666);
+  color: var(--ink);
   line-height: 1.6;
   margin: 0;
 }
@@ -1090,12 +1090,12 @@
 }
 
 .btn-primary {
-  background: var(--accent-peru, #CD853F);
+  background: var(--teal);
   color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--secondary-brown, #8B7355);
+  background: var(--ink);
 }
 
 .btn-primary:disabled {
@@ -1105,12 +1105,12 @@
 
 .btn-outline {
   background: white;
-  color: var(--accent-peru, #CD853F);
-  border: 2px solid var(--accent-peru, #CD853F);
+  color: var(--teal);
+  border: 2px solid var(--teal);
 }
 
 .btn-outline:hover:not(:disabled) {
-  background: var(--accent-peru, #CD853F);
+  background: var(--teal);
   color: white;
 }
 

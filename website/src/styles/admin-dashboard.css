@@ -34,7 +34,7 @@
 .stat-link {
   display: block;
   margin-top: 0.5rem;
-  color: var(--secondary-brown);
+  color: var(--ink);
   font-weight: 600;
   text-decoration: none;
   font-size: 0.9rem;
@@ -42,7 +42,7 @@
 }
 
 .stat-link:hover {
-  color: var(--accent-peru);
+  color: var(--teal);
 }
 
 /* Content Statistics */
@@ -61,8 +61,8 @@
 }
 
 .stat-section h2 {
-  font-family: var(--font-heading);
-  color: var(--secondary-brown);
+  font-family: var(--font-serif);
+  color: var(--ink);
   margin-bottom: 1.5rem;
 }
 
@@ -100,12 +100,12 @@
 .activity-content h4 {
   margin: 0;
   font-size: 1.5rem;
-  color: var(--secondary-brown);
+  color: var(--ink);
 }
 
 .activity-content p {
   margin: 0;
-  color: var(--text-charcoal);
+  color: var(--ink);
   opacity: 0.8;
 }
 
@@ -126,24 +126,24 @@
 
 .contributor-item .rank {
   font-weight: 700;
-  color: var(--accent-peru);
+  color: var(--teal);
   font-size: 1.1rem;
   min-width: 30px;
 }
 
 .contributor-item .name {
   flex: 1;
-  color: var(--text-charcoal);
+  color: var(--ink);
 }
 
 .contributor-item .count {
-  color: var(--secondary-brown);
+  color: var(--ink);
   font-weight: 600;
 }
 
 .empty-text {
   text-align: center;
-  color: var(--text-charcoal);
+  color: var(--ink);
   opacity: 0.6;
   padding: 2rem;
 }
@@ -173,16 +173,16 @@
   gap: 0.75rem;
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
-  border-bottom: 2px solid var(--light-gray);
+  border-bottom: 2px solid var(--line);
 }
 
 .card-header svg {
   font-size: 1.5rem;
-  color: var(--accent-peru);
+  color: var(--teal);
 }
 
 .card-header h3 {
-  color: var(--secondary-brown);
+  color: var(--ink);
   margin: 0;
 }
 
@@ -213,7 +213,7 @@
 
 .item-content h4 {
   margin: 0 0 0.5rem 0;
-  color: var(--secondary-brown);
+  color: var(--ink);
   font-size: 1rem;
 }
 
@@ -223,34 +223,34 @@
 }
 
 .meta {
-  color: var(--text-charcoal);
+  color: var(--ink);
   opacity: 0.7;
   font-size: 0.85rem;
 }
 
 .testimonial-preview {
   font-style: italic;
-  color: var(--text-charcoal);
+  color: var(--ink);
 }
 
 .view-all-link {
   display: block;
   margin-top: 1rem;
   text-align: center;
-  color: var(--accent-peru);
+  color: var(--teal);
   font-weight: 600;
   text-decoration: none;
   transition: color 0.2s;
 }
 
 .view-all-link:hover {
-  color: var(--secondary-brown);
+  color: var(--ink);
 }
 
 /* Quick Actions */
 .quick-actions-section h2 {
-  font-family: var(--font-heading);
-  color: var(--secondary-brown);
+  font-family: var(--font-serif);
+  color: var(--ink);
   margin-bottom: 1.5rem;
 }
 
@@ -267,7 +267,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   text-align: center;
   text-decoration: none;
-  color: var(--text-charcoal);
+  color: var(--ink);
   transition: all 0.2s;
 }
 
@@ -278,12 +278,12 @@
 
 .action-card svg {
   font-size: 3rem;
-  color: var(--accent-peru);
+  color: var(--teal);
   margin-bottom: 1rem;
 }
 
 .action-card h3 {
-  color: var(--secondary-brown);
+  color: var(--ink);
   margin: 0.5rem 0;
 }
 
