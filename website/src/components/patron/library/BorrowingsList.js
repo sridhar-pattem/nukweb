@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { patronLibraryAPI } from '../../../services/api';
-import { FaBook, FaClock, FaExclamationTriangle, FaSearch, FaFilter } from 'react-icons/fa';
+import { FaBook, FaClock, FaExclamationTriangle, FaSearch } from 'react-icons/fa';
 import '../../../styles/library-dashboard.css';
 
 const BorrowingsList = () => {

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { patronLibraryAPI } from '../../services/api';
+import { patronLibraryAPI } from '../../../services/api';
 import { FaBook, FaBookReader, FaClock, FaExclamationTriangle, FaStar } from 'react-icons/fa';
-import '../../styles/library-dashboard.css';
+import '../../../styles/library-dashboard.css';
 
 const LibraryDashboard = () => {
   const [loading, setLoading] = useState(true);
