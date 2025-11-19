@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/common/ProtectedRoute';
-import Header from './components/layout/Header';
+import ModernHeader from './components/layout/ModernHeader';
 import Footer from './components/layout/Footer';
 import Home from './components/pages/Home';
 import AboutUs from './components/pages/AboutUs';
@@ -62,7 +62,7 @@ function App() {
     <AuthProvider>
       <Router>
         <div className="App">
-          <Header />
+          <ModernHeader />
           <main>
             <Routes>
               {/* Public Routes */}
