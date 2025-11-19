@@ -31,13 +31,31 @@ def preview_book_import():
 
         books_preview = []
         errors = []
+        column_names = []
 
         for idx, row in enumerate(csv_reader, start=1):
-            # Try to find ISBN column (libib exports use 'ISBN' or 'ISBN13')
-            isbn = row.get('ISBN') or row.get('ISBN13') or row.get('isbn') or row.get('isbn13')
+            # Store column names from first row
+            if idx == 1:
+                column_names = list(row.keys())
+                print(f"CSV Columns found: {column_names}")
+
+            # Try to find ISBN column with various possible names
+            isbn = (row.get('ISBN') or row.get('ISBN13') or row.get('isbn') or
+                   row.get('isbn13') or row.get('ISBN 13') or row.get('isbn 13') or
+                   row.get('Isbn') or row.get('Isbn13') or row.get('Primary ISBN') or
+                   row.get('primary_isbn') or row.get('ean') or row.get('EAN'))
+
+            # Clean ISBN - remove hyphens and spaces
+            if isbn:
+                isbn = isbn.strip().replace('-', '').replace(' ', '')
 
             if not isbn:
-                errors.append(f"Row {idx}: No ISBN found")
+                errors.append(f"Row {idx}: No ISBN found in columns {column_names[:5]}")
+                continue
+
+            # Skip if ISBN is too short (likely invalid)
+            if len(isbn) < 10:
+                errors.append(f"Row {idx}: ISBN too short ({isbn})")
                 continue
 
             # Check if book already exists
@@ -82,6 +100,7 @@ def preview_book_import():
             "already_exists": len([b for b in books_preview if b['status'] == 'exists']),
             "not_found": len([b for b in books_preview if b['status'] == 'not_found']),
             "errors": errors,
+            "columns_found": column_names,
             "preview": books_preview[:50]  # Show first 50 for preview
         }), 200
 
