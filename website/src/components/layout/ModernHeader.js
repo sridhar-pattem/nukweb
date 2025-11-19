@@ -21,28 +21,29 @@ const ModernHeader = () => {
     <header className="nav">
       <div className="container nav-inner">
         {/* Brand */}
-        <Link to="/" style={{ display: 'flex', gap: '10px', alignItems: 'center', textDecoration: 'none' }} onClick={closeMobileMenu}>
+        <Link to="/" style={{ display: 'flex', gap: '6px', alignItems: 'center', textDecoration: 'none' }} onClick={closeMobileMenu}>
           <div style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '10px',
+            width: '28px',
+            height: '28px',
+            borderRadius: '6px',
             background: 'var(--teal)',
             color: '#fff',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontWeight: '700'
+            fontWeight: '700',
+            fontSize: '11px'
           }}>
             NUK
           </div>
           <div>
-            <div style={{ fontWeight: '700', color: '#111' }}>Nuk Library</div>
-            <div className="text-muted" style={{ marginTop: '-2px', fontSize: '11px' }}>Cowork & Café · Bangalore</div>
+            <div style={{ fontWeight: '700', color: '#111', fontSize: '14px' }}>Nuk Library</div>
+            <div className="text-muted" style={{ marginTop: '-2px', fontSize: '9px' }}>Cowork & Café · Bangalore</div>
           </div>
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="desktop-nav" style={{ display: 'flex', gap: '6px' }}>
+        <nav className="desktop-nav" style={{ display: 'flex', gap: '4px' }}>
           {/* Public Links */}
           <NavLink to="/" className="btn btn-outline" onClick={closeMobileMenu}>
             Home
