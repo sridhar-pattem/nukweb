@@ -8,6 +8,8 @@ import {
   FaExclamationTriangle,
   FaClock,
   FaUser,
+  FaPlus,
+  FaTimes,
 } from 'react-icons/fa';
 import '../../../styles/admin-library.css';
 
@@ -20,6 +22,11 @@ const Circulation = () => {
   const [statusFilter, setStatusFilter] = useState('active');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [checkoutForm, setCheckoutForm] = useState({
+    patron_email: '',
+    item_barcode: '',
+  });
   const itemsPerPage = 20;
 
   useEffect(() => {
@@ -78,6 +85,28 @@ const Circulation = () => {
     }
   };
 
+  const handleCheckout = async (e) => {
+    e.preventDefault();
+
+    if (!checkoutForm.patron_email || !checkoutForm.item_barcode) {
+      setError('Patron email and item barcode are required');
+      return;
+    }
+
+    try {
+      setError('');
+      await adminLibraryAPI.checkoutItem(checkoutForm);
+      setSuccess('Book checked out successfully!');
+      setShowCheckoutModal(false);
+      setCheckoutForm({ patron_email: '', item_barcode: '' });
+      fetchBorrowings();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error('Error checking out item:', err);
+      setError(err.response?.data?.error || 'Failed to checkout item');
+    }
+  };
+
   const isOverdue = (dueDate) => {
     return new Date(dueDate) < new Date();
   };
@@ -114,10 +143,72 @@ const Circulation = () => {
           <h1>Circulation</h1>
           <p>Manage checkouts, returns, and renewals</p>
         </div>
+        <button onClick={() => setShowCheckoutModal(true)} className="btn btn-primary">
+          <FaPlus /> Issue Book
+        </button>
       </div>
 
       {error && <div className="error-message">{error}</div>}
       {success && <div className="success-message">{success}</div>}
+
+      {/* Checkout Modal */}
+      {showCheckoutModal && (
+        <div className="modal-overlay" onClick={() => setShowCheckoutModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Issue Book</h2>
+              <button
+                className="modal-close"
+                onClick={() => setShowCheckoutModal(false)}
+              >
+                <FaTimes />
+              </button>
+            </div>
+            <form onSubmit={handleCheckout} className="modal-form">
+              <div className="form-group">
+                <label htmlFor="patron_email">Patron Email *</label>
+                <input
+                  type="email"
+                  id="patron_email"
+                  value={checkoutForm.patron_email}
+                  onChange={(e) =>
+                    setCheckoutForm({ ...checkoutForm, patron_email: e.target.value })
+                  }
+                  className="form-control"
+                  required
+                  placeholder="Enter patron email address"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="item_barcode">Item Barcode *</label>
+                <input
+                  type="text"
+                  id="item_barcode"
+                  value={checkoutForm.item_barcode}
+                  onChange={(e) =>
+                    setCheckoutForm({ ...checkoutForm, item_barcode: e.target.value })
+                  }
+                  className="form-control"
+                  required
+                  placeholder="Scan or enter item barcode"
+                />
+              </div>
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  onClick={() => setShowCheckoutModal(false)}
+                  className="btn btn-outline"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Checkout
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="admin-tabs">

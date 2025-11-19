@@ -50,6 +50,8 @@ import Cataloging from './components/admin/library/Cataloging';
 import Circulation from './components/admin/library/Circulation';
 import Members from './components/admin/library/Members';
 import Reports from './components/admin/library/Reports';
+import BookForm from './components/admin/library/BookForm';
+import MemberForm from './components/admin/library/MemberForm';
 
 function App() {
   return (
@@ -237,6 +239,38 @@ function App() {
                 element={
                   <ProtectedRoute adminOnly={true}>
                     <Reports />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/library/cataloging/books/new"
+                element={
+                  <ProtectedRoute adminOnly={true}>
+                    <BookForm />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/library/cataloging/books/:id"
+                element={
+                  <ProtectedRoute adminOnly={true}>
+                    <BookForm />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/library/members/new"
+                element={
+                  <ProtectedRoute adminOnly={true}>
+                    <MemberForm />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/library/members/:id"
+                element={
+                  <ProtectedRoute adminOnly={true}>
+                    <MemberForm />
                   </ProtectedRoute>
                 }
               />
