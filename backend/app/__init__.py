@@ -6,9 +6,17 @@ from app.config import Config
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
-    
-    # Initialize extensions
-    CORS(app)
+
+    # Initialize extensions with explicit CORS configuration
+    CORS(app, resources={
+        r"/api/*": {
+            "origins": ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002", "http://localhost:3003"],
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"],
+            "supports_credentials": True,
+            "expose_headers": ["Content-Type", "Authorization"]
+        }
+    })
     jwt = JWTManager(app)
     
     # Register blueprints
