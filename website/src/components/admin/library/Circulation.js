@@ -24,9 +24,15 @@ const Circulation = () => {
   const [success, setSuccess] = useState('');
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [checkoutForm, setCheckoutForm] = useState({
-    patron_email: '',
-    item_barcode: '',
+    patron_search: '',
+    item_search: '',
   });
+  const [patronSuggestions, setPatronSuggestions] = useState([]);
+  const [itemSuggestions, setItemSuggestions] = useState([]);
+  const [selectedPatron, setSelectedPatron] = useState(null);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [showPatronSuggestions, setShowPatronSuggestions] = useState(false);
+  const [showItemSuggestions, setShowItemSuggestions] = useState(false);
   const itemsPerPage = 20;
 
   useEffect(() => {
@@ -99,48 +105,87 @@ const Circulation = () => {
     }
   };
 
+  // Patron autocomplete search
+  const handlePatronSearch = async (query) => {
+    if (!query || query.length < 2) {
+      setPatronSuggestions([]);
+      setShowPatronSuggestions(false);
+      return;
+    }
+
+    try {
+      const response = await adminLibraryAPI.searchPatrons(query);
+      setPatronSuggestions(response.data || []);
+      setShowPatronSuggestions(true);
+    } catch (err) {
+      console.error('Error searching patrons:', err);
+    }
+  };
+
+  // Item autocomplete search (supports title, author, ISBN, barcode)
+  const handleItemSearch = async (query) => {
+    if (!query || query.length < 2) {
+      setItemSuggestions([]);
+      setShowItemSuggestions(false);
+      return;
+    }
+
+    try {
+      const response = await adminLibraryAPI.searchItems(query);
+      setItemSuggestions(response.data || []);
+      setShowItemSuggestions(true);
+    } catch (err) {
+      console.error('Error searching items:', err);
+    }
+  };
+
+  const handleSelectPatron = (patron) => {
+    setSelectedPatron(patron);
+    setCheckoutForm({
+      ...checkoutForm,
+      patron_search: `${patron.first_name} ${patron.last_name}`,
+    });
+    setShowPatronSuggestions(false);
+    setPatronSuggestions([]);
+  };
+
+  const handleSelectItem = (item) => {
+    setSelectedItem(item);
+    setCheckoutForm({
+      ...checkoutForm,
+      item_search: `${item.title} (Barcode: ${item.barcode})`,
+    });
+    setShowItemSuggestions(false);
+    setItemSuggestions([]);
+  };
+
   const handleCheckout = async (e) => {
     e.preventDefault();
 
-    if (!checkoutForm.patron_email || !checkoutForm.item_barcode) {
-      setError('Patron email and item barcode are required');
+    if (!selectedPatron) {
+      setError('Please select a patron from the suggestions');
+      return;
+    }
+
+    if (!selectedItem) {
+      setError('Please select an item from the suggestions');
       return;
     }
 
     try {
       setError('');
 
-      // First, search for patron by email
-      const patronRes = await adminLibraryAPI.searchPatrons(checkoutForm.patron_email);
-      const patrons = patronRes.data;
-
-      if (!patrons || patrons.length === 0) {
-        setError('Patron not found with that email');
-        return;
-      }
-
-      const patron = patrons[0]; // Take first match
-
-      // Search for item by barcode
-      const itemRes = await adminLibraryAPI.searchItems(checkoutForm.item_barcode);
-      const items = itemRes.data;
-
-      if (!items || items.length === 0) {
-        setError('Item not found with that barcode');
-        return;
-      }
-
-      const item = items[0]; // Take first match
-
       // Now issue the book with patron_id and item_id
       await adminLibraryAPI.checkoutItem({
-        patron_id: patron.patron_id,
-        item_id: item.item_id,
+        patron_id: selectedPatron.patron_id,
+        item_id: selectedItem.item_id,
       });
 
       setSuccess('Book checked out successfully!');
       setShowCheckoutModal(false);
-      setCheckoutForm({ patron_email: '', item_barcode: '' });
+      setCheckoutForm({ patron_search: '', item_search: '' });
+      setSelectedPatron(null);
+      setSelectedItem(null);
       fetchBorrowings();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
@@ -207,38 +252,125 @@ const Circulation = () => {
               </button>
             </div>
             <form onSubmit={handleCheckout} className="modal-form">
+              {/* Patron Search with Autocomplete */}
               <div className="form-group">
-                <label htmlFor="patron_email">Patron Email *</label>
-                <input
-                  type="email"
-                  id="patron_email"
-                  value={checkoutForm.patron_email}
-                  onChange={(e) =>
-                    setCheckoutForm({ ...checkoutForm, patron_email: e.target.value })
-                  }
-                  className="form-control"
-                  required
-                  placeholder="Enter patron email address"
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="item_barcode">Item Barcode *</label>
+                <label htmlFor="patron_search">
+                  <FaUser /> Patron Name *
+                </label>
                 <input
                   type="text"
-                  id="item_barcode"
-                  value={checkoutForm.item_barcode}
-                  onChange={(e) =>
-                    setCheckoutForm({ ...checkoutForm, item_barcode: e.target.value })
-                  }
+                  id="patron_search"
+                  value={checkoutForm.patron_search}
+                  onChange={(e) => {
+                    setCheckoutForm({ ...checkoutForm, patron_search: e.target.value });
+                    setSelectedPatron(null);
+                    handlePatronSearch(e.target.value);
+                  }}
                   className="form-control"
-                  required
-                  placeholder="Scan or enter item barcode"
+                  placeholder="Search by patron name..."
+                  autoComplete="off"
                 />
+                {showPatronSuggestions && patronSuggestions.length > 0 && (
+                  <div className="autocomplete-dropdown">
+                    {patronSuggestions.map((patron) => (
+                      <div
+                        key={patron.patron_id}
+                        className="autocomplete-item"
+                        onClick={() => handleSelectPatron(patron)}
+                      >
+                        <div className="autocomplete-item-main">
+                          <strong>
+                            {patron.first_name} {patron.last_name}
+                          </strong>
+                        </div>
+                        <div className="autocomplete-item-sub">{patron.email}</div>
+                        {patron.plan_name && (
+                          <div className="autocomplete-item-sub">
+                            Plan: {patron.plan_name}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {selectedPatron && (
+                  <div className="selected-info">
+                    <strong>✓ Selected:</strong> {selectedPatron.first_name}{' '}
+                    {selectedPatron.last_name} ({selectedPatron.email})
+                  </div>
+                )}
               </div>
+
+              {/* Item Search with Autocomplete */}
+              <div className="form-group">
+                <label htmlFor="item_search">
+                  <FaBook /> Book / Item *
+                </label>
+                <input
+                  type="text"
+                  id="item_search"
+                  value={checkoutForm.item_search}
+                  onChange={(e) => {
+                    setCheckoutForm({ ...checkoutForm, item_search: e.target.value });
+                    setSelectedItem(null);
+                    handleItemSearch(e.target.value);
+                  }}
+                  className="form-control"
+                  placeholder="Search by title, author, ISBN, or barcode..."
+                  autoComplete="off"
+                />
+                {showItemSuggestions && itemSuggestions.length > 0 && (
+                  <div className="autocomplete-dropdown">
+                    {itemSuggestions.map((item) => (
+                      <div
+                        key={item.item_id}
+                        className="autocomplete-item"
+                        onClick={() => handleSelectItem(item)}
+                      >
+                        <div className="autocomplete-item-main">
+                          <strong>{item.title}</strong>
+                        </div>
+                        {item.authors && (
+                          <div className="autocomplete-item-sub">By: {item.authors}</div>
+                        )}
+                        <div className="autocomplete-item-sub">
+                          Barcode: {item.barcode}
+                          {item.isbn && ` | ISBN: ${item.isbn}`}
+                        </div>
+                        <div className="autocomplete-item-sub">
+                          <span
+                            className={`badge ${
+                              item.status === 'Available' ? 'badge-success' : 'badge-warning'
+                            }`}
+                          >
+                            {item.status}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {selectedItem && (
+                  <div className="selected-info">
+                    <strong>✓ Selected:</strong> {selectedItem.title} (Barcode:{' '}
+                    {selectedItem.barcode})
+                  </div>
+                )}
+              </div>
+
               <div className="modal-actions">
                 <button
                   type="button"
-                  onClick={() => setShowCheckoutModal(false)}
+                  onClick={() => {
+                    setShowCheckoutModal(false);
+                    setCheckoutForm({ patron_search: '', item_search: '' });
+                    setSelectedPatron(null);
+                    setSelectedItem(null);
+                    setPatronSuggestions([]);
+                    setItemSuggestions([]);
+                    setShowPatronSuggestions(false);
+                    setShowItemSuggestions(false);
+                  }}
                   className="btn btn-outline"
                 >
                   Cancel

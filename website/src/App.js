@@ -51,6 +51,9 @@ import Circulation from './components/admin/library/Circulation';
 import Members from './components/admin/library/Members';
 import Reports from './components/admin/library/Reports';
 import Collections from './components/admin/library/Collections';
+import MembershipPlans from './components/admin/library/MembershipPlans';
+import Contributors from './components/admin/library/Contributors';
+import Items from './components/admin/library/Items';
 import BookForm from './components/admin/library/BookForm';
 import MemberForm from './components/admin/library/MemberForm';
 
@@ -248,6 +251,30 @@ function App() {
                 element={
                   <ProtectedRoute adminOnly={true}>
                     <Collections />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/library/membership-plans"
+                element={
+                  <ProtectedRoute adminOnly={true}>
+                    <MembershipPlans />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/library/contributors"
+                element={
+                  <ProtectedRoute adminOnly={true}>
+                    <Contributors />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/library/items"
+                element={
+                  <ProtectedRoute adminOnly={true}>
+                    <Items />
                   </ProtectedRoute>
                 }
               />
