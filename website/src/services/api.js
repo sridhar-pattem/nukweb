@@ -358,6 +358,13 @@ export const adminLibraryAPI = {
   // Library Dashboard Stats
   getLibraryDashboardStats: () => apiClient.get('/admin/library/dashboard/stats'),
 
+  // Membership Plans
+  getMembershipPlans: () => apiClient.get('/admin/membership-plans'),
+  getMembershipPlanById: (id) => apiClient.get(`/admin/membership-plans/${id}`),
+  createMembershipPlan: (data) => apiClient.post('/admin/membership-plans', data),
+  updateMembershipPlan: (id, data) => apiClient.put(`/admin/membership-plans/${id}`, data),
+  deleteMembershipPlan: (id) => apiClient.delete(`/admin/membership-plans/${id}`),
+
   // Reference Data
   getAgeRatings: () => apiClient.get('/admin/age-ratings'),
   getContentTypes: () => apiClient.get('/admin/content-types'),
