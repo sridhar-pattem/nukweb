@@ -16,7 +16,10 @@ import {
   FaCog,
   FaSignOutAlt,
   FaGavel,
-  FaTools
+  FaTools,
+  FaCreditCard,
+  FaUserEdit,
+  FaBoxes
 } from 'react-icons/fa';
 
 const Header = () => {
@@ -245,6 +248,36 @@ const Header = () => {
                         }}
                       >
                         <FaBook /> Collections
+                      </Link>
+                      <Link
+                        to="/admin/library/membership-plans"
+                        className="dropdown-item"
+                        onClick={() => {
+                          setAdminDropdownOpen(false);
+                          closeMobileMenu();
+                        }}
+                      >
+                        <FaCreditCard /> Membership Plans
+                      </Link>
+                      <Link
+                        to="/admin/library/contributors"
+                        className="dropdown-item"
+                        onClick={() => {
+                          setAdminDropdownOpen(false);
+                          closeMobileMenu();
+                        }}
+                      >
+                        <FaUserEdit /> Contributors
+                      </Link>
+                      <Link
+                        to="/admin/library/items"
+                        className="dropdown-item"
+                        onClick={() => {
+                          setAdminDropdownOpen(false);
+                          closeMobileMenu();
+                        }}
+                      >
+                        <FaBoxes /> Items/Inventory
                       </Link>
                     </div>
                   )}
