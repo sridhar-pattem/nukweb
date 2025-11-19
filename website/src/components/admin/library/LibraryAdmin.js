@@ -9,7 +9,7 @@ import Contributors from './Contributors';
 import Items from './Items';
 import BookForm from './BookForm';
 import MemberForm from './MemberForm';
-import BookImport from '../BookImport';
+import Import from '../Import';
 import '../../../styles/admin-library.css';
 
 const LibraryAdmin = () => {
@@ -88,7 +88,7 @@ const LibraryAdmin = () => {
           <Route path="/membership-plans" element={<MembershipPlans />} />
           <Route path="/contributors" element={<Contributors />} />
           <Route path="/items" element={<Items />} />
-          <Route path="/import" element={<BookImport />} />
+          <Route path="/import" element={<Import />} />
         </Routes>
       </div>
     </div>
