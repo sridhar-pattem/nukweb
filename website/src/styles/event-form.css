@@ -1,0 +1,50 @@
+/* Event Form Styles */
+
+.event-form-container {
+  padding: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.event-form.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+}
+
+.event-form {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.form-group.checkbox {
+  margin: 1rem 0;
+}
+
+.form-group.checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-weight: normal;
+}
+
+.form-group.checkbox input[type="checkbox"] {
+  width: auto;
+  height: 20px;
+  cursor: pointer;
+}
+
+.form-group.checkbox span {
+  color: var(--text-charcoal);
+}
+
+@media (max-width: 768px) {
+  .event-form-container {
+    padding: 1rem;
+  }
+}

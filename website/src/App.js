@@ -1,5 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/common/ProtectedRoute';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import Home from './components/pages/Home';
@@ -20,35 +22,134 @@ import Contact from './components/pages/Contact';
 import MembershipPlans from './components/pages/MembershipPlans';
 import Chatbot from './components/widgets/Chatbot';
 
+// Patron Components
+import PatronDashboard from './components/patron/PatronDashboard';
+import BlogPostEditor from './components/patron/BlogPostEditor';
+import BookSuggestionForm from './components/patron/BookSuggestionForm';
+import TestimonialForm from './components/patron/TestimonialForm';
+
+// Admin Components
+import AdminDashboard from './components/admin/AdminDashboard';
+import ModerationQueue from './components/admin/ModerationQueue';
+import EventManagement from './components/admin/EventManagement';
+import EventForm from './components/admin/EventForm';
+
 function App() {
   return (
-    <Router>
-      <div className="App">
-        <Header />
-        <main>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/about" element={<AboutUs />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/services/library" element={<LibraryService />} />
-            <Route path="/services/cowork" element={<CoworkService />} />
-            <Route path="/services/study-space" element={<StudySpaceService />} />
-            <Route path="/catalogue" element={<Catalogue />} />
-            <Route path="/books/:id" element={<BookDetail />} />
-            <Route path="/new-arrivals" element={<NewArrivals />} />
-            <Route path="/recommendations" element={<Recommendations />} />
-            <Route path="/events" element={<Events />} />
-            <Route path="/events/:id" element={<EventDetail />} />
-            <Route path="/blog" element={<Blog />} />
-            <Route path="/blog/:id" element={<BlogPost />} />
-            <Route path="/membership" element={<MembershipPlans />} />
-            <Route path="/contact" element={<Contact />} />
-          </Routes>
-        </main>
-        <Footer />
-        <Chatbot />
-      </div>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <div className="App">
+          <Header />
+          <main>
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Home />} />
+              <Route path="/about" element={<AboutUs />} />
+              <Route path="/services" element={<Services />} />
+              <Route path="/services/library" element={<LibraryService />} />
+              <Route path="/services/cowork" element={<CoworkService />} />
+              <Route path="/services/study-space" element={<StudySpaceService />} />
+              <Route path="/catalogue" element={<Catalogue />} />
+              <Route path="/books/:id" element={<BookDetail />} />
+              <Route path="/new-arrivals" element={<NewArrivals />} />
+              <Route path="/recommendations" element={<Recommendations />} />
+              <Route path="/events" element={<Events />} />
+              <Route path="/events/:id" element={<EventDetail />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/blog/:id" element={<BlogPost />} />
+              <Route path="/membership" element={<MembershipPlans />} />
+              <Route path="/contact" element={<Contact />} />
+
+              {/* Patron Routes (Protected) */}
+              <Route
+                path="/patron/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <PatronDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/patron/blog/new"
+                element={
+                  <ProtectedRoute>
+                    <BlogPostEditor />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/patron/blog/edit/:id"
+                element={
+                  <ProtectedRoute>
+                    <BlogPostEditor />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/patron/suggestions/new"
+                element={
+                  <ProtectedRoute>
+                    <BookSuggestionForm />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/patron/testimonials/new"
+                element={
+                  <ProtectedRoute>
+                    <TestimonialForm />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Admin Routes (Protected - Admin Only) */}
+              <Route
+                path="/admin/dashboard"
+                element={
+                  <ProtectedRoute adminOnly={true}>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/moderation"
+                element={
+                  <ProtectedRoute adminOnly={true}>
+                    <ModerationQueue />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/events"
+                element={
+                  <ProtectedRoute adminOnly={true}>
+                    <EventManagement />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/events/new"
+                element={
+                  <ProtectedRoute adminOnly={true}>
+                    <EventForm />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/events/edit/:id"
+                element={
+                  <ProtectedRoute adminOnly={true}>
+                    <EventForm />
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          </main>
+          <Footer />
+          <Chatbot />
+        </div>
+      </Router>
+    </AuthProvider>
   );
 }
 
