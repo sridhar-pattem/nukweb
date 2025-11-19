@@ -9,33 +9,35 @@ const Home = () => {
   const [upcomingEvents, setUpcomingEvents] = useState([]);
 
   useEffect(() => {
-    // Mock data - will be replaced with API calls later
-    setNewArrivals([
-      {
-        book_id: 1,
-        title: 'The Midnight Library',
-        authors: ['Matt Haig'],
-        cover_image_url: 'https://via.placeholder.com/200x300?text=Midnight+Library',
-        rating: 4.5,
-        available_items: 3,
-      },
-      {
-        book_id: 2,
-        title: 'Atomic Habits',
-        authors: ['James Clear'],
-        cover_image_url: 'https://via.placeholder.com/200x300?text=Atomic+Habits',
-        rating: 4.8,
-        available_items: 2,
-      },
-      {
-        book_id: 3,
-        title: 'The Blue Umbrella',
-        authors: ['Ruskin Bond'],
-        cover_image_url: 'https://via.placeholder.com/200x300?text=Blue+Umbrella',
-        rating: 4.3,
-        available_items: 5,
-      },
-    ]);
+    // Fetch new arrivals from API
+    const fetchNewArrivals = async () => {
+      try {
+        const response = await fetch('http://localhost:5001/api/patron/books/new-arrivals?limit=3');
+        const data = await response.json();
+
+        // Transform data to match BookCard component expectations
+        const transformedBooks = data.books.map(book => ({
+          book_id: book.book_id,
+          title: book.title,
+          authors: book.contributors
+            ? book.contributors
+                .filter(c => c.role === 'author')
+                .map(c => c.name)
+            : [],
+          cover_image_url: book.cover_image_url || 'https://via.placeholder.com/200x300?text=No+Cover',
+          rating: book.avg_rating || 0,
+          available_items: book.available_items || 0,
+        }));
+
+        setNewArrivals(transformedBooks);
+      } catch (error) {
+        console.error('Error fetching new arrivals:', error);
+        // Keep empty array on error
+        setNewArrivals([]);
+      }
+    };
+
+    fetchNewArrivals();
 
     setUpcomingEvents([
       {

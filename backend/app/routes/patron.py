@@ -6,6 +6,46 @@ from app.config import Config
 
 patron_bp = Blueprint('patron', __name__)
 
+@patron_bp.route('/books/new-arrivals', methods=['GET'])
+def get_new_arrivals():
+    """Get recently added books (public endpoint)"""
+    limit = request.args.get('limit', 6, type=int)
+
+    # Limit to a reasonable number to prevent abuse
+    if limit > 50:
+        limit = 50
+
+    query = """
+        SELECT b.book_id, b.isbn, b.title, b.subtitle,
+               b.publisher, b.publication_year,
+               b.collection_id, c.collection_name,
+               b.age_rating, b.cover_image_url,
+               b.created_at,
+               ba.available_items, ba.total_items,
+               COALESCE((SELECT json_agg(
+                   json_build_object('name', contrib.name, 'role', bc.role)
+                   ORDER BY bc.role, bc.sequence_number
+               )
+                FROM book_contributors bc
+                JOIN contributors contrib ON bc.contributor_id = contrib.contributor_id
+                WHERE bc.book_id = b.book_id
+               ), '[]'::json) as contributors,
+               (SELECT AVG(rating) FROM reviews WHERE book_id = b.book_id) as avg_rating,
+               (SELECT COUNT(*) FROM reviews WHERE book_id = b.book_id) as review_count
+        FROM books b
+        LEFT JOIN collections c ON b.collection_id = c.collection_id
+        LEFT JOIN mv_book_availability ba ON b.book_id = ba.book_id
+        WHERE b.is_active = TRUE
+        ORDER BY b.created_at DESC
+        LIMIT %s
+    """
+
+    books = execute_query(query, (limit,), fetch_all=True)
+
+    return jsonify({
+        "books": [dict(b) for b in (books or [])]
+    }), 200
+
 @patron_bp.route('/books', methods=['GET'])
 @jwt_required()
 def browse_books():
