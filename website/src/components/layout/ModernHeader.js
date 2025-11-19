@@ -94,10 +94,28 @@ const ModernHeader = () => {
               {isAdmin() && (
                 <>
                   <NavLink to="/admin/dashboard" className="nav-link" onClick={closeMobileMenu}>
-                    Admin
+                    Dashboard
                   </NavLink>
                   <NavLink to="/admin/library/cataloging" className="nav-link" onClick={closeMobileMenu}>
-                    Library Admin
+                    Cataloging
+                  </NavLink>
+                  <NavLink to="/admin/library/circulation" className="nav-link" onClick={closeMobileMenu}>
+                    Circulation
+                  </NavLink>
+                  <NavLink to="/admin/library/members" className="nav-link" onClick={closeMobileMenu}>
+                    Members
+                  </NavLink>
+                  <NavLink to="/admin/library/collections" className="nav-link" onClick={closeMobileMenu}>
+                    Collections
+                  </NavLink>
+                  <NavLink to="/admin/library/membership-plans" className="nav-link" onClick={closeMobileMenu}>
+                    Plans
+                  </NavLink>
+                  <NavLink to="/admin/library/contributors" className="nav-link" onClick={closeMobileMenu}>
+                    Contributors
+                  </NavLink>
+                  <NavLink to="/admin/library/items" className="nav-link" onClick={closeMobileMenu}>
+                    Items
                   </NavLink>
                 </>
               )}
@@ -160,10 +178,28 @@ const ModernHeader = () => {
               {isAdmin() && (
                 <>
                   <NavLink to="/admin/dashboard" className="mobile-nav-link" onClick={closeMobileMenu}>
-                    <Icon name="admin" /> Admin Dashboard
+                    <Icon name="dashboard" /> Dashboard
                   </NavLink>
                   <NavLink to="/admin/library/cataloging" className="mobile-nav-link" onClick={closeMobileMenu}>
-                    <Icon name="library" /> Library Admin
+                    <Icon name="books" /> Cataloging
+                  </NavLink>
+                  <NavLink to="/admin/library/circulation" className="mobile-nav-link" onClick={closeMobileMenu}>
+                    <Icon name="library" /> Circulation
+                  </NavLink>
+                  <NavLink to="/admin/library/members" className="mobile-nav-link" onClick={closeMobileMenu}>
+                    <Icon name="user" /> Members
+                  </NavLink>
+                  <NavLink to="/admin/library/collections" className="mobile-nav-link" onClick={closeMobileMenu}>
+                    <Icon name="books" /> Collections
+                  </NavLink>
+                  <NavLink to="/admin/library/membership-plans" className="mobile-nav-link" onClick={closeMobileMenu}>
+                    <Icon name="admin" /> Plans
+                  </NavLink>
+                  <NavLink to="/admin/library/contributors" className="mobile-nav-link" onClick={closeMobileMenu}>
+                    <Icon name="user" /> Contributors
+                  </NavLink>
+                  <NavLink to="/admin/library/items" className="mobile-nav-link" onClick={closeMobileMenu}>
+                    <Icon name="books" /> Items
                   </NavLink>
                 </>
               )}
