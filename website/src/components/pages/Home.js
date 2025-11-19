@@ -12,7 +12,7 @@ const Home = () => {
     // Fetch new arrivals from API
     const fetchNewArrivals = async () => {
       try {
-        const response = await fetch('http://localhost:5001/api/patron/books/new-arrivals?limit=3');
+        const response = await fetch('http://localhost:5001/api/patron/books/new-arrivals?limit=4');
         const data = await response.json();
 
         // Transform data to match BookCard component expectations
@@ -26,7 +26,8 @@ const Home = () => {
             : [],
           cover_image_url: book.cover_image_url || 'https://via.placeholder.com/200x300?text=No+Cover',
           rating: book.avg_rating || 0,
-          available_items: book.available_items || 0,
+          collection_name: book.collection_name || '',
+          age_rating: book.age_rating || '',
         }));
 
         setNewArrivals(transformedBooks);
@@ -198,9 +199,9 @@ const Home = () => {
               View All
             </Link>
           </div>
-          <div className="grid grid-3">
+          <div className="grid grid-4">
             {newArrivals.map((book) => (
-              <BookCard key={book.book_id} book={book} />
+              <BookCard key={book.book_id} book={book} compact={true} />
             ))}
           </div>
         </div>
