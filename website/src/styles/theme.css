@@ -319,6 +319,21 @@ img {
   background: linear-gradient(135deg, var(--paper) 0%, var(--card) 100%);
   padding: 100px 40px;
   text-align: center;
+  position: relative;
+  min-height: 500px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1;
 }
 
 .hero .hero-content {
@@ -326,24 +341,28 @@ img {
   max-width: 800px;
   margin: 0 auto;
   padding: 40px 24px;
+  position: relative;
+  z-index: 2;
 }
 
 .hero .hero-content h1 {
   font-family: var(--font-serif);
   font-size: clamp(32px, 5vw, 56px);
   font-weight: 700;
-  color: var(--ink);
+  color: #fff;
   margin-bottom: 20px;
   line-height: 1.2;
   text-align: center;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .hero .hero-content p {
   font-size: 18px;
-  color: var(--muted);
+  color: #fff;
   margin-bottom: 32px;
   line-height: 1.6;
   text-align: center;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .hero-img {
@@ -356,6 +375,7 @@ img {
 @media (max-width: 900px) {
   .hero {
     padding: 60px 24px;
+    min-height: 400px;
   }
 
   .hero .hero-content {
@@ -369,6 +389,22 @@ img {
 
   .hero .hero-content p {
     margin-bottom: 24px;
+  }
+}
+
+/* Hero animations */
+.fade-in {
+  animation: fadeIn 0.8s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
