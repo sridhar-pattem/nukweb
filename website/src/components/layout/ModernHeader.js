@@ -67,7 +67,7 @@ const ModernHeader = () => {
           </NavLink>
 
           {/* Auth Links */}
-          {!isAuthenticated() ? (
+          {!isAuthenticated ? (
             <>
               <Link to="/login" className="btn btn-ghost btn-sm" onClick={closeMobileMenu}>
                 Sign In
@@ -144,7 +144,7 @@ const ModernHeader = () => {
             </NavLink>
           </div>
 
-          {isAuthenticated() && (
+          {isAuthenticated && (
             <div className="mobile-nav-section">
               {!isAdmin() && (
                 <>
@@ -177,7 +177,7 @@ const ModernHeader = () => {
             </div>
           )}
 
-          {!isAuthenticated() && (
+          {!isAuthenticated && (
             <div className="mobile-nav-section">
               <Link to="/login" className="btn btn-ghost" onClick={closeMobileMenu}>
                 Sign In
