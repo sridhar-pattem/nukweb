@@ -23,8 +23,8 @@ const ModernHeader = () => {
         {/* Brand */}
         <Link to="/" style={{ display: 'flex', gap: '6px', alignItems: 'center', textDecoration: 'none' }} onClick={closeMobileMenu}>
           <div style={{
-            width: '28px',
-            height: '28px',
+            width: '40px',
+            height: '40px',
             borderRadius: '6px',
             background: 'var(--teal)',
             color: '#fff',
@@ -32,13 +32,13 @@ const ModernHeader = () => {
             alignItems: 'center',
             justifyContent: 'center',
             fontWeight: '700',
-            fontSize: '11px'
+            fontSize: '16px'
           }}>
             NUK
           </div>
           <div>
-            <div style={{ fontWeight: '700', color: '#111', fontSize: '14px' }}>Nuk Library</div>
-            <div className="text-muted" style={{ marginTop: '-2px', fontSize: '9px' }}>Cowork & Café · Bangalore</div>
+            <div style={{ fontWeight: '700', color: '#111', fontSize: '20px' }}>Nuk Library</div>
+            <div className="text-muted" style={{ marginTop: '-2px', fontSize: '12px' }}>Cowork & Café · Bangalore</div>
           </div>
         </Link>
 

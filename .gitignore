@@ -60,3 +60,6 @@ frontend/static/
 # Misc
 .DS_Store
 .env.production
+
+# Images
+website/public/assets/images/

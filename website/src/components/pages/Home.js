@@ -91,7 +91,7 @@ const Home = () => {
           <h1>Welcome to Nuk Library</h1>
           <p>
             Your community hub for reading, learning, and growth in Bangalore.<br />
-            Serving all ages for over 14 years.
+            Serving all age groups for over 14 years.
           </p>
           <div>
             <Link to="/membership" className="btn btn-primary btn-large">
