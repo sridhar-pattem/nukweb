@@ -23,6 +23,7 @@ def create_app():
     from app.routes.admin_contributors import admin_contributors_bp
     from app.routes.admin_items import admin_items_bp
     from app.routes.admin_rda_vocabularies import admin_rda_vocabularies_bp
+    from app.routes.admin_import import admin_import_bp
     from app.routes.patron import patron_bp
     # Content Management
     from app.routes.patron_content import patron_content_bp
@@ -39,6 +40,7 @@ def create_app():
     app.register_blueprint(admin_contributors_bp, url_prefix='/api/admin')
     app.register_blueprint(admin_items_bp, url_prefix='/api/admin')
     app.register_blueprint(admin_rda_vocabularies_bp, url_prefix='/api/admin')
+    app.register_blueprint(admin_import_bp, url_prefix='/api/admin')
     app.register_blueprint(patron_bp, url_prefix='/api/patron')
     # Content Management
     app.register_blueprint(patron_content_bp, url_prefix='/api/patron/content')

@@ -9,6 +9,7 @@ import Contributors from './Contributors';
 import Items from './Items';
 import BookForm from './BookForm';
 import MemberForm from './MemberForm';
+import BookImport from '../BookImport';
 import '../../../styles/admin-library.css';
 
 const LibraryAdmin = () => {
@@ -63,6 +64,12 @@ const LibraryAdmin = () => {
         >
           Items
         </NavLink>
+        <NavLink
+          to="/admin/library/import"
+          className={({ isActive }) => isActive ? 'tab-link active' : 'tab-link'}
+        >
+          Import
+        </NavLink>
       </nav>
 
       {/* Tab Content */}
@@ -81,6 +88,7 @@ const LibraryAdmin = () => {
           <Route path="/membership-plans" element={<MembershipPlans />} />
           <Route path="/contributors" element={<Contributors />} />
           <Route path="/items" element={<Items />} />
+          <Route path="/import" element={<BookImport />} />
         </Routes>
       </div>
     </div>
