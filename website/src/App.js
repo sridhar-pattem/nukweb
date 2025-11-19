@@ -22,6 +22,11 @@ import Contact from './components/pages/Contact';
 import MembershipPlans from './components/pages/MembershipPlans';
 import Chatbot from './components/widgets/Chatbot';
 
+// Auth Components
+import Login from './components/auth/Login';
+import Register from './components/auth/Register';
+import Profile from './components/auth/Profile';
+
 // Patron Components
 import PatronDashboard from './components/patron/PatronDashboard';
 import BlogPostEditor from './components/patron/BlogPostEditor';
@@ -59,6 +64,18 @@ function App() {
               <Route path="/blog/:id" element={<BlogPost />} />
               <Route path="/membership" element={<MembershipPlans />} />
               <Route path="/contact" element={<Contact />} />
+
+              {/* Auth Routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Patron Routes (Protected) */}
               <Route
