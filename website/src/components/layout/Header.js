@@ -250,7 +250,9 @@ const Header = () => {
                   <div className="user-avatar">
                     {user?.name?.charAt(0).toUpperCase() || 'U'}
                   </div>
-                  <span className="user-name">{user?.name || 'User'}</span>
+                  <span className="user-name">
+                    {isAdmin() ? 'My Account' : user?.name || 'User'}
+                  </span>
                   <FaChevronDown />
                 </button>
                 {userDropdownOpen && (
