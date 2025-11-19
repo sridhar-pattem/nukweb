@@ -92,7 +92,7 @@ const ModernHeader = () => {
 
               {/* Admin Navigation - Simple Link */}
               {isAdmin() && (
-                <NavLink to="/admin/library/cataloging" className="nav-link" onClick={closeMobileMenu}>
+                <NavLink to="/admin/library" className="nav-link" onClick={closeMobileMenu}>
                   Library Admin
                 </NavLink>
               )}
@@ -153,7 +153,7 @@ const ModernHeader = () => {
               )}
 
               {isAdmin() && (
-                <NavLink to="/admin/library/cataloging" className="mobile-nav-link" onClick={closeMobileMenu}>
+                <NavLink to="/admin/library" className="mobile-nav-link" onClick={closeMobileMenu}>
                   <Icon name="admin" /> Library Admin
                 </NavLink>
               )}
