@@ -28,14 +28,14 @@
 }
 
 .auth-header h1 {
-  font-family: var(--font-heading);
-  color: var(--secondary-brown);
+  font-family: var(--font-serif);
+  color: var(--ink);
   margin-bottom: 0.5rem;
   font-size: 2rem;
 }
 
 .auth-header p {
-  color: var(--text-charcoal);
+  color: var(--ink);
   opacity: 0.8;
   font-size: 1rem;
 }
@@ -61,7 +61,7 @@
 .auth-form label {
   display: block;
   margin-bottom: 0.5rem;
-  color: var(--secondary-brown);
+  color: var(--ink);
   font-weight: 600;
   font-size: 0.95rem;
 }
@@ -75,7 +75,7 @@
 .input-with-icon .input-icon {
   position: absolute;
   left: 1rem;
-  color: var(--secondary-brown);
+  color: var(--ink);
   opacity: 0.6;
   font-size: 1rem;
 }
@@ -83,16 +83,16 @@
 .input-with-icon input {
   width: 100%;
   padding: 0.875rem 1rem 0.875rem 3rem;
-  border: 2px solid var(--light-gray);
+  border: 2px solid var(--line);
   border-radius: 8px;
-  font-family: var(--font-body);
+  font-family: var(--font-sans);
   font-size: 1rem;
   transition: all 0.2s;
 }
 
 .input-with-icon input:focus {
   outline: none;
-  border-color: var(--accent-peru);
+  border-color: var(--teal);
   box-shadow: 0 0 0 3px rgba(205, 133, 63, 0.1);
 }
 
@@ -105,7 +105,7 @@
   right: 1rem;
   background: none;
   border: none;
-  color: var(--secondary-brown);
+  color: var(--ink);
   opacity: 0.6;
   cursor: pointer;
   padding: 0.5rem;
@@ -130,7 +130,7 @@
   gap: 0.5rem;
   cursor: pointer;
   font-size: 0.9rem;
-  color: var(--text-charcoal);
+  color: var(--ink);
 }
 
 .checkbox-label input[type="checkbox"] {
@@ -140,7 +140,7 @@
 }
 
 .forgot-link {
-  color: var(--accent-peru);
+  color: var(--teal);
   text-decoration: none;
   font-size: 0.9rem;
   font-weight: 500;
@@ -148,7 +148,7 @@
 }
 
 .forgot-link:hover {
-  color: var(--secondary-brown);
+  color: var(--ink);
   text-decoration: underline;
 }
 
@@ -165,20 +165,20 @@
 }
 
 .auth-footer p {
-  color: var(--text-charcoal);
+  color: var(--ink);
   opacity: 0.8;
   font-size: 0.95rem;
 }
 
 .auth-link {
-  color: var(--accent-peru);
+  color: var(--teal);
   text-decoration: none;
   font-weight: 600;
   transition: color 0.2s;
 }
 
 .auth-link:hover {
-  color: var(--secondary-brown);
+  color: var(--ink);
   text-decoration: underline;
 }
 
@@ -195,14 +195,14 @@
   top: 50%;
   width: 100%;
   height: 1px;
-  background: var(--light-gray);
+  background: var(--line);
 }
 
 .auth-divider span {
   position: relative;
   background: white;
   padding: 0 1rem;
-  color: var(--text-charcoal);
+  color: var(--ink);
   opacity: 0.6;
   font-size: 0.9rem;
 }

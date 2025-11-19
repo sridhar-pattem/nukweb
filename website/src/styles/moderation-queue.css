@@ -20,13 +20,13 @@
 }
 
 .queue-header h1 {
-  font-family: var(--font-heading);
-  color: var(--secondary-brown);
+  font-family: var(--font-serif);
+  color: var(--ink);
   margin-bottom: 0.5rem;
 }
 
 .queue-header p {
-  color: var(--text-charcoal);
+  color: var(--ink);
   opacity: 0.8;
 }
 
@@ -35,7 +35,7 @@
   display: flex;
   gap: 1rem;
   margin-bottom: 2rem;
-  border-bottom: 2px solid var(--light-gray);
+  border-bottom: 2px solid var(--line);
   overflow-x: auto;
 }
 
@@ -44,7 +44,7 @@
   background: none;
   border: none;
   font-size: 1rem;
-  color: var(--text-charcoal);
+  color: var(--ink);
   cursor: pointer;
   border-bottom: 3px solid transparent;
   transition: all 0.2s;
@@ -55,12 +55,12 @@
 }
 
 .moderation-tabs button:hover {
-  color: var(--secondary-brown);
+  color: var(--ink);
 }
 
 .moderation-tabs button.active {
-  color: var(--secondary-brown);
-  border-bottom-color: var(--accent-peru);
+  color: var(--ink);
+  border-bottom-color: var(--teal);
   font-weight: 600;
 }
 
@@ -86,11 +86,11 @@
 .item-header {
   margin-bottom: 1rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid var(--light-gray);
+  border-bottom: 1px solid var(--line);
 }
 
 .item-header h3 {
-  color: var(--secondary-brown);
+  color: var(--ink);
   margin: 0 0 0.5rem 0;
 }
 
@@ -98,7 +98,7 @@
   display: flex;
   gap: 1rem;
   font-size: 0.9rem;
-  color: var(--text-charcoal);
+  color: var(--ink);
   opacity: 0.8;
 }
 
@@ -113,7 +113,7 @@
 }
 
 .excerpt {
-  color: var(--text-charcoal);
+  color: var(--ink);
   line-height: 1.6;
 }
 
@@ -127,7 +127,7 @@
 .tag {
   padding: 0.25rem 0.75rem;
   background: var(--primary-bg);
-  color: var(--secondary-brown);
+  color: var(--ink);
   border-radius: 12px;
   font-size: 0.85rem;
 }
@@ -145,14 +145,14 @@
 .book-details p {
   margin: 0;
   font-size: 0.9rem;
-  color: var(--text-charcoal);
+  color: var(--ink);
 }
 
 .reason {
   margin-top: 1rem;
   padding: 1rem;
   background: #F0F8FF;
-  border-left: 3px solid var(--accent-peru);
+  border-left: 3px solid var(--teal);
   border-radius: 4px;
   line-height: 1.6;
 }
@@ -160,7 +160,7 @@
 .purchase-link {
   display: inline-block;
   margin-top: 0.75rem;
-  color: var(--accent-peru);
+  color: var(--teal);
   text-decoration: none;
   font-weight: 600;
 }
@@ -176,7 +176,7 @@
 }
 
 .rating svg {
-  color: var(--light-gray);
+  color: var(--line);
   font-size: 1.25rem;
 }
 
@@ -186,7 +186,7 @@
 
 .testimonial-text {
   font-style: italic;
-  color: var(--text-charcoal);
+  color: var(--ink);
   line-height: 1.6;
   font-size: 1.05rem;
 }
@@ -259,7 +259,7 @@
 
 .modal-header {
   padding: 1.5rem;
-  border-bottom: 2px solid var(--light-gray);
+  border-bottom: 2px solid var(--line);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -267,14 +267,14 @@
 
 .modal-header h2 {
   margin: 0;
-  color: var(--secondary-brown);
+  color: var(--ink);
 }
 
 .close-btn {
   background: none;
   border: none;
   font-size: 2rem;
-  color: var(--text-charcoal);
+  color: var(--ink);
   cursor: pointer;
   line-height: 1;
   padding: 0;
@@ -283,7 +283,7 @@
 }
 
 .close-btn:hover {
-  color: var(--secondary-brown);
+  color: var(--ink);
 }
 
 .modal-body {
@@ -292,27 +292,27 @@
 
 .modal-body p {
   margin-bottom: 1rem;
-  color: var(--text-charcoal);
+  color: var(--ink);
 }
 
 .modal-body textarea {
   width: 100%;
   padding: 0.75rem;
-  border: 2px solid var(--light-gray);
+  border: 2px solid var(--line);
   border-radius: 4px;
-  font-family: var(--font-body);
+  font-family: var(--font-sans);
   font-size: 1rem;
   resize: vertical;
 }
 
 .modal-body textarea:focus {
   outline: none;
-  border-color: var(--accent-peru);
+  border-color: var(--teal);
 }
 
 .modal-actions {
   padding: 1.5rem;
-  border-top: 2px solid var(--light-gray);
+  border-top: 2px solid var(--line);
   display: flex;
   gap: 1rem;
   justify-content: flex-end;
