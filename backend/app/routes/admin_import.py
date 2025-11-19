@@ -40,11 +40,13 @@ def preview_book_import():
                 print(f"CSV Columns found: {column_names}")
 
             # Try to find ISBN column with various possible names
-            isbn = (row.get('ean_isbn13') or row.get('ean_isbn10') or
-                   row.get('ISBN') or row.get('ISBN13') or row.get('isbn') or
-                   row.get('isbn13') or row.get('ISBN 13') or row.get('isbn 13') or
-                   row.get('Isbn') or row.get('Isbn13') or row.get('Primary ISBN') or
-                   row.get('primary_isbn') or row.get('ean') or row.get('EAN'))
+            # Priority: ean_isbn13 first, then upc_isbn10, then others
+            isbn = (row.get('ean_isbn13') or row.get('upc_isbn10') or
+                   row.get('ean_isbn10') or row.get('ISBN') or row.get('ISBN13') or
+                   row.get('isbn') or row.get('isbn13') or row.get('ISBN 13') or
+                   row.get('isbn 13') or row.get('Isbn') or row.get('Isbn13') or
+                   row.get('Primary ISBN') or row.get('primary_isbn') or
+                   row.get('ean') or row.get('EAN'))
 
             # Clean ISBN - remove hyphens and spaces
             if isbn:
