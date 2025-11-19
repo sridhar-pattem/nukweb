@@ -325,12 +325,17 @@ export const adminLibraryAPI = {
   getItemsByBookId: (bookId) => apiClient.get(`/admin/items/book/${bookId}`),
 
   // Circulation (Borrowings)
-  getBorrowings: (params) => apiClient.get('/admin/borrowings', { params }),
+  getBorrowings: (params) => apiClient.get('/admin/borrowings/all', { params }),
+  searchBorrowings: (params) => apiClient.get('/admin/borrowings/search', { params }),
   getBorrowingById: (id) => apiClient.get(`/admin/borrowings/${id}`),
-  checkoutItem: (data) => apiClient.post('/admin/borrowings/checkout', data),
+  checkoutItem: (data) => apiClient.post('/admin/borrowings/issue', data),
   returnItem: (borrowingId, data) => apiClient.post(`/admin/borrowings/${borrowingId}/return`, data),
   renewBorrowing: (borrowingId) => apiClient.post(`/admin/borrowings/${borrowingId}/renew`),
   getOverdueBorrowings: () => apiClient.get('/admin/borrowings/overdue'),
+
+  // Search helpers
+  searchPatrons: (query) => apiClient.get('/admin/patrons/search', { params: { q: query } }),
+  searchItems: (query) => apiClient.get('/admin/items/search', { params: { q: query } }),
 
   // Patrons Management
   getPatrons: (params) => apiClient.get('/admin/patrons', { params }),
