@@ -51,7 +51,7 @@ import Circulation from './components/admin/library/Circulation';
 import Members from './components/admin/library/Members';
 import Reports from './components/admin/library/Reports';
 import Collections from './components/admin/library/Collections';
-import MembershipPlans from './components/admin/library/MembershipPlans';
+import AdminMembershipPlans from './components/admin/library/MembershipPlans';
 import Contributors from './components/admin/library/Contributors';
 import Items from './components/admin/library/Items';
 import BookForm from './components/admin/library/BookForm';
@@ -258,7 +258,7 @@ function App() {
                 path="/admin/library/membership-plans"
                 element={
                   <ProtectedRoute adminOnly={true}>
-                    <MembershipPlans />
+                    <AdminMembershipPlans />
                   </ProtectedRoute>
                 }
               />
