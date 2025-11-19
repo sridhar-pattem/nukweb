@@ -249,14 +249,24 @@ const BookImport = () => {
                     <tr style={{ background: '#e0e0e0' }}>
                       <th style={{ padding: '0.5rem', textAlign: 'left' }}>ISBN</th>
                       <th style={{ padding: '0.5rem', textAlign: 'left' }}>Title</th>
+                      <th style={{ padding: '0.5rem', textAlign: 'left' }}>Author</th>
+                      <th style={{ padding: '0.5rem', textAlign: 'left' }}>Source</th>
                       <th style={{ padding: '0.5rem', textAlign: 'left' }}>Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {preview.preview.map((book, idx) => (
                       <tr key={idx} style={{ borderBottom: '1px solid #ddd' }}>
-                        <td style={{ padding: '0.5rem' }}>{book.isbn}</td>
+                        <td style={{ padding: '0.5rem', fontFamily: 'monospace', fontSize: '0.875rem' }}>{book.isbn}</td>
                         <td style={{ padding: '0.5rem' }}>{book.title || '-'}</td>
+                        <td style={{ padding: '0.5rem', fontSize: '0.875rem' }}>{book.author || '-'}</td>
+                        <td style={{ padding: '0.5rem' }}>
+                          {book.source && (
+                            <span style={{ fontSize: '0.75rem', color: '#666' }}>
+                              {book.source}
+                            </span>
+                          )}
+                        </td>
                         <td style={{ padding: '0.5rem' }}>
                           <span
                             style={{
@@ -266,7 +276,7 @@ const BookImport = () => {
                               background: book.status === 'ready' ? '#d4edda' : book.status === 'exists' ? '#fff3cd' : '#f8d7da',
                             }}
                           >
-                            {book.message}
+                            {book.status === 'ready' ? '✓ Ready' : book.status === 'exists' ? '⊙ Exists' : '✗ Not found'}
                           </span>
                         </td>
                       </tr>
