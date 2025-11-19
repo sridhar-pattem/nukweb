@@ -1074,8 +1074,11 @@
   margin-bottom: 1rem;
 }
 
-/* Buttons */
-.btn {
+/* Buttons - Scoped to library dashboard */
+.library-dashboard .btn,
+.borrowings-list .btn,
+.book-browse .btn,
+.book-detail-page .btn {
   padding: 0.875rem 1.5rem;
   border: none;
   border-radius: 8px;
@@ -1089,37 +1092,58 @@
   font-size: 1rem;
 }
 
-.btn-primary {
+.library-dashboard .btn-primary,
+.borrowings-list .btn-primary,
+.book-browse .btn-primary,
+.book-detail-page .btn-primary {
   background: var(--teal);
   color: white;
 }
 
-.btn-primary:hover:not(:disabled) {
+.library-dashboard .btn-primary:hover:not(:disabled),
+.borrowings-list .btn-primary:hover:not(:disabled),
+.book-browse .btn-primary:hover:not(:disabled),
+.book-detail-page .btn-primary:hover:not(:disabled) {
   background: var(--ink);
 }
 
-.btn-primary:disabled {
+.library-dashboard .btn-primary:disabled,
+.borrowings-list .btn-primary:disabled,
+.book-browse .btn-primary:disabled,
+.book-detail-page .btn-primary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.btn-outline {
+.library-dashboard .btn-outline,
+.borrowings-list .btn-outline,
+.book-browse .btn-outline,
+.book-detail-page .btn-outline {
   background: white;
   color: var(--teal);
   border: 2px solid var(--teal);
 }
 
-.btn-outline:hover:not(:disabled) {
+.library-dashboard .btn-outline:hover:not(:disabled),
+.borrowings-list .btn-outline:hover:not(:disabled),
+.book-browse .btn-outline:hover:not(:disabled),
+.book-detail-page .btn-outline:hover:not(:disabled) {
   background: var(--teal);
   color: white;
 }
 
-.btn-outline:disabled {
+.library-dashboard .btn-outline:disabled,
+.borrowings-list .btn-outline:disabled,
+.book-browse .btn-outline:disabled,
+.book-detail-page .btn-outline:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.btn-small {
+.library-dashboard .btn-small,
+.borrowings-list .btn-small,
+.book-browse .btn-small,
+.book-detail-page .btn-small {
   padding: 0.5rem 1rem;
   font-size: 0.9rem;
 }
