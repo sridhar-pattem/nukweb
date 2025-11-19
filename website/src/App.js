@@ -37,7 +37,7 @@ import TestimonialForm from './components/patron/TestimonialForm';
 import LibraryDashboard from './components/patron/library/LibraryDashboard';
 import BorrowingsList from './components/patron/library/BorrowingsList';
 import BookBrowse from './components/patron/library/BookBrowse';
-import BookDetail from './components/patron/library/BookDetail';
+import PatronBookDetail from './components/patron/library/BookDetail';
 
 // Admin Components
 import AdminDashboard from './components/admin/AdminDashboard';
@@ -154,7 +154,7 @@ function App() {
                 path="/patron/library/book/:id"
                 element={
                   <ProtectedRoute>
-                    <BookDetail />
+                    <PatronBookDetail />
                   </ProtectedRoute>
                 }
               />
