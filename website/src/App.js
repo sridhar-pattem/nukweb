@@ -50,6 +50,7 @@ import Cataloging from './components/admin/library/Cataloging';
 import Circulation from './components/admin/library/Circulation';
 import Members from './components/admin/library/Members';
 import Reports from './components/admin/library/Reports';
+import Collections from './components/admin/library/Collections';
 import BookForm from './components/admin/library/BookForm';
 import MemberForm from './components/admin/library/MemberForm';
 
@@ -239,6 +240,14 @@ function App() {
                 element={
                   <ProtectedRoute adminOnly={true}>
                     <Reports />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/library/collections"
+                element={
+                  <ProtectedRoute adminOnly={true}>
+                    <Collections />
                   </ProtectedRoute>
                 }
               />

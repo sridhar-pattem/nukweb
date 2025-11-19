@@ -236,6 +236,16 @@ const Header = () => {
                       >
                         <FaUser /> Members
                       </Link>
+                      <Link
+                        to="/admin/library/collections"
+                        className="dropdown-item"
+                        onClick={() => {
+                          setAdminDropdownOpen(false);
+                          closeMobileMenu();
+                        }}
+                      >
+                        <FaBook /> Collections
+                      </Link>
                     </div>
                   )}
                 </div>

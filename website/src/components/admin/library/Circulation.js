@@ -36,13 +36,27 @@ const Circulation = () => {
   const fetchBorrowings = async () => {
     try {
       setLoading(true);
-      const params = { page, status: statusFilter };
+      const params = {};
 
-      if (searchTerm) params.search = searchTerm;
+      if (searchTerm) {
+        params.patron = searchTerm;
+        params.book = searchTerm;
+      }
 
       const response = await adminLibraryAPI.getBorrowings(params);
-      setBorrowings(response.data.borrowings || []);
-      setTotal(response.data.total || 0);
+
+      // Filter by status if needed (backend returns all active by default)
+      let data = response.data || [];
+
+      if (statusFilter === 'overdue') {
+        data = data.filter(b => new Date(b.due_date) < new Date());
+      } else if (statusFilter === 'returned') {
+        // For returned, we need a different endpoint or query
+        data = data.filter(b => b.status === 'returned');
+      }
+
+      setBorrowings(data);
+      setTotal(data.length);
     } catch (err) {
       console.error('Error fetching borrowings:', err);
       setError('Failed to load borrowings');
@@ -95,7 +109,35 @@ const Circulation = () => {
 
     try {
       setError('');
-      await adminLibraryAPI.checkoutItem(checkoutForm);
+
+      // First, search for patron by email
+      const patronRes = await adminLibraryAPI.searchPatrons(checkoutForm.patron_email);
+      const patrons = patronRes.data;
+
+      if (!patrons || patrons.length === 0) {
+        setError('Patron not found with that email');
+        return;
+      }
+
+      const patron = patrons[0]; // Take first match
+
+      // Search for item by barcode
+      const itemRes = await adminLibraryAPI.searchItems(checkoutForm.item_barcode);
+      const items = itemRes.data;
+
+      if (!items || items.length === 0) {
+        setError('Item not found with that barcode');
+        return;
+      }
+
+      const item = items[0]; // Take first match
+
+      // Now issue the book with patron_id and item_id
+      await adminLibraryAPI.checkoutItem({
+        patron_id: patron.patron_id,
+        item_id: item.item_id,
+      });
+
       setSuccess('Book checked out successfully!');
       setShowCheckoutModal(false);
       setCheckoutForm({ patron_email: '', item_barcode: '' });
@@ -296,17 +338,14 @@ const Circulation = () => {
                         <div className="patron-info">
                           <FaUser />
                           <div>
-                            <strong>{borrowing.patron_name}</strong>
-                            <span className="patron-email">{borrowing.patron_email}</span>
+                            <strong>{borrowing.first_name} {borrowing.last_name}</strong>
+                            <span className="patron-email">{borrowing.email}</span>
                           </div>
                         </div>
                       </td>
                       <td>
                         <div className="book-info">
-                          <strong>{borrowing.book_title}</strong>
-                          {borrowing.book_subtitle && (
-                            <span className="subtitle">{borrowing.book_subtitle}</span>
-                          )}
+                          <strong>{borrowing.title}</strong>
                         </div>
                       </td>
                       <td>{borrowing.barcode}</td>
