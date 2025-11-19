@@ -201,12 +201,38 @@ const BookImport = () => {
           {preview && (
             <div style={{ marginBottom: '2rem', padding: '1rem', background: '#f5f5f5', borderRadius: '8px' }}>
               <h3>Preview Results</h3>
+
+              {/* CSV Column Names */}
+              {preview.columns_found && preview.columns_found.length > 0 && (
+                <div style={{ marginBottom: '1rem', padding: '0.5rem', background: '#e8f4f8', borderRadius: '4px' }}>
+                  <strong>CSV Columns Found:</strong>
+                  <div style={{ fontSize: '0.875rem', marginTop: '0.25rem', fontFamily: 'monospace' }}>
+                    {preview.columns_found.join(', ')}
+                  </div>
+                </div>
+              )}
+
               <div style={{ marginBottom: '1rem' }}>
                 <p><strong>Total rows:</strong> {preview.total_rows}</p>
                 <p><strong>Ready to import:</strong> {preview.ready_to_import}</p>
                 <p><strong>Already exists:</strong> {preview.already_exists}</p>
                 <p><strong>Not found:</strong> {preview.not_found}</p>
+                {preview.errors && preview.errors.length > 0 && (
+                  <p style={{ color: '#d9534f' }}><strong>Errors:</strong> {preview.errors.length}</p>
+                )}
               </div>
+
+              {/* Errors Section */}
+              {preview.errors && preview.errors.length > 0 && (
+                <div style={{ marginBottom: '1rem', padding: '0.5rem', background: '#f8d7da', borderRadius: '4px', maxHeight: '200px', overflow: 'auto' }}>
+                  <strong>Errors (first 10):</strong>
+                  <ul style={{ fontSize: '0.875rem', marginTop: '0.25rem', paddingLeft: '1.5rem' }}>
+                    {preview.errors.slice(0, 10).map((error, idx) => (
+                      <li key={idx}>{error}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               <button
                 onClick={handleImport}
