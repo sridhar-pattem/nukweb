@@ -191,6 +191,91 @@ export const authAPI = {
 };
 
 // ===================================
+// PATRON CONTENT APIs
+// ===================================
+
+export const patronContentAPI = {
+  // Blog Posts
+  getBlogPosts: (params) => apiClient.get('/patron/content/blog/posts', { params }),
+  getBlogPostById: (id) => apiClient.get(`/patron/content/blog/posts/${id}`),
+  createBlogPost: (data) => apiClient.post('/patron/content/blog/posts', data),
+  updateBlogPost: (id, data) => apiClient.put(`/patron/content/blog/posts/${id}`, data),
+  deleteBlogPost: (id) => apiClient.delete(`/patron/content/blog/posts/${id}`),
+  submitBlogPost: (id) => apiClient.post(`/patron/content/blog/posts/${id}/submit`),
+
+  // Book Suggestions
+  getBookSuggestions: (params) => apiClient.get('/patron/content/suggestions', { params }),
+  createBookSuggestion: (data) => apiClient.post('/patron/content/suggestions', data),
+
+  // Testimonials
+  getTestimonials: (params) => apiClient.get('/patron/content/testimonials', { params }),
+  createTestimonial: (data) => apiClient.post('/patron/content/testimonials', data),
+
+  // Notifications
+  getNotifications: (params) => apiClient.get('/patron/content/notifications', { params }),
+  markNotificationAsRead: (id) => apiClient.put(`/patron/content/notifications/${id}/read`),
+  markAllNotificationsAsRead: () => apiClient.put('/patron/content/notifications/read-all'),
+
+  // Dashboard Stats
+  getDashboardStats: () => apiClient.get('/patron/content/dashboard/stats'),
+};
+
+// ===================================
+// ADMIN CONTENT APIs
+// ===================================
+
+export const adminContentAPI = {
+  // Dashboard
+  getDashboardStats: () => apiClient.get('/admin/content/dashboard/stats'),
+  getPendingContent: () => apiClient.get('/admin/content/dashboard/pending'),
+
+  // Blog Post Moderation
+  getAllBlogPosts: (params) => apiClient.get('/admin/content/blog', { params }),
+  getBlogPostById: (id) => apiClient.get(`/admin/content/blog/${id}`),
+  approveBlogPost: (id, data) => apiClient.post(`/admin/content/blog/${id}/approve`, data),
+  rejectBlogPost: (id, data) => apiClient.post(`/admin/content/blog/${id}/reject`, data),
+  requestChanges: (id, data) => apiClient.post(`/admin/content/blog/${id}/request-changes`, data),
+  featureBlogPost: (id) => apiClient.post(`/admin/content/blog/${id}/feature`),
+  unfeatureBlogPost: (id) => apiClient.delete(`/admin/content/blog/${id}/feature`),
+
+  // Book Suggestion Moderation
+  getAllSuggestions: (params) => apiClient.get('/admin/content/suggestions', { params }),
+  approveSuggestion: (id, data) => apiClient.post(`/admin/content/suggestions/${id}/approve`, data),
+  rejectSuggestion: (id, data) => apiClient.post(`/admin/content/suggestions/${id}/reject`, data),
+
+  // Testimonial Moderation
+  getAllTestimonials: (params) => apiClient.get('/admin/content/testimonials', { params }),
+  approveTestimonial: (id) => apiClient.post(`/admin/content/testimonials/${id}/approve`),
+  rejectTestimonial: (id, data) => apiClient.post(`/admin/content/testimonials/${id}/reject`, data),
+  featureTestimonial: (id) => apiClient.post(`/admin/content/testimonials/${id}/feature`),
+  unfeatureTestimonial: (id) => apiClient.delete(`/admin/content/testimonials/${id}/feature`),
+
+  // Activity Log
+  getActivityLog: (params) => apiClient.get('/admin/content/activity', { params }),
+};
+
+// ===================================
+// EVENT MANAGEMENT APIs (Admin)
+// ===================================
+
+export const eventManagementAPI = {
+  // Event CRUD
+  getAllEvents: (params) => apiClient.get('/events', { params }),
+  getEventById: (id) => apiClient.get(`/events/${id}`),
+  createEvent: (data) => apiClient.post('/events', data),
+  updateEvent: (id, data) => apiClient.put(`/events/${id}`, data),
+  deleteEvent: (id) => apiClient.delete(`/events/${id}`),
+
+  // Event Registration Management
+  getEventRegistrations: (eventId, params) => apiClient.get(`/events/${eventId}/registrations`, { params }),
+  cancelRegistration: (eventId, registrationId) => apiClient.delete(`/events/${eventId}/registrations/${registrationId}`),
+
+  // Public Event Operations
+  registerForEvent: (eventId, data) => apiClient.post(`/events/${eventId}/register`, data),
+  getMyRegistrations: () => apiClient.get('/events/my-registrations'),
+};
+
+// ===================================
 // HELPER FUNCTIONS
 // ===================================
 
