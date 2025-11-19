@@ -126,6 +126,7 @@ def preview_book_import():
                         'author': book_info.get('author', 'Unknown'),
                         'publisher': book_info.get('publisher', ''),
                         'year': book_info.get('publication_year', ''),
+                        'description': book_info.get('description', ''),
                         'cover_url': book_info.get('cover_image_url', ''),
                         'source': source,
                         'message': f'Ready to import (from {source})'
@@ -155,17 +156,19 @@ def preview_book_import():
 @jwt_required()
 @admin_required
 def execute_book_import():
-    """Execute bulk import of books from CSV"""
+    """Execute bulk import of books - supports both CSV data and manual ISBN entry"""
     data = request.get_json()
 
     collection_id = data.get('collection_id')
-    isbns = data.get('isbns', [])  # List of ISBNs to import
+    books_data = data.get('books', [])  # List of book objects with ISBN and metadata (CSV mode)
+    isbns = data.get('isbns', [])  # List of ISBNs only (manual mode)
 
     if not collection_id:
         return jsonify({"error": "collection_id is required"}), 400
 
-    if not isbns:
-        return jsonify({"error": "No ISBNs provided"}), 400
+    # Accept either books or isbns
+    if not books_data and not isbns:
+        return jsonify({"error": "No books or ISBNs provided"}), 400
 
     # Validate collection exists
     collection_check = "SELECT collection_id FROM collections WHERE collection_id = %s"
@@ -178,8 +181,39 @@ def execute_book_import():
         'errors': []
     }
 
-    with get_db_cursor() as cursor:
+    # Convert ISBNs to book data format if needed (manual mode)
+    if isbns and not books_data:
+        books_data = []
         for isbn in isbns:
+            # Fetch from APIs for manual entry
+            book_info = fetch_google(isbn)
+            source = 'Google Books'
+
+            if not book_info:
+                book_info = fetch_openlibrary(isbn)
+                source = 'Open Library' if book_info else None
+
+            if book_info:
+                books_data.append({
+                    'isbn': isbn,
+                    'title': book_info.get('title'),
+                    'author': book_info.get('author'),
+                    'publisher': book_info.get('publisher'),
+                    'year': book_info.get('publication_year'),
+                    'description': book_info.get('description', ''),
+                    'cover_url': book_info.get('cover_image_url', ''),
+                    'source': source
+                })
+            else:
+                results['errors'].append({
+                    'isbn': isbn,
+                    'reason': 'Not found in Google Books or Open Library'
+                })
+
+    with get_db_cursor() as cursor:
+        for book_data in books_data:
+            isbn = book_data.get('isbn')
+
             try:
                 # Check if already exists
                 check_query = "SELECT book_id FROM books WHERE isbn = %s"
@@ -193,19 +227,23 @@ def execute_book_import():
                     })
                     continue
 
-                # Try multiple sources: Google Books -> Open Library
-                book_info = fetch_google(isbn)
-                source = 'Google Books'
+                # Use provided book info (which may be from CSV, Google Books, or Open Library)
+                book_info = {
+                    'isbn': isbn,
+                    'title': book_data.get('title'),
+                    'author': book_data.get('author'),
+                    'publisher': book_data.get('publisher'),
+                    'publication_year': book_data.get('year'),
+                    'description': book_data.get('description', ''),
+                    'cover_image_url': book_data.get('cover_url', ''),
+                    'language': book_data.get('language', 'eng')
+                }
+                source = book_data.get('source', 'Unknown')
 
-                if not book_info:
-                    # Try Open Library as fallback
-                    book_info = fetch_openlibrary(isbn)
-                    source = 'Open Library' if book_info else None
-
-                if not book_info:
+                if not book_info.get('title'):
                     results['errors'].append({
                         'isbn': isbn,
-                        'reason': 'Not found in Google Books or Open Library'
+                        'reason': 'Missing title'
                     })
                     continue
 
@@ -281,9 +319,11 @@ def execute_book_import():
         # Refresh materialized view
         cursor.execute("REFRESH MATERIALIZED VIEW mv_book_availability")
 
+    total_count = len(books_data) if books_data else len(isbns)
+
     return jsonify({
         "message": "Import completed",
-        "total": len(isbns),
+        "total": total_count,
         "imported": len(results['imported']),
         "skipped": len(results['skipped']),
         "errors": len(results['errors']),

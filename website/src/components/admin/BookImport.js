@@ -69,15 +69,24 @@ const BookImport = () => {
 
     setLoading(true);
 
-    // Get ISBNs of books that are ready to import
-    const isbnsToImport = preview.preview
+    // Get full book data (including CSV data) for books ready to import
+    const booksToImport = preview.preview
       .filter(book => book.status === 'ready')
-      .map(book => book.isbn);
+      .map(book => ({
+        isbn: book.isbn,
+        title: book.title,
+        author: book.author,
+        publisher: book.publisher,
+        year: book.year,
+        description: book.description || '',
+        cover_url: book.cover_url || '',
+        source: book.source
+      }));
 
     try {
       const response = await adminLibraryAPI.executeBookImport({
         collection_id: selectedCollection,
-        isbns: isbnsToImport,
+        books: booksToImport,
       });
 
       setImportResult(response.data);
