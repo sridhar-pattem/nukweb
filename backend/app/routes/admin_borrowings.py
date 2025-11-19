@@ -130,9 +130,8 @@ def renew_borrowing(borrowing_id):
 @admin_borrowings_bp.route('/borrowings/<int:borrowing_id>/return', methods=['POST'])
 @jwt_required()
 @admin_required
-def return_book():
+def return_book(borrowing_id):
     """Mark an item as returned"""
-    borrowing_id = request.view_args.get('borrowing_id')
 
     query = """
         UPDATE borrowings
@@ -269,7 +268,7 @@ def search_items():
         return jsonify([]), 200
 
     query = """
-        SELECT i.item_id, i.barcode, i.call_number, i.circulation_status,
+        SELECT i.item_id, i.barcode, i.call_number, i.circulation_status as status,
                b.book_id, b.isbn, b.title, b.cover_image_url,
                ba.available_items, ba.total_items,
                COALESCE((SELECT json_agg(
@@ -279,13 +278,19 @@ def search_items():
                 FROM book_contributors bc
                 JOIN contributors c ON bc.contributor_id = c.contributor_id
                 WHERE bc.book_id = b.book_id
-               ), '[]'::json) as contributors
+               ), '[]'::json) as contributors,
+               COALESCE(string_agg(c.name, ', ') FILTER (WHERE bc.role = 'Author'), '') as authors
         FROM items i
         JOIN books b ON i.book_id = b.book_id
         LEFT JOIN mv_book_availability ba ON b.book_id = ba.book_id
+        LEFT JOIN book_contributors bc ON b.book_id = bc.book_id
+        LEFT JOIN contributors c ON bc.contributor_id = c.contributor_id
         WHERE (b.title ILIKE %s OR b.isbn LIKE %s OR i.barcode LIKE %s)
           AND i.circulation_status = 'available'
           AND b.is_active = TRUE
+        GROUP BY i.item_id, i.barcode, i.call_number, i.circulation_status,
+                 b.book_id, b.isbn, b.title, b.cover_image_url,
+                 ba.available_items, ba.total_items
         ORDER BY b.title
         LIMIT 10
     """
