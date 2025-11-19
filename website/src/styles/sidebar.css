@@ -1,0 +1,168 @@
+/* Sidebar Styles */
+
+.sidebar {
+  background: white;
+  width: 260px;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  left: 0;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+  transition: width 0.3s ease;
+  overflow-y: auto;
+  z-index: 100;
+}
+
+.sidebar.collapsed {
+  width: 70px;
+}
+
+.sidebar-nav {
+  padding: 1rem 0;
+}
+
+.sidebar-item {
+  margin-bottom: 0.25rem;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.875rem 1.5rem;
+  color: var(--text-charcoal);
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.sidebar-link:hover {
+  background: var(--primary-bg);
+  color: var(--secondary-brown);
+  text-decoration: none;
+}
+
+.sidebar-link.active {
+  background: rgba(205, 133, 63, 0.1);
+  color: var(--accent-peru);
+  font-weight: 600;
+}
+
+.sidebar-link.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--accent-peru);
+}
+
+.sidebar-link svg {
+  font-size: 1.25rem;
+  min-width: 1.25rem;
+  opacity: 0.8;
+}
+
+.sidebar-link.active svg {
+  opacity: 1;
+}
+
+.sidebar.collapsed .sidebar-link {
+  justify-content: center;
+  padding: 0.875rem;
+}
+
+.sidebar.collapsed .sidebar-link span {
+  display: none;
+}
+
+/* Sidebar Groups */
+.sidebar-group {
+  margin-bottom: 1rem;
+}
+
+.sidebar-group-title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.875rem 1.5rem;
+  color: var(--secondary-brown);
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.7;
+}
+
+.sidebar-group-title svg {
+  font-size: 1.25rem;
+  min-width: 1.25rem;
+}
+
+.sidebar.collapsed .sidebar-group-title span {
+  display: none;
+}
+
+.sidebar-submenu {
+  padding-left: 1rem;
+}
+
+.submenu-link {
+  padding-left: 3.5rem;
+  font-size: 0.9rem;
+}
+
+.submenu-link::before {
+  content: '';
+  position: absolute;
+  left: 2.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--light-gray);
+}
+
+.submenu-link.active::before {
+  background: var(--accent-peru);
+}
+
+/* Scrollbar Styling */
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: var(--light-gray);
+  border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: var(--secondary-brown);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .sidebar {
+    position: fixed;
+    z-index: 1000;
+    transform: translateX(-100%);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 240px;
+  }
+}
