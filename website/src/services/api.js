@@ -14,7 +14,7 @@ const apiClient = axios.create({
 // Request interceptor to add auth token if available
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -31,8 +31,10 @@ apiClient.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Handle unauthorized access
-      localStorage.removeItem('authToken');
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
       // Optionally redirect to login
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }
@@ -276,19 +278,41 @@ export const eventManagementAPI = {
 };
 
 // ===================================
+// PATRON LIBRARY APIs
+// ===================================
+
+export const patronLibraryAPI = {
+  // Browse Books
+  getBrowseBooks: (params) => apiClient.get('/patron/books', { params }),
+  getBookDetails: (bookId) => apiClient.get(`/patron/books/${bookId}`),
+  addBookReview: (bookId, data) => apiClient.post(`/patron/books/${bookId}/review`, data),
+
+  // Borrowings
+  getMyBorrowings: (status = 'active') => apiClient.get('/patron/my-borrowings', { params: { status } }),
+
+  // Recommendations
+  getRecommendations: () => apiClient.get('/patron/recommendations'),
+
+  // Cowork Bookings
+  requestCoworkBooking: (data) => apiClient.post('/patron/cowork-booking', data),
+  getMyCoworkBookings: () => apiClient.get('/patron/my-cowork-bookings'),
+};
+
+// ===================================
 // HELPER FUNCTIONS
 // ===================================
 
 export const setAuthToken = (token) => {
   if (token) {
-    localStorage.setItem('authToken', token);
+    localStorage.setItem('token', token);
   } else {
-    localStorage.removeItem('authToken');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
   }
 };
 
 export const getAuthToken = () => {
-  return localStorage.getItem('authToken');
+  return localStorage.getItem('token');
 };
 
 export const isAuthenticated = () => {
