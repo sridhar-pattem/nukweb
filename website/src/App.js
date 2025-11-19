@@ -45,6 +45,12 @@ import ModerationQueue from './components/admin/ModerationQueue';
 import EventManagement from './components/admin/EventManagement';
 import EventForm from './components/admin/EventForm';
 
+// Admin Library Components
+import Cataloging from './components/admin/library/Cataloging';
+import Circulation from './components/admin/library/Circulation';
+import Members from './components/admin/library/Members';
+import Reports from './components/admin/library/Reports';
+
 function App() {
   return (
     <AuthProvider>
@@ -197,6 +203,40 @@ function App() {
                 element={
                   <ProtectedRoute adminOnly={true}>
                     <EventForm />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Admin Library Routes (Protected - Admin Only) */}
+              <Route
+                path="/admin/library/cataloging"
+                element={
+                  <ProtectedRoute adminOnly={true}>
+                    <Cataloging />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/library/circulation"
+                element={
+                  <ProtectedRoute adminOnly={true}>
+                    <Circulation />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/library/members"
+                element={
+                  <ProtectedRoute adminOnly={true}>
+                    <Members />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/library/reports"
+                element={
+                  <ProtectedRoute adminOnly={true}>
+                    <Reports />
                   </ProtectedRoute>
                 }
               />
