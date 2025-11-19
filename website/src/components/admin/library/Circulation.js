@@ -61,6 +61,11 @@ const Circulation = () => {
         data = data.filter(b => b.status === 'returned');
       }
 
+      // Debug: Log borrowing data to check structure
+      if (data.length > 0) {
+        console.log('Sample borrowing data:', data[0]);
+      }
+
       setBorrowings(data);
       setTotal(data.length);
     } catch (err) {
@@ -78,30 +83,54 @@ const Circulation = () => {
   };
 
   const handleReturn = async (borrowingId) => {
+    console.log('handleReturn called with borrowing ID:', borrowingId);
+
+    if (!borrowingId) {
+      setError('Invalid borrowing ID');
+      return;
+    }
+
     if (!window.confirm('Confirm return of this item?')) return;
 
     try {
+      setError('');
+      console.log('Calling returnItem API with ID:', borrowingId);
       await adminLibraryAPI.returnItem(borrowingId, { return_date: new Date().toISOString() });
       setSuccess('Item returned successfully');
       fetchBorrowings();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       console.error('Error returning item:', err);
-      setError(err.response?.data?.error || 'Failed to return item');
+      console.error('Error details:', err.response?.data);
+      const errorMsg = err.response?.data?.error || err.response?.data?.message || 'Failed to return item';
+      setError(errorMsg);
+      setTimeout(() => setError(''), 5000);
     }
   };
 
   const handleRenew = async (borrowingId) => {
+    console.log('handleRenew called with borrowing ID:', borrowingId);
+
+    if (!borrowingId) {
+      setError('Invalid borrowing ID');
+      return;
+    }
+
     if (!window.confirm('Renew this borrowing?')) return;
 
     try {
+      setError('');
+      console.log('Calling renewBorrowing API with ID:', borrowingId);
       await adminLibraryAPI.renewBorrowing(borrowingId);
       setSuccess('Borrowing renewed successfully');
       fetchBorrowings();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       console.error('Error renewing borrowing:', err);
-      setError(err.response?.data?.error || 'Failed to renew borrowing');
+      console.error('Error details:', err.response?.data);
+      const errorMsg = err.response?.data?.error || err.response?.data?.message || 'Failed to renew borrowing';
+      setError(errorMsg);
+      setTimeout(() => setError(''), 5000);
     }
   };
 
