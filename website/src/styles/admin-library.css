@@ -965,3 +965,107 @@ textarea.form-control {
     max-width: none;
   }
 }
+
+/* Members Table Styling */
+.members-table tbody {
+  background: #fffff2;
+}
+
+.patron-id-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--ink);
+  font-weight: 500;
+  font-family: 'Courier New', monospace;
+}
+
+.patron-name-link {
+  color: var(--ink);
+  text-decoration: none;
+  display: block;
+  transition: color 0.2s;
+}
+
+.patron-name-link:hover {
+  color: var(--teal);
+  text-decoration: underline;
+}
+
+.patron-name-link strong {
+  font-weight: 600;
+}
+
+.patron-location {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--muted);
+  font-weight: normal;
+  margin-top: 0.25rem;
+}
+
+/* Status Badge for Frozen */
+.status-badge.frozen {
+  background: rgba(13, 110, 253, 0.1);
+  color: #0d6efd;
+}
+
+.status-badge.closed {
+  background: rgba(108, 117, 125, 0.1);
+  color: #6c757d;
+}
+
+/* Edit Member Form Styling */
+.book-form .form-section {
+  background: #fffff2;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.book-form .form-section h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: var(--ink);
+}
+
+/* Status Actions in Edit Form */
+.status-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+.status-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-warning {
+  background: #ffc107;
+  color: #000;
+}
+
+.btn-warning:hover {
+  background: #e0a800;
+}
+
+.btn-info {
+  background: #0dcaf0;
+  color: #000;
+}
+
+.btn-info:hover {
+  background: #31d2f2;
+}
+
+.btn-success {
+  background: #198754;
+  color: white;
+}
+
+.btn-success:hover {
+  background: #157347;
+}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { adminLibraryAPI } from '../../../services/api';
-import { FaUser, FaArrowLeft } from 'react-icons/fa';
+import { FaUser, FaArrowLeft, FaBan, FaRedo, FaPause, FaPlay } from 'react-icons/fa';
 import '../../../styles/admin-library.css';
 
 const MemberForm = () => {
@@ -14,6 +14,7 @@ const MemberForm = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [membershipPlans, setMembershipPlans] = useState([]);
+  const [patronStatus, setPatronStatus] = useState('active');
 
   const [formData, setFormData] = useState({
     first_name: '',
@@ -54,7 +55,7 @@ const MemberForm = () => {
     try {
       setLoading(true);
       const response = await adminLibraryAPI.getPatronById(id);
-      const patron = response.data;
+      const patron = response.data.patron || response.data;
 
       setFormData({
         first_name: patron.first_name || '',
@@ -69,6 +70,7 @@ const MemberForm = () => {
         membership_plan_id: patron.membership_plan_id || '',
         password: '', // Don't populate password for edit
       });
+      setPatronStatus(patron.status || 'active');
     } catch (err) {
       console.error('Error fetching patron:', err);
       setError('Failed to load member details');
@@ -83,6 +85,29 @@ const MemberForm = () => {
       ...prev,
       [name]: value,
     }));
+  };
+
+  const handleStatusAction = async (action, actionName) => {
+    if (!window.confirm(`Are you sure you want to ${actionName} this account?`)) return;
+
+    try {
+      setSaving(true);
+      setError('');
+      await adminLibraryAPI.updatePatronStatus(id, { action });
+      setSuccess(`Account ${actionName}d successfully!`);
+
+      // Update local status
+      if (action === 'renew') setPatronStatus('active');
+      else if (action === 'freeze') setPatronStatus('frozen');
+      else if (action === 'close') setPatronStatus('closed');
+
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error(`Error ${actionName}ing account:`, err);
+      setError(err.response?.data?.error || `Failed to ${actionName} account`);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -315,6 +340,68 @@ const MemberForm = () => {
             </select>
           </div>
         </div>
+
+        {isEditMode && (
+          <div className="form-section">
+            <h2>Account Status</h2>
+            <p className="help-text">
+              Current Status:{' '}
+              <span
+                className={`status-badge ${
+                  patronStatus === 'active'
+                    ? 'active'
+                    : patronStatus === 'frozen'
+                    ? 'frozen'
+                    : 'closed'
+                }`}
+              >
+                {patronStatus}
+              </span>
+            </p>
+            <div className="status-actions">
+              {patronStatus === 'active' && (
+                <button
+                  type="button"
+                  onClick={() => handleStatusAction('freeze', 'pause')}
+                  className="btn btn-warning"
+                  disabled={saving}
+                >
+                  <FaPause /> Pause Account
+                </button>
+              )}
+              {patronStatus === 'frozen' && (
+                <button
+                  type="button"
+                  onClick={() => handleStatusAction('renew', 'resume')}
+                  className="btn btn-success"
+                  disabled={saving}
+                >
+                  <FaPlay /> Resume Account
+                </button>
+              )}
+              {(patronStatus === 'active' || patronStatus === 'frozen') && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => handleStatusAction('renew', 'renew')}
+                    className="btn btn-info"
+                    disabled={saving}
+                  >
+                    <FaRedo /> Renew Account
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleStatusAction('close', 'close')}
+                    className="btn btn-danger"
+                    disabled={saving}
+                  >
+                    <FaBan /> Close Account
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="form-actions">
           <button
