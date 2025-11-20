@@ -560,29 +560,33 @@ def execute_patron_import():
                     })
                     continue
 
-                # Extract name from combined field
-                name = patron_data.get('name', '')
+                # Extract patron data from preview
+                name = patron_data.get('name', '')  # Combined "First Last"
                 phone = patron_data.get('phone', '')
                 address = patron_data.get('address', '')
                 tags = patron_data.get('tags', '')
                 user_status = patron_data.get('user_status', 'active')
-                join_date = patron_data.get('join_date')
 
-                # Validate required fields
-                if not name:
+                # Split name into first_name and last_name (required for patrons table)
+                name_parts = name.split(' ', 1)
+                first_name = name_parts[0] if len(name_parts) > 0 else ''
+                last_name = name_parts[1] if len(name_parts) > 1 else ''
+
+                # Validate required fields (patrons.first_name and last_name are NOT NULL)
+                if not first_name or not last_name:
                     results['errors'].append({
                         'patron_id': patron_id,
                         'email': email,
-                        'reason': 'Missing name field'
+                        'reason': 'Missing first_name or last_name'
                     })
                     continue
 
                 # Create user account first (required for foreign key constraint)
                 cursor.execute("""
-                    INSERT INTO users (email, password_hash, role, name, phone, status)
-                    VALUES (%s, %s, 'patron', %s, %s, %s)
+                    INSERT INTO users (email, password_hash, role, name, status)
+                    VALUES (%s, %s, 'patron', %s, %s)
                     RETURNING user_id
-                """, (email, password_hash, name, phone, user_status))
+                """, (email, password_hash, name, user_status))
 
                 user_result = cursor.fetchone()
                 if not user_result:
@@ -590,12 +594,13 @@ def execute_patron_import():
 
                 user_id = user_result['user_id']
 
-                # Create patron record with tags and default membership plan
+                # Create patron record matching actual database schema
+                # Schema has: first_name, last_name, phone, address, tags (NOT join_date or mobile_number)
                 cursor.execute("""
                     INSERT INTO patrons
-                    (patron_id, user_id, address, join_date, mobile_number, tags, membership_plan_id)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
-                """, (patron_id, user_id, address, join_date, phone, tags, default_membership_plan_id))
+                    (patron_id, user_id, first_name, last_name, phone, address, tags, membership_plan_id)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                """, (patron_id, user_id, first_name, last_name, phone, address, tags, default_membership_plan_id))
 
                 results['imported'].append({
                     'patron_id': patron_id,
