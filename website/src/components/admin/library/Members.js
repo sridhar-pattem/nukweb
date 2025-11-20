@@ -237,11 +237,11 @@ const Members = () => {
         <button
           className={`tab ${statusFilter === 'inactive' ? 'active' : ''}`}
           onClick={() => {
-            setStatusFilter('inactive');
+            setStatusFilter('frozen');
             setPage(1);
           }}
         >
-          Inactive
+          Frozen
         </button>
         <button
           className={`tab ${statusFilter === 'closed' ? 'active' : ''}`}
