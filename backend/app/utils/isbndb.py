@@ -153,18 +153,18 @@ def fetch_books_batch_isbndb(isbns):
             url = 'https://api2.isbndb.com/books'
 
             headers = {
-                'Authorization': api_key,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
+                'Authorization': api_key
             }
 
-            # Format: isbns=isbn1,isbn2,isbn3
-            data = 'isbns=' + ','.join(batch)
+            # Format: isbns=isbn1,isbn2,isbn3 (send as raw string body)
+            # ISBNDB expects this format exactly as shown in their documentation
+            payload = 'isbns=' + ','.join(batch)
 
             print(f"Fetching batch of {len(batch)} ISBNs from ISBNDB (batch {i//batch_size + 1} of {(len(clean_isbns) + batch_size - 1)//batch_size})...")
+            print(f"Sending payload: {payload[:200]}...")  # Show first 200 chars
 
             try:
-                response = requests.post(url, headers=headers, data=data, timeout=30)
+                response = requests.post(url, headers=headers, data=payload.encode('utf-8'), timeout=30)
 
                 print(f"ISBNDB API Response Status: {response.status_code}")
 
@@ -199,6 +199,12 @@ def fetch_books_batch_isbndb(isbns):
 
                 data = response.json()
                 print(f"ISBNDB returned {len(data.get('books', []))} books in response")
+
+                # If no books returned, show the response to debug
+                if len(data.get('books', [])) == 0:
+                    print(f"Response JSON: {data}")
+                    if 'error' in data or 'errorMessage' in data:
+                        print(f"ISBNDB API Error: {data.get('error') or data.get('errorMessage')}")
 
             except requests.Timeout:
                 print(f"ISBNDB API request timed out after 30 seconds")
