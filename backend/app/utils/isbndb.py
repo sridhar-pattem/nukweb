@@ -163,25 +163,58 @@ def fetch_books_batch_isbndb(isbns):
 
             print(f"Fetching batch of {len(batch)} ISBNs from ISBNDB (batch {i//batch_size + 1} of {(len(clean_isbns) + batch_size - 1)//batch_size})...")
 
-            response = requests.post(url, headers=headers, data=data, timeout=30)
+            try:
+                response = requests.post(url, headers=headers, data=data, timeout=30)
 
-            if response.status_code == 404:
-                print(f"Batch request: ISBNs not found in ISBNDB")
-                # Mark all as not found
+                print(f"ISBNDB API Response Status: {response.status_code}")
+
+                if response.status_code == 404:
+                    print(f"ISBNDB returned 404 - ISBNs not found")
+                    print(f"Response body: {response.text[:500]}")
+                    # Mark all as not found
+                    for isbn in batch:
+                        all_results[isbn] = None
+                    continue
+
+                if response.status_code == 429:
+                    print(f"ISBNDB API rate limit exceeded (429)")
+                    print(f"Response body: {response.text[:500]}")
+                    # Mark all as not found (will fallback to other sources)
+                    for isbn in batch:
+                        all_results[isbn] = None
+                    continue
+
+                if response.status_code == 401:
+                    print(f"ISBNDB API authentication failed (401) - Check API key")
+                    print(f"Response body: {response.text[:500]}")
+                    # Mark all as not found
+                    for isbn in batch:
+                        all_results[isbn] = None
+                    continue
+
+                if response.status_code != 200:
+                    print(f"ISBNDB API returned error status {response.status_code}")
+                    print(f"Response body: {response.text[:500]}")
+                    response.raise_for_status()
+
+                data = response.json()
+                print(f"ISBNDB returned {len(data.get('books', []))} books in response")
+
+            except requests.Timeout:
+                print(f"ISBNDB API request timed out after 30 seconds")
                 for isbn in batch:
                     all_results[isbn] = None
                 continue
-
-            if response.status_code == 429:
-                print(f"ISBNDB API rate limit exceeded for batch request")
-                # Mark all as not found (will fallback to other sources)
+            except requests.ConnectionError as e:
+                print(f"ISBNDB API connection error: {e}")
                 for isbn in batch:
                     all_results[isbn] = None
                 continue
-
-            response.raise_for_status()
-
-            data = response.json()
+            except Exception as e:
+                print(f"ISBNDB API request failed: {e}")
+                for isbn in batch:
+                    all_results[isbn] = None
+                continue
 
             # Map results by ISBN for this batch
             batch_results = {}
@@ -233,6 +266,25 @@ def fetch_books_batch_isbndb(isbns):
 
             # Merge batch results into all results
             all_results.update(batch_results)
+
+        # Print summary
+        found_count = len([v for v in all_results.values() if v is not None])
+        not_found_isbns = [k for k, v in all_results.items() if v is None]
+        not_found_count = len(not_found_isbns)
+
+        print(f"\nISBNDB Batch Fetch Summary:")
+        print(f"  Total ISBNs requested: {len(clean_isbns)}")
+        print(f"  Found in ISBNDB: {found_count}")
+        print(f"  Not found in ISBNDB: {not_found_count}")
+        print(f"  Success rate: {(found_count / len(clean_isbns) * 100):.1f}%")
+
+        if not_found_count > 0:
+            print(f"\n  ISBNs not found in ISBNDB (first 10):")
+            for isbn in not_found_isbns[:10]:
+                print(f"    - {isbn}")
+            if not_found_count > 10:
+                print(f"    ... and {not_found_count - 10} more")
+        print()
 
         return all_results
 
