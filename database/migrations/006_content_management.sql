@@ -75,7 +75,7 @@ CREATE INDEX idx_blog_likes_post ON blog_post_likes(post_id);
 
 CREATE TABLE book_suggestions (
     suggestion_id SERIAL PRIMARY KEY,
-    patron_id INTEGER NOT NULL REFERENCES patrons(patron_id) ON DELETE CASCADE,
+    patron_id VARCHAR(20) NOT NULL REFERENCES patrons(patron_id) ON DELETE CASCADE,
     title VARCHAR(500) NOT NULL,
     authors TEXT NOT NULL,
     isbn VARCHAR(20),
@@ -154,7 +154,7 @@ CREATE TABLE event_registrations (
     registration_id SERIAL PRIMARY KEY,
     event_id INTEGER NOT NULL REFERENCES events(event_id) ON DELETE CASCADE,
     user_id INTEGER REFERENCES users(user_id) ON DELETE SET NULL,
-    patron_id INTEGER REFERENCES patrons(patron_id) ON DELETE SET NULL,
+    patron_id VARCHAR(20) REFERENCES patrons(patron_id) ON DELETE SET NULL,
     attendee_name VARCHAR(255) NOT NULL,
     attendee_email VARCHAR(255) NOT NULL,
     attendee_phone VARCHAR(20),
