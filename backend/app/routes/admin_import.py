@@ -94,6 +94,7 @@ def preview_book_import():
         if isbns_to_fetch:
             print(f"Batch fetching {len(isbns_to_fetch)} ISBNs from ISBNDB...")
             isbndb_results = fetch_books_batch_isbndb(isbns_to_fetch)
+            print(f"ISBNDB returned data for {len([v for v in isbndb_results.values() if v is not None])} out of {len(isbns_to_fetch)} ISBNs")
 
         # Second pass: process results and fallback to other sources
         for isbn in isbns_to_fetch:
@@ -108,11 +109,14 @@ def preview_book_import():
             if isbn in isbndb_results and isbndb_results[isbn]:
                 book_info = isbndb_results[isbn]
                 source = 'ISBNDB'
+                print(f"ISBN {isbn}: Using ISBNDB data")
             else:
                 # Try Google Books as fallback
+                print(f"ISBN {isbn}: Not found in ISBNDB, trying Google Books...")
                 book_info = fetch_google(isbn)
                 if book_info:
                     source = 'Google Books'
+                    print(f"ISBN {isbn}: Using Google Books data")
                 else:
                     # Try Open Library as fallback
                     book_info = fetch_openlibrary(isbn)
@@ -176,7 +180,7 @@ def preview_book_import():
             "not_found": len([b for b in books_preview if b['status'] == 'not_found']),
             "errors": errors,
             "columns_found": column_names,
-            "preview": books_preview[:50]  # Show first 50 for preview
+            "preview": books_preview  # Send all records (no limit)
         }), 200
 
     except Exception as e:
@@ -218,6 +222,7 @@ def execute_book_import():
         # Batch fetch from ISBNDB first
         print(f"Batch fetching {len(isbns)} ISBNs from ISBNDB...")
         isbndb_results = fetch_books_batch_isbndb(isbns)
+        print(f"ISBNDB returned data for {len([v for v in isbndb_results.values() if v is not None])} out of {len(isbns)} ISBNs")
 
         for isbn in isbns:
             book_info = None
@@ -227,11 +232,14 @@ def execute_book_import():
             if isbn in isbndb_results and isbndb_results[isbn]:
                 book_info = isbndb_results[isbn]
                 source = 'ISBNDB'
+                print(f"ISBN {isbn}: Using ISBNDB data")
             else:
                 # Try Google Books as fallback
+                print(f"ISBN {isbn}: Not found in ISBNDB, trying Google Books...")
                 book_info = fetch_google(isbn)
                 if book_info:
                     source = 'Google Books'
+                    print(f"ISBN {isbn}: Using Google Books data")
                 else:
                     # Try Open Library as fallback
                     book_info = fetch_openlibrary(isbn)
