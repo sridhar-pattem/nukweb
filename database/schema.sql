@@ -81,7 +81,7 @@ CREATE TABLE age_ratings (
 -- Borrowings
 CREATE TABLE borrowings (
     borrowing_id SERIAL PRIMARY KEY,
-    patron_id INTEGER REFERENCES patrons(patron_id) ON DELETE CASCADE,
+    patron_id VARCHAR(20) REFERENCES patrons(patron_id) ON DELETE CASCADE,
     book_id INTEGER REFERENCES books(book_id) ON DELETE CASCADE,
     checkout_date DATE NOT NULL DEFAULT CURRENT_DATE,
     due_date DATE NOT NULL,
@@ -94,7 +94,7 @@ CREATE TABLE borrowings (
 -- Reservations
 CREATE TABLE reservations (
     reservation_id SERIAL PRIMARY KEY,
-    patron_id INTEGER REFERENCES patrons(patron_id) ON DELETE CASCADE,
+    patron_id VARCHAR(20) REFERENCES patrons(patron_id) ON DELETE CASCADE,
     book_id INTEGER REFERENCES books(book_id) ON DELETE CASCADE,
     reservation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     expiry_date TIMESTAMP,
@@ -105,7 +105,7 @@ CREATE TABLE reservations (
 -- Reviews
 CREATE TABLE reviews (
     review_id SERIAL PRIMARY KEY,
-    patron_id INTEGER REFERENCES patrons(patron_id) ON DELETE CASCADE,
+    patron_id VARCHAR(20) REFERENCES patrons(patron_id) ON DELETE CASCADE,
     book_id INTEGER REFERENCES books(book_id) ON DELETE CASCADE,
     rating INTEGER CHECK (rating >= 1 AND rating <= 5),
     comment TEXT,
@@ -116,7 +116,7 @@ CREATE TABLE reviews (
 -- Coworking Space Bookings
 CREATE TABLE cowork_bookings (
     booking_id SERIAL PRIMARY KEY,
-    patron_id INTEGER REFERENCES patrons(patron_id) ON DELETE CASCADE,
+    patron_id VARCHAR(20) REFERENCES patrons(patron_id) ON DELETE CASCADE,
     booking_date DATE NOT NULL,
     time_slot VARCHAR(50) NOT NULL,
     booking_type VARCHAR(20) CHECK (booking_type IN ('day', 'half-day')),
@@ -129,7 +129,7 @@ CREATE TABLE cowork_bookings (
 -- Coworking Subscriptions
 CREATE TABLE cowork_subscriptions (
     subscription_id SERIAL PRIMARY KEY,
-    patron_id INTEGER REFERENCES patrons(patron_id) ON DELETE CASCADE,
+    patron_id VARCHAR(20) REFERENCES patrons(patron_id) ON DELETE CASCADE,
     subscription_type VARCHAR(50) NOT NULL CHECK (subscription_type IN ('full-day', 'half-day', 'weekend-only')),
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
@@ -141,7 +141,7 @@ CREATE TABLE cowork_subscriptions (
 -- Invoices
 CREATE TABLE invoices (
     invoice_id SERIAL PRIMARY KEY,
-    patron_id INTEGER REFERENCES patrons(patron_id) ON DELETE CASCADE,
+    patron_id VARCHAR(20) REFERENCES patrons(patron_id) ON DELETE CASCADE,
     invoice_number VARCHAR(50) UNIQUE NOT NULL,
     invoice_type VARCHAR(50) NOT NULL CHECK (invoice_type IN ('membership', 'cowork')),
     amount DECIMAL(10, 2) NOT NULL,
@@ -199,7 +199,7 @@ CREATE TABLE social_media_posts (
 -- Reading History (for recommendations)
 CREATE TABLE reading_history (
     history_id SERIAL PRIMARY KEY,
-    patron_id INTEGER REFERENCES patrons(patron_id) ON DELETE CASCADE,
+    patron_id VARCHAR(20) REFERENCES patrons(patron_id) ON DELETE CASCADE,
     book_id INTEGER REFERENCES books(book_id) ON DELETE CASCADE,
     read_date DATE DEFAULT CURRENT_DATE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
