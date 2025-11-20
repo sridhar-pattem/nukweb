@@ -488,7 +488,7 @@ def preview_patron_import():
             "email_conflicts": len([p for p in patrons_preview if p['status'] == 'email_conflict']),
             "errors": errors,
             "columns_found": column_names,
-            "preview": patrons_preview[:50]  # Show first 50 for preview
+            "preview": patrons_preview  # Send all records for import (no limit)
         }), 200
 
     except Exception as e:
