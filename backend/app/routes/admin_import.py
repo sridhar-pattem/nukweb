@@ -176,7 +176,7 @@ def preview_book_import():
             "not_found": len([b for b in books_preview if b['status'] == 'not_found']),
             "errors": errors,
             "columns_found": column_names,
-            "preview": books_preview[:50]  # Show first 50 for preview
+            "preview": books_preview  # Send all records (no limit)
         }), 200
 
     except Exception as e:
