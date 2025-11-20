@@ -2,12 +2,13 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
 from app.utils.auth import admin_required, hash_password
 from app.utils.database import execute_query, get_db_cursor
+from app.utils.isbndb import fetch_book_from_isbndb as fetch_isbndb, fetch_books_batch_isbndb
 from app.utils.googlebooks import fetch_book_by_isbn as fetch_google
 from app.utils.openlibrary import fetch_book_by_isbn as fetch_openlibrary
 import csv
 import io
 import re
-from datetime import datetime
+from datetime import datetime, date
 
 admin_import_bp = Blueprint('admin_import', __name__)
 
@@ -35,6 +36,10 @@ def preview_book_import():
         books_preview = []
         errors = []
         column_names = []
+
+        # First pass: collect all ISBNs and CSV data
+        isbn_to_row = {}  # Map ISBN to row data for later processing
+        isbns_to_fetch = []  # ISBNs that need fetching from APIs
 
         for idx, row in enumerate(csv_reader, start=1):
             # Store column names from first row
@@ -77,11 +82,34 @@ def preview_book_import():
                     'message': 'Book already in database'
                 })
             else:
-                # Try multiple sources: Google Books -> Open Library -> CSV data
-                book_info = None
-                source = None
+                # Store for batch fetching
+                isbn_to_row[isbn] = {
+                    'row': idx,
+                    'csv_data': row
+                }
+                isbns_to_fetch.append(isbn)
 
-                # Try Google Books first
+        # Batch fetch from ISBNDB
+        isbndb_results = {}
+        if isbns_to_fetch:
+            print(f"Batch fetching {len(isbns_to_fetch)} ISBNs from ISBNDB...")
+            isbndb_results = fetch_books_batch_isbndb(isbns_to_fetch)
+
+        # Second pass: process results and fallback to other sources
+        for isbn in isbns_to_fetch:
+            row_data = isbn_to_row[isbn]
+            row = row_data['csv_data']
+            idx = row_data['row']
+
+            book_info = None
+            source = None
+
+            # Check ISBNDB batch results
+            if isbn in isbndb_results and isbndb_results[isbn]:
+                book_info = isbndb_results[isbn]
+                source = 'ISBNDB'
+            else:
+                # Try Google Books as fallback
                 book_info = fetch_google(isbn)
                 if book_info:
                     source = 'Google Books'
@@ -119,27 +147,27 @@ def preview_book_import():
                             }
                             source = 'CSV data'
 
-                if book_info:
-                    books_preview.append({
-                        'row': idx,
-                        'isbn': isbn,
-                        'status': 'ready',
-                        'title': book_info.get('title', 'Unknown'),
-                        'author': book_info.get('author', 'Unknown'),
-                        'publisher': book_info.get('publisher', ''),
-                        'year': book_info.get('publication_year', ''),
-                        'description': book_info.get('description', ''),
-                        'cover_url': book_info.get('cover_image_url', ''),
-                        'source': source,
-                        'message': f'Ready to import (from {source})'
-                    })
-                else:
-                    books_preview.append({
-                        'row': idx,
-                        'isbn': isbn,
-                        'status': 'not_found',
-                        'message': 'Book not found (no APIs or CSV data)'
-                    })
+            if book_info:
+                books_preview.append({
+                    'row': idx,
+                    'isbn': isbn,
+                    'status': 'ready',
+                    'title': book_info.get('title', 'Unknown'),
+                    'author': book_info.get('author', 'Unknown'),
+                    'publisher': book_info.get('publisher', ''),
+                    'year': book_info.get('publication_year', ''),
+                    'description': book_info.get('description', ''),
+                    'cover_url': book_info.get('cover_image_url', ''),
+                    'source': source,
+                    'message': f'Ready to import (from {source})'
+                })
+            else:
+                books_preview.append({
+                    'row': idx,
+                    'isbn': isbn,
+                    'status': 'not_found',
+                    'message': 'Book not found (no APIs or CSV data)'
+                })
 
         return jsonify({
             "total_rows": idx if 'idx' in locals() else 0,
@@ -186,14 +214,28 @@ def execute_book_import():
     # Convert ISBNs to book data format if needed (manual mode)
     if isbns and not books_data:
         books_data = []
-        for isbn in isbns:
-            # Fetch from APIs for manual entry
-            book_info = fetch_google(isbn)
-            source = 'Google Books'
 
-            if not book_info:
-                book_info = fetch_openlibrary(isbn)
-                source = 'Open Library' if book_info else None
+        # Batch fetch from ISBNDB first
+        print(f"Batch fetching {len(isbns)} ISBNs from ISBNDB...")
+        isbndb_results = fetch_books_batch_isbndb(isbns)
+
+        for isbn in isbns:
+            book_info = None
+            source = None
+
+            # Check ISBNDB batch results
+            if isbn in isbndb_results and isbndb_results[isbn]:
+                book_info = isbndb_results[isbn]
+                source = 'ISBNDB'
+            else:
+                # Try Google Books as fallback
+                book_info = fetch_google(isbn)
+                if book_info:
+                    source = 'Google Books'
+                else:
+                    # Try Open Library as fallback
+                    book_info = fetch_openlibrary(isbn)
+                    source = 'Open Library' if book_info else None
 
             if book_info:
                 books_data.append({
@@ -209,7 +251,7 @@ def execute_book_import():
             else:
                 results['errors'].append({
                     'isbn': isbn,
-                    'reason': 'Not found in Google Books or Open Library'
+                    'reason': 'Not found in ISBNDB, Google Books, or Open Library'
                 })
 
     with get_db_cursor() as cursor:
@@ -305,9 +347,29 @@ def execute_book_import():
                         VALUES (%s, %s, %s, %s)
                     """, (book_id, contributor_id, 'author', 1))
 
+                # Automatically create an initial item for the book
+                # Barcode is NULL initially and can be assigned later
+                cursor.execute("""
+                    INSERT INTO items
+                    (book_id, barcode, circulation_status, condition,
+                     acquisition_date, notes)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    RETURNING item_id
+                """, (
+                    book_id,
+                    None,  # Barcode is NULL, will be assigned manually later
+                    'available',  # Default status
+                    'good',  # Default condition
+                    date.today(),  # Acquisition date set to today
+                    f'Auto-created during import from {source}'  # Note about creation
+                ))
+
+                item_id = cursor.fetchone()['item_id']
+
                 results['imported'].append({
                     'isbn': isbn,
                     'book_id': book_id,
+                    'item_id': item_id,
                     'title': book_info.get('title'),
                     'source': source
                 })
