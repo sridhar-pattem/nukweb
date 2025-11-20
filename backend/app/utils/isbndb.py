@@ -198,7 +198,27 @@ def fetch_books_batch_isbndb(isbns):
                     response.raise_for_status()
 
                 data = response.json()
-                print(f"ISBNDB returned {len(data.get('books', []))} books in response")
+
+                # ISBNDB batch endpoint returns: {'total': X, 'requested': Y, 'data': [...]}
+                # Not 'books' array
+                books_data = data.get('data', [])
+
+                # Handle if 'data' is a list of books
+                if isinstance(books_data, list):
+                    books_list = books_data
+                else:
+                    # If 'data' is a single object or dict, wrap it in a list
+                    books_list = [books_data] if books_data else []
+
+                print(f"ISBNDB response: total={data.get('total')}, requested={data.get('requested')}")
+                print(f"ISBNDB returned {len(books_list)} books in response")
+
+                # If no books returned, show the response to debug
+                if len(books_list) == 0:
+                    print(f"Response JSON keys: {list(data.keys())}")
+                    print(f"Response JSON: {str(data)[:500]}")
+                    if 'error' in data or 'errorMessage' in data:
+                        print(f"ISBNDB API Error: {data.get('error') or data.get('errorMessage')}")
 
                 # If no books returned, show the response to debug
                 if len(data.get('books', [])) == 0:
@@ -225,7 +245,7 @@ def fetch_books_batch_isbndb(isbns):
             # Map results by ISBN for this batch
             batch_results = {}
 
-            for book_data in data.get('books', []):
+            for book_data in books_list:
                 # Map to our schema
                 book_info = {
                     'isbn': book_data.get('isbn13') or book_data.get('isbn10'),
