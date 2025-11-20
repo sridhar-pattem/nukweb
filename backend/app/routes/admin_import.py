@@ -526,12 +526,14 @@ def execute_patron_import():
     except Exception as e:
         print(f"Warning: Could not find default membership plan '2 Book 3 Month': {str(e)}")
 
-    with get_db_cursor() as cursor:
-        for patron_data in patrons_data:
-            patron_id = patron_data.get('patron_id')
-            email = patron_data.get('email')
+    # Process each patron in its own transaction to prevent one failure from blocking others
+    for patron_data in patrons_data:
+        patron_id = patron_data.get('patron_id')
+        email = patron_data.get('email')
 
-            try:
+        try:
+            # Use a separate cursor context for each patron (separate transaction)
+            with get_db_cursor() as cursor:
                 # Check if patron already exists
                 check_query = "SELECT patron_id FROM patrons WHERE patron_id = %s"
                 cursor.execute(check_query, (patron_id,))
@@ -566,14 +568,27 @@ def execute_patron_import():
                 user_status = patron_data.get('user_status', 'active')
                 join_date = patron_data.get('join_date')
 
-                # Create user account
+                # Validate required fields
+                if not name:
+                    results['errors'].append({
+                        'patron_id': patron_id,
+                        'email': email,
+                        'reason': 'Missing name field'
+                    })
+                    continue
+
+                # Create user account first (required for foreign key constraint)
                 cursor.execute("""
                     INSERT INTO users (email, password_hash, role, name, phone, status)
                     VALUES (%s, %s, 'patron', %s, %s, %s)
                     RETURNING user_id
                 """, (email, password_hash, name, phone, user_status))
 
-                user_id = cursor.fetchone()['user_id']
+                user_result = cursor.fetchone()
+                if not user_result:
+                    raise Exception("Failed to create user account")
+
+                user_id = user_result['user_id']
 
                 # Create patron record with tags and default membership plan
                 cursor.execute("""
@@ -589,12 +604,18 @@ def execute_patron_import():
                     'status': user_status
                 })
 
-            except Exception as e:
-                results['errors'].append({
-                    'patron_id': patron_id,
-                    'email': email,
-                    'reason': str(e)
-                })
+        except Exception as e:
+            # Log the detailed error for debugging
+            import traceback
+            error_detail = str(e)
+            print(f"Error importing patron {patron_id}: {error_detail}")
+            print(traceback.format_exc())
+
+            results['errors'].append({
+                'patron_id': patron_id,
+                'email': email,
+                'reason': error_detail
+            })
 
     return jsonify({
         "message": "Patron import completed",
