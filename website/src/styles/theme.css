@@ -2,9 +2,9 @@
 /* 1) Color system + typography */
 :root {
   --ink: #1E1E1E;
-  --paper: #E2DFD2;
-  --card: #FFFDF7;
-  --teal: #2AA198;
+  --paper: #5cd0cc;
+  --card: #fffff2;
+  --teal: #146861;
   --teal-700: #218379;
   --ember: #E67E22;
   --muted: #A3A3A3;
@@ -302,10 +302,10 @@ img {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: rgba(226, 223, 210, 0.9);
+  background: rgba(255, 255, 242, 1.0);
   backdrop-filter: saturate(130%) blur(8px);
   border-bottom: 1px solid var(--line);
-  margin-top: 16px;
+  margin-top: 0px;
 }
 
 .nav-inner {
