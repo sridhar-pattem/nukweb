@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
 from app.utils.auth import admin_required, hash_password
 from app.utils.database import execute_query, get_db_cursor
+from app.utils.isbndb import fetch_book_from_isbndb as fetch_isbndb
 from app.utils.googlebooks import fetch_book_by_isbn as fetch_google
 from app.utils.openlibrary import fetch_book_by_isbn as fetch_openlibrary
 import csv
@@ -77,20 +78,25 @@ def preview_book_import():
                     'message': 'Book already in database'
                 })
             else:
-                # Try multiple sources: Google Books -> Open Library -> CSV data
+                # Try multiple sources: ISBNDB -> Google Books -> Open Library -> CSV data
                 book_info = None
                 source = None
 
-                # Try Google Books first
-                book_info = fetch_google(isbn)
+                # Try ISBNDB first
+                book_info = fetch_isbndb(isbn)
                 if book_info:
-                    source = 'Google Books'
+                    source = 'ISBNDB'
                 else:
-                    # Try Open Library as fallback
-                    book_info = fetch_openlibrary(isbn)
+                    # Try Google Books as fallback
+                    book_info = fetch_google(isbn)
                     if book_info:
-                        source = 'Open Library'
+                        source = 'Google Books'
                     else:
+                        # Try Open Library as fallback
+                        book_info = fetch_openlibrary(isbn)
+                        if book_info:
+                            source = 'Open Library'
+                        else:
                         # Use CSV data as last resort (libib column names)
                         title = row.get('title')
                         creators = row.get('creators')  # libib uses 'creators' for author
@@ -187,13 +193,17 @@ def execute_book_import():
     if isbns and not books_data:
         books_data = []
         for isbn in isbns:
-            # Fetch from APIs for manual entry
-            book_info = fetch_google(isbn)
-            source = 'Google Books'
+            # Fetch from APIs for manual entry - ISBNDB first, then Google Books, then Open Library
+            book_info = fetch_isbndb(isbn)
+            source = 'ISBNDB'
 
             if not book_info:
-                book_info = fetch_openlibrary(isbn)
-                source = 'Open Library' if book_info else None
+                book_info = fetch_google(isbn)
+                source = 'Google Books'
+
+                if not book_info:
+                    book_info = fetch_openlibrary(isbn)
+                    source = 'Open Library' if book_info else None
 
             if book_info:
                 books_data.append({

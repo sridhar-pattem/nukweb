@@ -137,7 +137,7 @@ const BookImport = () => {
     <div className="book-import">
       <h2>Import Books from CSV</h2>
       <p className="text-muted" style={{ marginBottom: '2rem' }}>
-        Import your book inventory using ISBNs. Book details will be automatically fetched from Google Books or Open Library, with CSV data as fallback.
+        Import your book inventory using ISBNs. Book details will be automatically fetched from ISBNDB, Google Books, or Open Library, with CSV data as fallback.
       </p>
 
       {/* Mode Selection */}
