@@ -392,6 +392,7 @@ def preview_patron_import():
             email = row.get('email', '').strip()
             phone = row.get('phone', '').strip()
             freeze = row.get('freeze', '').strip()
+            tags = row.get('tags', '').strip()
 
             # Validate required fields
             if not patron_id:
@@ -473,6 +474,7 @@ def preview_patron_import():
                     'email': email,
                     'phone': phone,
                     'address': full_address,
+                    'tags': tags,
                     'status': 'ready',
                     'user_status': user_status,
                     'join_date': str(join_date) if join_date else None,
@@ -514,6 +516,16 @@ def execute_patron_import():
     default_password = "BookNook313"
     password_hash = hash_password(default_password)
 
+    # Get default membership plan ID for "2 Book 3 Month"
+    default_membership_plan_id = None
+    try:
+        plan_query = "SELECT plan_id FROM membership_plans WHERE plan_name = %s"
+        plan_result = execute_query(plan_query, ("2 Book 3 Month",), fetch_one=True)
+        if plan_result:
+            default_membership_plan_id = plan_result['plan_id']
+    except Exception as e:
+        print(f"Warning: Could not find default membership plan '2 Book 3 Month': {str(e)}")
+
     with get_db_cursor() as cursor:
         for patron_data in patrons_data:
             patron_id = patron_data.get('patron_id')
@@ -550,6 +562,7 @@ def execute_patron_import():
                 name = patron_data.get('name', '')
                 phone = patron_data.get('phone', '')
                 address = patron_data.get('address', '')
+                tags = patron_data.get('tags', '')
                 user_status = patron_data.get('user_status', 'active')
                 join_date = patron_data.get('join_date')
 
@@ -562,12 +575,12 @@ def execute_patron_import():
 
                 user_id = cursor.fetchone()['user_id']
 
-                # Create patron record
+                # Create patron record with tags and default membership plan
                 cursor.execute("""
                     INSERT INTO patrons
-                    (patron_id, user_id, address, join_date, mobile_number)
-                    VALUES (%s, %s, %s, %s, %s)
-                """, (patron_id, user_id, address, join_date, phone))
+                    (patron_id, user_id, address, join_date, mobile_number, tags, membership_plan_id)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """, (patron_id, user_id, address, join_date, phone, tags, default_membership_plan_id))
 
                 results['imported'].append({
                     'patron_id': patron_id,
