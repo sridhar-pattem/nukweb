@@ -187,11 +187,6 @@ def fetch_books_batch_isbndb(isbns):
             batch_results = {}
 
             for book_data in data.get('books', []):
-                isbn_key = book_data.get('isbn13') or book_data.get('isbn10')
-
-                if not isbn_key:
-                    continue
-
                 # Map to our schema
                 book_info = {
                     'isbn': book_data.get('isbn13') or book_data.get('isbn10'),
@@ -220,21 +215,21 @@ def fetch_books_batch_isbndb(isbns):
                 if book_info['subjects']:
                     book_info['genre'] = book_info['subjects'][0]
 
-                batch_results[isbn_key] = book_info
+                # Store by both ISBN-10 and ISBN-13 for better matching
+                isbn13 = book_data.get('isbn13', '').replace('-', '').replace(' ', '')
+                isbn10 = book_data.get('isbn10', '').replace('-', '').replace(' ', '')
+
+                if isbn13:
+                    batch_results[isbn13] = book_info
+                if isbn10:
+                    batch_results[isbn10] = book_info
 
             # Mark ISBNs in this batch that weren't found
             for isbn in batch:
                 if isbn not in batch_results:
-                    # Try to find by ISBN-10/ISBN-13 conversion
-                    found = False
-                    for key in batch_results.keys():
-                        if key.endswith(isbn[-10:]) or isbn.endswith(key[-10:]):
-                            batch_results[isbn] = batch_results[key]
-                            found = True
-                            break
-
-                    if not found:
-                        batch_results[isbn] = None
+                    # ISBN not found, mark as None
+                    batch_results[isbn] = None
+                    print(f"ISBN {isbn} not found in ISBNDB batch response")
 
             # Merge batch results into all results
             all_results.update(batch_results)
