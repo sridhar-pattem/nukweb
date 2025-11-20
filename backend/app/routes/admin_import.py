@@ -8,7 +8,7 @@ from app.utils.openlibrary import fetch_book_by_isbn as fetch_openlibrary
 import csv
 import io
 import re
-from datetime import datetime
+from datetime import datetime, date
 
 admin_import_bp = Blueprint('admin_import', __name__)
 
@@ -347,9 +347,29 @@ def execute_book_import():
                         VALUES (%s, %s, %s, %s)
                     """, (book_id, contributor_id, 'author', 1))
 
+                # Automatically create an initial item for the book
+                # Barcode is NULL initially and can be assigned later
+                cursor.execute("""
+                    INSERT INTO items
+                    (book_id, barcode, circulation_status, condition,
+                     acquisition_date, notes)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    RETURNING item_id
+                """, (
+                    book_id,
+                    None,  # Barcode is NULL, will be assigned manually later
+                    'available',  # Default status
+                    'good',  # Default condition
+                    date.today(),  # Acquisition date set to today
+                    f'Auto-created during import from {source}'  # Note about creation
+                ))
+
+                item_id = cursor.fetchone()['item_id']
+
                 results['imported'].append({
                     'isbn': isbn,
                     'book_id': book_id,
+                    'item_id': item_id,
                     'title': book_info.get('title'),
                     'source': source
                 })
