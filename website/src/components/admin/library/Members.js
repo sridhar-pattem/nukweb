@@ -5,12 +5,12 @@ import {
   FaUser,
   FaSearch,
   FaPlus,
-  FaEdit,
-  FaBan,
-  FaCheckCircle,
+  FaPause,
+  FaPlay,
   FaBook,
   FaEnvelope,
   FaPhone,
+  FaIdCard,
 } from 'react-icons/fa';
 import '../../../styles/admin-library.css';
 
@@ -53,31 +53,31 @@ const Members = () => {
     fetchPatrons();
   };
 
-  const handleDeactivate = async (patronId) => {
-    if (!window.confirm('Are you sure you want to deactivate this patron?')) return;
+  const handlePause = async (patronId) => {
+    if (!window.confirm('Are you sure you want to pause this member\'s account?')) return;
 
     try {
-      await adminLibraryAPI.deactivatePatron(patronId);
-      setSuccess('Patron deactivated successfully');
+      await adminLibraryAPI.updatePatronStatus(patronId, { action: 'freeze' });
+      setSuccess('Member account paused successfully');
       fetchPatrons();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      console.error('Error deactivating patron:', err);
-      setError(err.response?.data?.error || 'Failed to deactivate patron');
+      console.error('Error pausing member:', err);
+      setError(err.response?.data?.error || 'Failed to pause member');
     }
   };
 
-  const handleReactivate = async (patronId) => {
-    if (!window.confirm('Reactivate this patron?')) return;
+  const handleResume = async (patronId) => {
+    if (!window.confirm('Resume this member\'s account?')) return;
 
     try {
-      await adminLibraryAPI.reactivatePatron(patronId);
-      setSuccess('Patron reactivated successfully');
+      await adminLibraryAPI.updatePatronStatus(patronId, { action: 'renew' });
+      setSuccess('Member account resumed successfully');
       fetchPatrons();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      console.error('Error reactivating patron:', err);
-      setError(err.response?.data?.error || 'Failed to reactivate patron');
+      console.error('Error resuming member:', err);
+      setError(err.response?.data?.error || 'Failed to resume member');
     }
   };
 
@@ -128,22 +128,22 @@ const Members = () => {
           Active
         </button>
         <button
-          className={`tab ${statusFilter === 'inactive' ? 'active' : ''}`}
+          className={`tab ${statusFilter === 'frozen' ? 'active' : ''}`}
           onClick={() => {
-            setStatusFilter('inactive');
+            setStatusFilter('frozen');
             setPage(1);
           }}
         >
-          Inactive
+          Frozen
         </button>
         <button
-          className={`tab ${statusFilter === 'suspended' ? 'active' : ''}`}
+          className={`tab ${statusFilter === 'closed' ? 'active' : ''}`}
           onClick={() => {
-            setStatusFilter('suspended');
+            setStatusFilter('closed');
             setPage(1);
           }}
         >
-          Suspended
+          Closed
         </button>
       </div>
 
@@ -154,7 +154,7 @@ const Members = () => {
             <FaSearch />
             <input
               type="text"
-              placeholder="Search by name, email, or phone..."
+              placeholder="Search by name, email, patron ID, or phone..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -179,9 +179,10 @@ const Members = () => {
       ) : (
         <>
           <div className="table-container">
-            <table className="admin-table">
+            <table className="admin-table members-table">
               <thead>
                 <tr>
+                  <th>Patron ID</th>
                   <th>Name</th>
                   <th>Contact</th>
                   <th>Membership</th>
@@ -195,12 +196,20 @@ const Members = () => {
                 {patrons.map((patron) => (
                   <tr key={patron.patron_id}>
                     <td>
-                      <div className="patron-name">
+                      <div className="patron-id-cell">
+                        <FaIdCard /> {patron.patron_id}
+                      </div>
+                    </td>
+                    <td>
+                      <Link
+                        to={`/admin/library/members/${patron.patron_id}`}
+                        className="patron-name-link"
+                      >
                         <strong>
                           {patron.first_name} {patron.last_name}
                         </strong>
                         {patron.city && <span className="patron-location">{patron.city}</span>}
-                      </div>
+                      </Link>
                     </td>
                     <td>
                       <div className="contact-info">
@@ -239,9 +248,9 @@ const Members = () => {
                         className={`status-badge ${
                           patron.status === 'active'
                             ? 'active'
-                            : patron.status === 'suspended'
-                            ? 'suspended'
-                            : 'inactive'
+                            : patron.status === 'frozen'
+                            ? 'frozen'
+                            : 'closed'
                         }`}
                       >
                         {patron.status}
@@ -249,30 +258,23 @@ const Members = () => {
                     </td>
                     <td>
                       <div className="action-buttons">
-                        <Link
-                          to={`/admin/library/members/${patron.patron_id}`}
-                          className="btn btn-icon"
-                          title="View Details"
-                        >
-                          <FaEdit />
-                        </Link>
                         {patron.status === 'active' ? (
                           <button
-                            onClick={() => handleDeactivate(patron.patron_id)}
-                            className="btn btn-icon btn-danger"
-                            title="Deactivate"
+                            onClick={() => handlePause(patron.patron_id)}
+                            className="btn btn-icon btn-warning"
+                            title="Pause Account"
                           >
-                            <FaBan />
+                            <FaPause />
                           </button>
-                        ) : (
+                        ) : patron.status === 'frozen' ? (
                           <button
-                            onClick={() => handleReactivate(patron.patron_id)}
+                            onClick={() => handleResume(patron.patron_id)}
                             className="btn btn-icon btn-success"
-                            title="Reactivate"
+                            title="Resume Account"
                           >
-                            <FaCheckCircle />
+                            <FaPlay />
                           </button>
-                        )}
+                        ) : null}
                       </div>
                     </td>
                   </tr>

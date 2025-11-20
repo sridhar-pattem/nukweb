@@ -342,8 +342,7 @@ export const adminLibraryAPI = {
   getPatronById: (id) => apiClient.get(`/admin/patrons/${id}`),
   createPatron: (data) => apiClient.post('/admin/patrons', data),
   updatePatron: (id, data) => apiClient.put(`/admin/patrons/${id}`, data),
-  deactivatePatron: (id) => apiClient.post(`/admin/patrons/${id}/deactivate`),
-  reactivatePatron: (id) => apiClient.post(`/admin/patrons/${id}/reactivate`),
+  updatePatronStatus: (id, data) => apiClient.patch(`/admin/patrons/${id}/status`, data),
   getPatronBorrowings: (patronId) => apiClient.get(`/admin/patrons/${patronId}/borrowings`),
 
   // Contributors Management
