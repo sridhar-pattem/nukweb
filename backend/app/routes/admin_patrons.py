@@ -28,10 +28,14 @@ def get_patrons():
         """)
         search_param = f'%{search}%'
         params.extend([search_param, search_param, search_param, search_param, search_param])
-    
+
     if status:
-        where_clauses.append("u.status = %s")
-        params.append(status)
+        if status == 'inactive':
+            # Inactive = active users with expired memberships
+            where_clauses.append("u.status = 'active' AND p.membership_end_date < CURRENT_DATE")
+        else:
+            where_clauses.append("u.status = %s")
+            params.append(status)
     
     where_sql = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
     

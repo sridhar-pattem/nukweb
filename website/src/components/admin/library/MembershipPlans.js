@@ -174,11 +174,11 @@ const MembershipPlans = () => {
                   <td>{plan.duration_days || '-'}</td>
                   <td>{plan.max_books || '-'}</td>
                   <td>
-                    {plan.price ? `$${parseFloat(plan.price).toFixed(2)}` : '-'}
+                    {plan.price ? `₹${parseFloat(plan.price).toFixed(2)}` : '-'}
                   </td>
                   <td>
                     {plan.late_fee_per_day
-                      ? `$${parseFloat(plan.late_fee_per_day).toFixed(2)}`
+                      ? `₹${parseFloat(plan.late_fee_per_day).toFixed(2)}`
                       : '-'}
                   </td>
                   <td>
@@ -276,7 +276,7 @@ const MembershipPlans = () => {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label htmlFor="price">Price ($)</label>
+                  <label htmlFor="price">Price (₹)</label>
                   <input
                     type="number"
                     id="price"
@@ -290,7 +290,7 @@ const MembershipPlans = () => {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="late_fee_per_day">Late Fee Per Day ($)</label>
+                  <label htmlFor="late_fee_per_day">Late Fee Per Day (₹)</label>
                   <input
                     type="number"
                     id="late_fee_per_day"
