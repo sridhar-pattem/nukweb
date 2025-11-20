@@ -203,10 +203,60 @@
   border-bottom: 2px solid var(--line);
 }
 
+.admin-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s, color 0.2s;
+}
+
+.admin-table th.sortable:hover {
+  background: rgba(205, 133, 63, 0.08);
+  color: var(--teal);
+}
+
+.admin-table th.sortable svg {
+  margin-left: 0.5rem;
+  font-size: 0.75rem;
+  opacity: 0.6;
+  vertical-align: middle;
+}
+
+/* Table Column Filters */
+.admin-table .filter-row th {
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.admin-table .column-filter {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-size: 0.875rem;
+  color: var(--ink);
+  background: white;
+  transition: border-color 0.2s;
+}
+
+.admin-table .column-filter:focus {
+  outline: none;
+  border-color: var(--teal);
+  box-shadow: 0 0 0 2px rgba(225, 149, 118, 0.1);
+}
+
+.admin-table .column-filter::placeholder {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
 .admin-table td {
   padding: 1rem;
   border-bottom: 1px solid var(--line);
   color: var(--ink);
+}
+
+.admin-table tbody {
+  background: #fffff2;
 }
 
 .admin-table tbody tr {
@@ -214,7 +264,7 @@
 }
 
 .admin-table tbody tr:hover {
-  background: rgba(205, 133, 63, 0.02);
+  background: rgba(205, 133, 63, 0.08);
 }
 
 .admin-table tbody tr.row-overdue {
@@ -237,6 +287,56 @@
   font-size: 0.85rem;
   color: var(--ink);
   opacity: 0.8;
+}
+
+.book-title-link {
+  color: var(--ink);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.book-title-link:hover {
+  color: var(--teal);
+}
+
+.book-title-link:hover strong {
+  text-decoration: underline;
+}
+
+.items-count {
+  font-weight: 500;
+  color: var(--ink);
+  font-size: 0.95rem;
+}
+
+.due-date-badge {
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.book-cover-thumbnail {
+  width: 50px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+}
+
+.book-cover-placeholder {
+  width: 50px;
+  height: 70px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 1.5rem;
 }
 
 .patron-info,
@@ -1008,6 +1108,11 @@ textarea.form-control {
 .status-badge.frozen {
   background: rgba(13, 110, 253, 0.1);
   color: #0d6efd;
+}
+
+.status-badge.inactive {
+  background: rgba(255, 193, 7, 0.1);
+  color: #ff8800;
 }
 
 .status-badge.closed {

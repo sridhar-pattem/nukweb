@@ -11,6 +11,9 @@ import {
   FaEnvelope,
   FaPhone,
   FaIdCard,
+  FaSortUp,
+  FaSortDown,
+  FaSort,
 } from 'react-icons/fa';
 import '../../../styles/admin-library.css';
 
@@ -21,8 +24,16 @@ const Members = () => {
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('active');
+  const [sortField, setSortField] = useState('');
+  const [sortDirection, setSortDirection] = useState('asc');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [filters, setFilters] = useState({
+    patron_id: '',
+    name: '',
+    contact: '',
+    status: '',
+  });
   const itemsPerPage = 20;
 
   useEffect(() => {
@@ -81,6 +92,85 @@ const Members = () => {
     }
   };
 
+  const handleSort = (field) => {
+    if (sortField === field) {
+      // Toggle direction if same field
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // New field, default to ascending
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortIcon = (field) => {
+    if (sortField !== field) return <FaSort />;
+    return sortDirection === 'asc' ? <FaSortUp /> : <FaSortDown />;
+  };
+
+  const handleFilterChange = (field, value) => {
+    setFilters((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const filterPatrons = (patronsList) => {
+    return patronsList.filter((patron) => {
+      // Patron ID filter
+      if (filters.patron_id && !patron.patron_id.toLowerCase().includes(filters.patron_id.toLowerCase())) {
+        return false;
+      }
+
+      // Name filter
+      if (filters.name) {
+        const fullName = `${patron.first_name} ${patron.last_name}`.toLowerCase();
+        if (!fullName.includes(filters.name.toLowerCase())) {
+          return false;
+        }
+      }
+
+      // Contact filter (email or phone)
+      if (filters.contact) {
+        const email = patron.email?.toLowerCase() || '';
+        const phone = patron.phone?.toLowerCase() || '';
+        const contactLower = filters.contact.toLowerCase();
+        if (!email.includes(contactLower) && !phone.includes(contactLower)) {
+          return false;
+        }
+      }
+
+      // Status filter
+      if (filters.status && patron.status !== filters.status) {
+        return false;
+      }
+
+      return true;
+    });
+  };
+
+  const sortPatrons = (patronsList) => {
+    if (!sortField) return patronsList;
+
+    return [...patronsList].sort((a, b) => {
+      let aVal, bVal;
+
+      if (sortField === 'name') {
+        aVal = `${a.first_name} ${a.last_name}`.toLowerCase();
+        bVal = `${b.first_name} ${b.last_name}`.toLowerCase();
+      } else if (sortField === 'patron_id') {
+        aVal = a.patron_id;
+        bVal = b.patron_id;
+      } else {
+        return 0;
+      }
+
+      if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -88,6 +178,14 @@ const Members = () => {
       month: 'short',
       day: 'numeric',
     });
+  };
+
+  const getDisplayStatus = (patron) => {
+    // Check if membership is expired
+    if (patron.membership_end_date && new Date(patron.membership_end_date) < new Date()) {
+      return { status: 'inactive', label: 'Inactive (Expired)' };
+    }
+    return { status: patron.status, label: patron.status };
   };
 
   const totalPages = Math.ceil(total / itemsPerPage);
@@ -137,6 +235,15 @@ const Members = () => {
           Frozen
         </button>
         <button
+          className={`tab ${statusFilter === 'inactive' ? 'active' : ''}`}
+          onClick={() => {
+            setStatusFilter('inactive');
+            setPage(1);
+          }}
+        >
+          Inactive
+        </button>
+        <button
           className={`tab ${statusFilter === 'closed' ? 'active' : ''}`}
           onClick={() => {
             setStatusFilter('closed');
@@ -182,8 +289,12 @@ const Members = () => {
             <table className="admin-table members-table">
               <thead>
                 <tr>
-                  <th>Patron ID</th>
-                  <th>Name</th>
+                  <th className="sortable" onClick={() => handleSort('patron_id')}>
+                    Patron ID {getSortIcon('patron_id')}
+                  </th>
+                  <th className="sortable" onClick={() => handleSort('name')}>
+                    Name {getSortIcon('name')}
+                  </th>
                   <th>Contact</th>
                   <th>Membership</th>
                   <th>Member Since</th>
@@ -191,9 +302,58 @@ const Members = () => {
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>
+                <tr className="filter-row">
+                  <th>
+                    <input
+                      type="text"
+                      placeholder="Filter Patron ID..."
+                      value={filters.patron_id}
+                      onChange={(e) => handleFilterChange('patron_id', e.target.value)}
+                      className="column-filter"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </th>
+                  <th>
+                    <input
+                      type="text"
+                      placeholder="Filter Name..."
+                      value={filters.name}
+                      onChange={(e) => handleFilterChange('name', e.target.value)}
+                      className="column-filter"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </th>
+                  <th>
+                    <input
+                      type="text"
+                      placeholder="Filter Email/Phone..."
+                      value={filters.contact}
+                      onChange={(e) => handleFilterChange('contact', e.target.value)}
+                      className="column-filter"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </th>
+                  <th></th>
+                  <th></th>
+                  <th></th>
+                  <th>
+                    <select
+                      value={filters.status}
+                      onChange={(e) => handleFilterChange('status', e.target.value)}
+                      className="column-filter"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <option value="">All</option>
+                      <option value="active">Active</option>
+                      <option value="frozen">Frozen</option>
+                      <option value="closed">Closed</option>
+                    </select>
+                  </th>
+                  <th></th>
+                </tr>
               </thead>
               <tbody>
-                {patrons.map((patron) => (
+                {sortPatrons(filterPatrons(patrons)).map((patron) => (
                   <tr key={patron.patron_id}>
                     <td>
                       <div className="patron-id-cell">
@@ -245,15 +405,9 @@ const Members = () => {
                     </td>
                     <td>
                       <span
-                        className={`status-badge ${
-                          patron.status === 'active'
-                            ? 'active'
-                            : patron.status === 'frozen'
-                            ? 'frozen'
-                            : 'closed'
-                        }`}
+                        className={`status-badge ${getDisplayStatus(patron).status}`}
                       >
-                        {patron.status}
+                        {getDisplayStatus(patron).label}
                       </span>
                     </td>
                     <td>

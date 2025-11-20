@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { adminLibraryAPI } from '../../../services/api';
-import { FaBook, FaSearch, FaPlus, FaEdit, FaTrash, FaBarcode } from 'react-icons/fa';
+import { FaBook, FaSearch, FaPlus, FaPlug } from 'react-icons/fa';
 import '../../../styles/admin-library.css';
 
 const Cataloging = () => {
@@ -13,6 +13,12 @@ const Cataloging = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCollection, setSelectedCollection] = useState('');
   const [error, setError] = useState('');
+  const [filters, setFilters] = useState({
+    isbn: '',
+    title: '',
+    author: '',
+    collection: '',
+  });
   const itemsPerPage = 20;
 
   useEffect(() => {
@@ -57,16 +63,42 @@ const Cataloging = () => {
     fetchBooks();
   };
 
-  const handleDelete = async (bookId) => {
-    if (!window.confirm('Are you sure you want to delete this book?')) return;
+  const handleFilterChange = (field, value) => {
+    setFilters((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
 
-    try {
-      await adminLibraryAPI.deleteBook(bookId);
-      fetchBooks();
-    } catch (err) {
-      console.error('Error deleting book:', err);
-      setError('Failed to delete book');
-    }
+  const filterBooks = (booksList) => {
+    return booksList.filter((book) => {
+      // ISBN filter
+      if (filters.isbn && !book.isbn?.toLowerCase().includes(filters.isbn.toLowerCase())) {
+        return false;
+      }
+
+      // Title filter
+      if (filters.title && !book.title.toLowerCase().includes(filters.title.toLowerCase())) {
+        return false;
+      }
+
+      // Author filter
+      if (filters.author) {
+        const authors = book.contributors && book.contributors.length > 0
+          ? book.contributors.map((c) => c.name).join(' ').toLowerCase()
+          : '';
+        if (!authors.includes(filters.author.toLowerCase())) {
+          return false;
+        }
+      }
+
+      // Collection filter
+      if (filters.collection && book.collection_name?.toLowerCase() !== filters.collection.toLowerCase()) {
+        return false;
+      }
+
+      return true;
+    });
   };
 
   const totalPages = Math.ceil(total / itemsPerPage);
@@ -159,24 +191,91 @@ const Cataloging = () => {
             <table className="admin-table">
               <thead>
                 <tr>
+                  <th>Cover</th>
                   <th>ISBN</th>
                   <th>Title</th>
                   <th>Authors</th>
                   <th>Collection</th>
-                  <th>Items</th>
-                  <th>Available</th>
+                  <th>Items (Avail/Total)</th>
+                  <th>Due Date</th>
                   <th>Actions</th>
+                </tr>
+                <tr className="filter-row">
+                  <th></th>
+                  <th>
+                    <input
+                      type="text"
+                      placeholder="Filter ISBN..."
+                      value={filters.isbn}
+                      onChange={(e) => handleFilterChange('isbn', e.target.value)}
+                      className="column-filter"
+                    />
+                  </th>
+                  <th>
+                    <input
+                      type="text"
+                      placeholder="Filter Title..."
+                      value={filters.title}
+                      onChange={(e) => handleFilterChange('title', e.target.value)}
+                      className="column-filter"
+                    />
+                  </th>
+                  <th>
+                    <input
+                      type="text"
+                      placeholder="Filter Author..."
+                      value={filters.author}
+                      onChange={(e) => handleFilterChange('author', e.target.value)}
+                      className="column-filter"
+                    />
+                  </th>
+                  <th>
+                    <input
+                      type="text"
+                      placeholder="Filter Collection..."
+                      value={filters.collection}
+                      onChange={(e) => handleFilterChange('collection', e.target.value)}
+                      className="column-filter"
+                      list="collections-list"
+                    />
+                    <datalist id="collections-list">
+                      {collections.map((collection) => (
+                        <option key={collection.collection_id} value={collection.collection_name} />
+                      ))}
+                    </datalist>
+                  </th>
+                  <th></th>
+                  <th></th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
-                {books.map((book) => (
+                {filterBooks(books).map((book) => (
                   <tr key={book.book_id}>
+                    <td>
+                      {book.cover_image_url ? (
+                        <img
+                          src={book.cover_image_url}
+                          alt={book.title}
+                          className="book-cover-thumbnail"
+                        />
+                      ) : (
+                        <div className="book-cover-placeholder">
+                          <FaBook />
+                        </div>
+                      )}
+                    </td>
                     <td>{book.isbn || 'N/A'}</td>
                     <td>
-                      <div className="book-title">
-                        <strong>{book.title}</strong>
-                        {book.subtitle && <span className="subtitle">{book.subtitle}</span>}
-                      </div>
+                      <Link
+                        to={`/admin/library/cataloging/books/${book.book_id}`}
+                        className="book-title-link"
+                      >
+                        <div className="book-title">
+                          <strong>{book.title}</strong>
+                          {book.subtitle && <span className="subtitle">{book.subtitle}</span>}
+                        </div>
+                      </Link>
                     </td>
                     <td>
                       {book.contributors && book.contributors.length > 0
@@ -184,35 +283,29 @@ const Cataloging = () => {
                         : 'N/A'}
                     </td>
                     <td>{book.collection_name || 'N/A'}</td>
-                    <td>{book.total_items || 0}</td>
                     <td>
-                      <span className={`status-badge ${book.available_items > 0 ? 'available' : 'unavailable'}`}>
-                        {book.available_items || 0}
+                      <span className="items-count">
+                        {book.available_items || 0}/{book.total_items || 0}
                       </span>
+                    </td>
+                    <td>
+                      {book.earliest_due_date ? (
+                        <span className="due-date-badge">
+                          {new Date(book.earliest_due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </span>
+                      ) : (
+                        '-'
+                      )}
                     </td>
                     <td>
                       <div className="action-buttons">
                         <Link
-                          to={`/admin/library/cataloging/books/${book.book_id}`}
-                          className="btn btn-icon"
-                          title="Edit Book"
-                        >
-                          <FaEdit />
-                        </Link>
-                        <Link
                           to={`/admin/library/cataloging/books/${book.book_id}/items`}
-                          className="btn btn-icon"
-                          title="Manage Items"
+                          className="btn btn-icon btn-primary"
+                          title="Add/Manage Items"
                         >
-                          <FaBarcode />
+                          <FaPlug />
                         </Link>
-                        <button
-                          onClick={() => handleDelete(book.book_id)}
-                          className="btn btn-icon btn-danger"
-                          title="Delete Book"
-                        >
-                          <FaTrash />
-                        </button>
                       </div>
                     </td>
                   </tr>
