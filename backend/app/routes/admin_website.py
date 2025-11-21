@@ -5,7 +5,7 @@ Handles website content management, theme customization, and page building
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from app.utils.database import get_db_connection
+from app.utils.database import get_db_cursor
 from app.utils.auth import admin_required
 import json
 from datetime import datetime
@@ -22,8 +22,7 @@ admin_website_bp = Blueprint('admin_website', __name__)
 def get_theme_settings():
     """Get all theme settings"""
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
+        with get_db_cursor() as cur:
 
         cur.execute("""
             SELECT setting_id, setting_key, setting_value, setting_type,
@@ -41,10 +40,6 @@ def get_theme_settings():
             if category not in grouped_settings:
                 grouped_settings[category] = []
             grouped_settings[category].append(setting)
-
-        cur.close()
-        conn.close()
-
         return jsonify({
             'success': True,
             'settings': grouped_settings,
@@ -67,8 +62,7 @@ def update_theme_setting(setting_id):
         if not setting_value:
             return jsonify({'success': False, 'error': 'Setting value is required'}), 400
 
-        conn = get_db_connection()
-        cur = conn.cursor()
+        with get_db_cursor() as cur:
 
         cur.execute("""
             UPDATE website_theme_settings
@@ -80,14 +74,7 @@ def update_theme_setting(setting_id):
         updated_setting = cur.fetchone()
 
         if not updated_setting:
-            cur.close()
-            conn.close()
             return jsonify({'success': False, 'error': 'Setting not found'}), 404
-
-        conn.commit()
-        cur.close()
-        conn.close()
-
         return jsonify({
             'success': True,
             'message': 'Theme setting updated successfully',
@@ -110,8 +97,7 @@ def update_theme_settings_bulk():
         if not settings:
             return jsonify({'success': False, 'error': 'No settings provided'}), 400
 
-        conn = get_db_connection()
-        cur = conn.cursor()
+        with get_db_cursor() as cur:
 
         updated_count = 0
         for setting in settings:
@@ -125,11 +111,6 @@ def update_theme_settings_bulk():
                     WHERE setting_key = %s
                 """, (setting_value, setting_key))
                 updated_count += cur.rowcount
-
-        conn.commit()
-        cur.close()
-        conn.close()
-
         return jsonify({
             'success': True,
             'message': f'{updated_count} settings updated successfully'
@@ -166,8 +147,7 @@ def reset_theme():
 def get_pages():
     """Get all pages"""
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
+        with get_db_cursor() as cur:
 
         cur.execute("""
             SELECT p.*, u.name as creator_name
@@ -177,10 +157,6 @@ def get_pages():
         """)
 
         pages = cur.fetchall()
-
-        cur.close()
-        conn.close()
-
         return jsonify({
             'success': True,
             'pages': pages
@@ -196,8 +172,7 @@ def get_pages():
 def get_page(page_id):
     """Get a specific page with all its sections"""
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
+        with get_db_cursor() as cur:
 
         # Get page details
         cur.execute("""
@@ -210,8 +185,6 @@ def get_page(page_id):
         page = cur.fetchone()
 
         if not page:
-            cur.close()
-            conn.close()
             return jsonify({'success': False, 'error': 'Page not found'}), 404
 
         # Get sections for this page
@@ -240,10 +213,6 @@ def get_page(page_id):
             section['cards'] = cur.fetchall()
 
         page['sections'] = sections
-
-        cur.close()
-        conn.close()
-
         return jsonify({
             'success': True,
             'page': page
@@ -273,14 +242,11 @@ def create_page():
         if not page_title or not page_slug:
             return jsonify({'success': False, 'error': 'Page title and slug are required'}), 400
 
-        conn = get_db_connection()
-        cur = conn.cursor()
+        with get_db_cursor() as cur:
 
         # Check if slug already exists
         cur.execute("SELECT page_id FROM website_pages WHERE page_slug = %s", (page_slug,))
         if cur.fetchone():
-            cur.close()
-            conn.close()
             return jsonify({'success': False, 'error': 'Page slug already exists'}), 400
 
         cur.execute("""
@@ -293,11 +259,6 @@ def create_page():
               is_published, display_order, user_id))
 
         new_page = cur.fetchone()
-
-        conn.commit()
-        cur.close()
-        conn.close()
-
         return jsonify({
             'success': True,
             'message': 'Page created successfully',
@@ -316,8 +277,7 @@ def update_page(page_id):
     try:
         data = request.get_json()
 
-        conn = get_db_connection()
-        cur = conn.cursor()
+        with get_db_cursor() as cur:
 
         # Build dynamic update query
         update_fields = []
@@ -347,14 +307,7 @@ def update_page(page_id):
         updated_page = cur.fetchone()
 
         if not updated_page:
-            cur.close()
-            conn.close()
             return jsonify({'success': False, 'error': 'Page not found'}), 404
-
-        conn.commit()
-        cur.close()
-        conn.close()
-
         return jsonify({
             'success': True,
             'message': 'Page updated successfully',
@@ -371,21 +324,13 @@ def update_page(page_id):
 def delete_page(page_id):
     """Delete a page"""
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
+        with get_db_cursor() as cur:
 
         cur.execute("DELETE FROM website_pages WHERE page_id = %s RETURNING page_id", (page_id,))
         deleted = cur.fetchone()
 
         if not deleted:
-            cur.close()
-            conn.close()
             return jsonify({'success': False, 'error': 'Page not found'}), 404
-
-        conn.commit()
-        cur.close()
-        conn.close()
-
         return jsonify({
             'success': True,
             'message': 'Page deleted successfully'
@@ -421,8 +366,7 @@ def create_section():
         if not page_id or not section_name or not section_type:
             return jsonify({'success': False, 'error': 'Page ID, section name, and type are required'}), 400
 
-        conn = get_db_connection()
-        cur = conn.cursor()
+        with get_db_cursor() as cur:
 
         cur.execute("""
             INSERT INTO website_sections
@@ -434,11 +378,6 @@ def create_section():
               background_color, text_color, display_order, is_visible, custom_css))
 
         new_section = cur.fetchone()
-
-        conn.commit()
-        cur.close()
-        conn.close()
-
         return jsonify({
             'success': True,
             'message': 'Section created successfully',
@@ -457,8 +396,7 @@ def update_section(section_id):
     try:
         data = request.get_json()
 
-        conn = get_db_connection()
-        cur = conn.cursor()
+        with get_db_cursor() as cur:
 
         # Build dynamic update query
         update_fields = []
@@ -488,14 +426,7 @@ def update_section(section_id):
         updated_section = cur.fetchone()
 
         if not updated_section:
-            cur.close()
-            conn.close()
             return jsonify({'success': False, 'error': 'Section not found'}), 404
-
-        conn.commit()
-        cur.close()
-        conn.close()
-
         return jsonify({
             'success': True,
             'message': 'Section updated successfully',
@@ -512,21 +443,13 @@ def update_section(section_id):
 def delete_section(section_id):
     """Delete a section"""
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
+        with get_db_cursor() as cur:
 
         cur.execute("DELETE FROM website_sections WHERE section_id = %s RETURNING section_id", (section_id,))
         deleted = cur.fetchone()
 
         if not deleted:
-            cur.close()
-            conn.close()
             return jsonify({'success': False, 'error': 'Section not found'}), 404
-
-        conn.commit()
-        cur.close()
-        conn.close()
-
         return jsonify({
             'success': True,
             'message': 'Section deleted successfully'
@@ -562,8 +485,7 @@ def create_content_block():
         if not section_id or not block_type:
             return jsonify({'success': False, 'error': 'Section ID and block type are required'}), 400
 
-        conn = get_db_connection()
-        cur = conn.cursor()
+        with get_db_cursor() as cur:
 
         cur.execute("""
             INSERT INTO website_content_blocks
@@ -575,11 +497,6 @@ def create_content_block():
               link_text, display_order, is_visible, json.dumps(custom_attributes)))
 
         new_block = cur.fetchone()
-
-        conn.commit()
-        cur.close()
-        conn.close()
-
         return jsonify({
             'success': True,
             'message': 'Content block created successfully',
@@ -598,8 +515,7 @@ def update_content_block(block_id):
     try:
         data = request.get_json()
 
-        conn = get_db_connection()
-        cur = conn.cursor()
+        with get_db_cursor() as cur:
 
         # Build dynamic update query
         update_fields = []
@@ -633,14 +549,7 @@ def update_content_block(block_id):
         updated_block = cur.fetchone()
 
         if not updated_block:
-            cur.close()
-            conn.close()
             return jsonify({'success': False, 'error': 'Content block not found'}), 404
-
-        conn.commit()
-        cur.close()
-        conn.close()
-
         return jsonify({
             'success': True,
             'message': 'Content block updated successfully',
@@ -657,21 +566,13 @@ def update_content_block(block_id):
 def delete_content_block(block_id):
     """Delete a content block"""
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
+        with get_db_cursor() as cur:
 
         cur.execute("DELETE FROM website_content_blocks WHERE block_id = %s RETURNING block_id", (block_id,))
         deleted = cur.fetchone()
 
         if not deleted:
-            cur.close()
-            conn.close()
             return jsonify({'success': False, 'error': 'Content block not found'}), 404
-
-        conn.commit()
-        cur.close()
-        conn.close()
-
         return jsonify({
             'success': True,
             'message': 'Content block deleted successfully'
@@ -708,8 +609,7 @@ def create_card():
         if not section_id or not card_title:
             return jsonify({'success': False, 'error': 'Section ID and card title are required'}), 400
 
-        conn = get_db_connection()
-        cur = conn.cursor()
+        with get_db_cursor() as cur:
 
         cur.execute("""
             INSERT INTO website_cards
@@ -721,11 +621,6 @@ def create_card():
               link_url, link_text, background_color, text_color, display_order, is_visible))
 
         new_card = cur.fetchone()
-
-        conn.commit()
-        cur.close()
-        conn.close()
-
         return jsonify({
             'success': True,
             'message': 'Card created successfully',
@@ -744,8 +639,7 @@ def update_card(card_id):
     try:
         data = request.get_json()
 
-        conn = get_db_connection()
-        cur = conn.cursor()
+        with get_db_cursor() as cur:
 
         # Build dynamic update query
         update_fields = []
@@ -776,14 +670,7 @@ def update_card(card_id):
         updated_card = cur.fetchone()
 
         if not updated_card:
-            cur.close()
-            conn.close()
             return jsonify({'success': False, 'error': 'Card not found'}), 404
-
-        conn.commit()
-        cur.close()
-        conn.close()
-
         return jsonify({
             'success': True,
             'message': 'Card updated successfully',
@@ -800,21 +687,13 @@ def update_card(card_id):
 def delete_card(card_id):
     """Delete a card"""
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
+        with get_db_cursor() as cur:
 
         cur.execute("DELETE FROM website_cards WHERE card_id = %s RETURNING card_id", (card_id,))
         deleted = cur.fetchone()
 
         if not deleted:
-            cur.close()
-            conn.close()
             return jsonify({'success': False, 'error': 'Card not found'}), 404
-
-        conn.commit()
-        cur.close()
-        conn.close()
-
         return jsonify({
             'success': True,
             'message': 'Card deleted successfully'
@@ -834,8 +713,7 @@ def delete_card(card_id):
 def get_menu_items(menu_location):
     """Get menu items for a specific location"""
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
+        with get_db_cursor() as cur:
 
         cur.execute("""
             SELECT * FROM website_menu_items
@@ -844,10 +722,6 @@ def get_menu_items(menu_location):
         """, (menu_location,))
 
         menu_items = cur.fetchall()
-
-        cur.close()
-        conn.close()
-
         return jsonify({
             'success': True,
             'menu_items': menu_items
@@ -863,8 +737,7 @@ def get_menu_items(menu_location):
 def get_all_menu_items():
     """Get all menu items grouped by location"""
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
+        with get_db_cursor() as cur:
 
         cur.execute("""
             SELECT * FROM website_menu_items
@@ -880,10 +753,6 @@ def get_all_menu_items():
             if location not in grouped_menu:
                 grouped_menu[location] = []
             grouped_menu[location].append(item)
-
-        cur.close()
-        conn.close()
-
         return jsonify({
             'success': True,
             'menu': grouped_menu,
@@ -914,8 +783,7 @@ def create_menu_item():
         if not menu_location or not menu_text or not menu_url:
             return jsonify({'success': False, 'error': 'Menu location, text, and URL are required'}), 400
 
-        conn = get_db_connection()
-        cur = conn.cursor()
+        with get_db_cursor() as cur:
 
         cur.execute("""
             INSERT INTO website_menu_items
@@ -927,11 +795,6 @@ def create_menu_item():
               is_visible, target, icon))
 
         new_item = cur.fetchone()
-
-        conn.commit()
-        cur.close()
-        conn.close()
-
         return jsonify({
             'success': True,
             'message': 'Menu item created successfully',
@@ -950,8 +813,7 @@ def update_menu_item(item_id):
     try:
         data = request.get_json()
 
-        conn = get_db_connection()
-        cur = conn.cursor()
+        with get_db_cursor() as cur:
 
         # Build dynamic update query
         update_fields = []
@@ -981,14 +843,7 @@ def update_menu_item(item_id):
         updated_item = cur.fetchone()
 
         if not updated_item:
-            cur.close()
-            conn.close()
             return jsonify({'success': False, 'error': 'Menu item not found'}), 404
-
-        conn.commit()
-        cur.close()
-        conn.close()
-
         return jsonify({
             'success': True,
             'message': 'Menu item updated successfully',
@@ -1005,21 +860,13 @@ def update_menu_item(item_id):
 def delete_menu_item(item_id):
     """Delete a menu item"""
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
+        with get_db_cursor() as cur:
 
         cur.execute("DELETE FROM website_menu_items WHERE menu_item_id = %s RETURNING menu_item_id", (item_id,))
         deleted = cur.fetchone()
 
         if not deleted:
-            cur.close()
-            conn.close()
             return jsonify({'success': False, 'error': 'Menu item not found'}), 404
-
-        conn.commit()
-        cur.close()
-        conn.close()
-
         return jsonify({
             'success': True,
             'message': 'Menu item deleted successfully'
@@ -1041,8 +888,7 @@ def get_media():
     try:
         media_type = request.args.get('type', None)
 
-        conn = get_db_connection()
-        cur = conn.cursor()
+        with get_db_cursor() as cur:
 
         if media_type:
             cur.execute("""
@@ -1061,10 +907,6 @@ def get_media():
             """)
 
         media_files = cur.fetchall()
-
-        cur.close()
-        conn.close()
-
         return jsonify({
             'success': True,
             'media': media_files
@@ -1094,8 +936,7 @@ def upload_media():
         if not media_name or not media_url:
             return jsonify({'success': False, 'error': 'Media name and URL are required'}), 400
 
-        conn = get_db_connection()
-        cur = conn.cursor()
+        with get_db_cursor() as cur:
 
         cur.execute("""
             INSERT INTO website_media
@@ -1107,11 +948,6 @@ def upload_media():
               alt_text, caption, user_id))
 
         new_media = cur.fetchone()
-
-        conn.commit()
-        cur.close()
-        conn.close()
-
         return jsonify({
             'success': True,
             'message': 'Media registered successfully',
@@ -1130,8 +966,7 @@ def update_media(media_id):
     try:
         data = request.get_json()
 
-        conn = get_db_connection()
-        cur = conn.cursor()
+        with get_db_cursor() as cur:
 
         # Build dynamic update query
         update_fields = []
@@ -1160,14 +995,7 @@ def update_media(media_id):
         updated_media = cur.fetchone()
 
         if not updated_media:
-            cur.close()
-            conn.close()
             return jsonify({'success': False, 'error': 'Media not found'}), 404
-
-        conn.commit()
-        cur.close()
-        conn.close()
-
         return jsonify({
             'success': True,
             'message': 'Media updated successfully',
@@ -1184,21 +1012,13 @@ def update_media(media_id):
 def delete_media(media_id):
     """Delete a media file"""
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
+        with get_db_cursor() as cur:
 
         cur.execute("DELETE FROM website_media WHERE media_id = %s RETURNING media_id", (media_id,))
         deleted = cur.fetchone()
 
         if not deleted:
-            cur.close()
-            conn.close()
             return jsonify({'success': False, 'error': 'Media not found'}), 404
-
-        conn.commit()
-        cur.close()
-        conn.close()
-
         return jsonify({
             'success': True,
             'message': 'Media deleted successfully'
@@ -1218,15 +1038,10 @@ def delete_media(media_id):
 def get_global_settings():
     """Get global website settings"""
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
+        with get_db_cursor() as cur:
 
         cur.execute("SELECT * FROM website_global_settings LIMIT 1")
         settings = cur.fetchone()
-
-        cur.close()
-        conn.close()
-
         if not settings:
             return jsonify({'success': False, 'error': 'Settings not found'}), 404
 
@@ -1247,8 +1062,7 @@ def update_global_settings():
     try:
         data = request.get_json()
 
-        conn = get_db_connection()
-        cur = conn.cursor()
+        with get_db_cursor() as cur:
 
         # Build dynamic update query
         update_fields = []
@@ -1280,14 +1094,7 @@ def update_global_settings():
         updated_settings = cur.fetchone()
 
         if not updated_settings:
-            cur.close()
-            conn.close()
             return jsonify({'success': False, 'error': 'Settings not found'}), 404
-
-        conn.commit()
-        cur.close()
-        conn.close()
-
         return jsonify({
             'success': True,
             'message': 'Global settings updated successfully',
