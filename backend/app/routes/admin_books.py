@@ -5,6 +5,7 @@ from app.utils.database import execute_query, get_db_cursor
 from app.utils.googlebooks import fetch_book_by_isbn as fetch_google_books
 from app.utils.openlibrary import fetch_book_by_isbn as fetch_open_library
 from app.config import Config
+import json
 
 admin_books_bp = Blueprint('admin_books', __name__)
 
@@ -178,13 +179,20 @@ def merge_book_data(google_data, openlibrary_data):
     Required fields to check: Title, Author, Publisher, Genre, Pages,
     Publication Year, Language, Description, Cover Image URL
     """
+    print("\n" + "=" * 80)
+    print("STARTING DATA MERGE")
+    print("=" * 80)
+
     if not google_data:
+        print("Google Books returned no data, using OpenLibrary data only")
         return openlibrary_data
 
     if not openlibrary_data:
+        print("OpenLibrary returned no data, using Google Books data only")
         return google_data
 
     merged = google_data.copy()
+    fields_merged = []
 
     # Map of Google Books fields to OpenLibrary fields
     field_mappings = {
@@ -202,12 +210,29 @@ def merge_book_data(google_data, openlibrary_data):
 
     # Fill in missing fields from OpenLibrary
     for google_field, openlibrary_field in field_mappings.items():
-        if not merged.get(google_field) and openlibrary_data.get(openlibrary_field):
-            merged[google_field] = openlibrary_data[openlibrary_field]
+        google_value = merged.get(google_field)
+        openlibrary_value = openlibrary_data.get(openlibrary_field)
+
+        if not google_value and openlibrary_value:
+            merged[google_field] = openlibrary_value
+            fields_merged.append(f"{google_field} (from OpenLibrary)")
+            print(f"  ✓ Merged {google_field}: '{openlibrary_value}' (from OpenLibrary)")
+        elif google_value:
+            print(f"  • Using {google_field}: '{google_value}' (from Google Books)")
+        else:
+            print(f"  ✗ Missing {google_field}: Not available in either source")
 
     # If page_count is missing but number_of_pages is available
     if not merged.get('page_count') and merged.get('number_of_pages'):
         merged['page_count'] = merged['number_of_pages']
+
+    print(f"\nFields merged from OpenLibrary: {len(fields_merged)}")
+    if fields_merged:
+        print(f"  - {', '.join(fields_merged)}")
+
+    print("\nFINAL MERGED DATA:")
+    print(json.dumps(merged, indent=2))
+    print("=" * 80 + "\n")
 
     return merged
 
@@ -225,6 +250,10 @@ def fetch_book_details():
     if not isbn:
         return jsonify({"error": "ISBN is required"}), 400
 
+    print("\n" + "🔍" * 40)
+    print(f"📚 BOOK LOOKUP REQUEST FOR ISBN: {isbn}")
+    print("🔍" * 40 + "\n")
+
     # Check if book already exists
     existing_query = "SELECT book_id FROM books WHERE isbn = %s OR isbn_10 = %s"
     isbn_clean = isbn.replace('-', '').replace(' ', '')
@@ -234,29 +263,59 @@ def fetch_book_details():
         return jsonify({"error": "Book with this ISBN already exists"}), 400
 
     # Fetch from Google Books first
-    print(f"Fetching book data from Google Books for ISBN: {isbn}")
+    print(f"📗 Step 1: Fetching book data from Google Books for ISBN: {isbn}")
     google_book_info = fetch_google_books(isbn)
 
     # Check if important fields are missing from Google Books
+    required_fields = ['title', 'author', 'publisher', 'page_count',
+                      'publication_year', 'language', 'description', 'cover_image_url']
     missing_fields = []
+
     if google_book_info:
-        required_fields = ['title', 'author', 'publisher', 'page_count',
-                          'publication_year', 'language', 'description', 'cover_image_url']
         missing_fields = [field for field in required_fields
                          if not google_book_info.get(field)]
+
+        print(f"\n📊 Google Books Result Summary:")
+        print(f"  Total fields: {len(required_fields)}")
+        print(f"  Fields found: {len(required_fields) - len(missing_fields)}")
+        print(f"  Fields missing: {len(missing_fields)}")
+        if missing_fields:
+            print(f"  Missing: {', '.join(missing_fields)}")
+    else:
+        print("  ❌ Google Books returned no data")
+        missing_fields = required_fields
 
     # If Google Books returned no data or has missing fields, try OpenLibrary
     openlibrary_book_info = None
     if not google_book_info or missing_fields:
-        print(f"Fetching book data from OpenLibrary for ISBN: {isbn}")
-        print(f"Missing fields from Google Books: {missing_fields}")
+        print(f"\n📘 Step 2: Fetching book data from OpenLibrary for ISBN: {isbn}")
+        print(f"  Reason: {'No data from Google Books' if not google_book_info else f'Missing {len(missing_fields)} field(s)'}")
         openlibrary_book_info = fetch_open_library(isbn)
+
+        if openlibrary_book_info:
+            print(f"  ✓ OpenLibrary returned data")
+        else:
+            print(f"  ❌ OpenLibrary returned no data")
+    else:
+        print(f"\n✅ Google Books has all required fields, skipping OpenLibrary")
 
     # Merge data from both sources
     book_info = merge_book_data(google_book_info, openlibrary_book_info)
 
     if not book_info:
+        print("\n❌ LOOKUP FAILED: No data from either source\n")
         return jsonify({"error": "Book not found in Google Books or OpenLibrary"}), 404
+
+    # Final validation
+    final_missing = [field for field in required_fields if not book_info.get(field)]
+    print("\n" + "=" * 80)
+    print("📋 FINAL RESULT VALIDATION:")
+    print(f"  Required fields present: {len(required_fields) - len(final_missing)}/{len(required_fields)}")
+    if final_missing:
+        print(f"  ⚠️  Still missing: {', '.join(final_missing)}")
+    else:
+        print(f"  ✅ All required fields present!")
+    print("=" * 80 + "\n")
 
     return jsonify(book_info), 200
 

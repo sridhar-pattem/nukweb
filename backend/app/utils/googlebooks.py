@@ -1,4 +1,5 @@
 import requests
+import json
 from app.config import Config
 
 def fetch_book_by_isbn(isbn):
@@ -18,7 +19,14 @@ def fetch_book_by_isbn(isbn):
 
         data = response.json()
 
+        # Print raw API response for debugging
+        print("=" * 80)
+        print(f"GOOGLE BOOKS RAW API RESPONSE for ISBN {clean_isbn}:")
+        print(json.dumps(data, indent=2))
+        print("=" * 80)
+
         if data.get('totalItems', 0) == 0:
+            print(f"Google Books: No results found for ISBN {clean_isbn}")
             return None
 
         # Get the first book result
@@ -44,13 +52,20 @@ def fetch_book_by_isbn(isbn):
         if book_info['categories']:
             book_info['genre'] = book_info['categories'][0]
 
+        # Print parsed data for debugging
+        print(f"GOOGLE BOOKS PARSED DATA for ISBN {clean_isbn}:")
+        print(json.dumps(book_info, indent=2))
+        print("=" * 80)
+
         return book_info
 
     except requests.RequestException as e:
         print(f"Error fetching book data from Google Books: {e}")
         return None
     except Exception as e:
-        print(f"Unexpected error: {e}")
+        print(f"Unexpected error in Google Books fetch: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 def search_books_google(query, limit=10):
