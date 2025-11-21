@@ -220,12 +220,6 @@ def fetch_books_batch_isbndb(isbns):
                     if 'error' in data or 'errorMessage' in data:
                         print(f"ISBNDB API Error: {data.get('error') or data.get('errorMessage')}")
 
-                # If no books returned, show the response to debug
-                if len(data.get('books', [])) == 0:
-                    print(f"Response JSON: {data}")
-                    if 'error' in data or 'errorMessage' in data:
-                        print(f"ISBNDB API Error: {data.get('error') or data.get('errorMessage')}")
-
             except requests.Timeout:
                 print(f"ISBNDB API request timed out after 30 seconds")
                 for isbn in batch:

@@ -258,7 +258,7 @@ const BookForm = () => {
               <FaSearch /> {lookupLoading ? 'Looking up...' : 'Lookup'}
             </button>
           </div>
-          <p className="help-text">Automatically fetch book details from Google Books</p>
+          <p className="help-text">Automatically fetch book details from Google Books and OpenLibrary</p>
         </div>
       )}
 
