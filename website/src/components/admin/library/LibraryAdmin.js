@@ -59,12 +59,6 @@ const LibraryAdmin = () => {
           Contributors
         </NavLink>
         <NavLink
-          to="/admin/library/items"
-          className={({ isActive }) => isActive ? 'tab-link active' : 'tab-link'}
-        >
-          Items
-        </NavLink>
-        <NavLink
           to="/admin/library/import"
           className={({ isActive }) => isActive ? 'tab-link active' : 'tab-link'}
         >
@@ -87,7 +81,6 @@ const LibraryAdmin = () => {
           <Route path="/collections" element={<Collections />} />
           <Route path="/membership-plans" element={<MembershipPlans />} />
           <Route path="/contributors" element={<Contributors />} />
-          <Route path="/items" element={<Items />} />
           <Route path="/import" element={<Import />} />
         </Routes>
       </div>

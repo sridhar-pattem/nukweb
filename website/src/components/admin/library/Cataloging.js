@@ -13,6 +13,10 @@ const Cataloging = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCollection, setSelectedCollection] = useState('');
   const [error, setError] = useState('');
+  const [selectedBook, setSelectedBook] = useState(null);
+  const [showItemsPanel, setShowItemsPanel] = useState(false);
+  const [bookItems, setBookItems] = useState([]);
+  const [loadingItems, setLoadingItems] = useState(false);
   const [filters, setFilters] = useState({
     isbn: '',
     title: '',
@@ -61,6 +65,28 @@ const Cataloging = () => {
     e.preventDefault();
     setPage(1);
     fetchBooks();
+  };
+
+  const handleBookClick = async (book) => {
+    setSelectedBook(book);
+    setShowItemsPanel(true);
+    setLoadingItems(true);
+
+    try {
+      const response = await adminLibraryAPI.getBookById(book.book_id);
+      setBookItems(response.data.items || []);
+    } catch (err) {
+      console.error('Error fetching book items:', err);
+      setError('Failed to load book items');
+    } finally {
+      setLoadingItems(false);
+    }
+  };
+
+  const closeItemsPanel = () => {
+    setShowItemsPanel(false);
+    setSelectedBook(null);
+    setBookItems([]);
   };
 
   const handleFilterChange = (field, value) => {
@@ -197,7 +223,6 @@ const Cataloging = () => {
                   <th>Authors</th>
                   <th>Collection</th>
                   <th>Items (Avail/Total)</th>
-                  <th>Due Date</th>
                   <th>Actions</th>
                 </tr>
                 <tr className="filter-row">
@@ -246,7 +271,6 @@ const Cataloging = () => {
                   </th>
                   <th></th>
                   <th></th>
-                  <th></th>
                 </tr>
               </thead>
               <tbody>
@@ -274,6 +298,15 @@ const Cataloging = () => {
                         <div className="book-title">
                           <strong>{book.title}</strong>
                           {book.subtitle && <span className="subtitle">{book.subtitle}</span>}
+                          {book.earliest_due_date && (
+                            <div className="due-date-under-title">
+                              Due: {new Date(book.earliest_due_date).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric'
+                              })}
+                            </div>
+                          )}
                         </div>
                       </Link>
                     </td>
@@ -289,23 +322,14 @@ const Cataloging = () => {
                       </span>
                     </td>
                     <td>
-                      {book.earliest_due_date ? (
-                        <span className="due-date-badge">
-                          {new Date(book.earliest_due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        </span>
-                      ) : (
-                        '-'
-                      )}
-                    </td>
-                    <td>
                       <div className="action-buttons">
-                        <Link
-                          to={`/admin/library/cataloging/books/${book.book_id}/items`}
+                        <button
+                          onClick={() => handleBookClick(book)}
                           className="btn btn-icon btn-primary"
-                          title="Add/Manage Items"
+                          title="Manage Items"
                         >
                           <FaPlug />
-                        </Link>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -338,6 +362,104 @@ const Cataloging = () => {
               </button>
             </div>
           )}
+        </>
+      )}
+
+      {/* Right-hand Items Panel */}
+      {showItemsPanel && selectedBook && (
+        <>
+          <div className="panel-overlay" onClick={closeItemsPanel}></div>
+          <div className="right-panel">
+            <div className="panel-header">
+              <div>
+                <h2>{selectedBook.title}</h2>
+                {selectedBook.subtitle && <p className="text-muted">{selectedBook.subtitle}</p>}
+              </div>
+              <button onClick={closeItemsPanel} className="btn btn-icon">
+                ×
+              </button>
+            </div>
+
+            <div className="panel-content">
+              {/* Book Info */}
+              <div className="panel-section">
+                <h3>Book Information</h3>
+                <div className="info-grid">
+                  <div className="info-item">
+                    <label>ISBN:</label>
+                    <span>{selectedBook.isbn || 'N/A'}</span>
+                  </div>
+                  <div className="info-item">
+                    <label>Authors:</label>
+                    <span>
+                      {selectedBook.contributors && selectedBook.contributors.length > 0
+                        ? selectedBook.contributors.map((c) => c.name).join(', ')
+                        : 'N/A'}
+                    </span>
+                  </div>
+                  <div className="info-item">
+                    <label>Collection:</label>
+                    <span>{selectedBook.collection_name || 'N/A'}</span>
+                  </div>
+                  <div className="info-item">
+                    <label>Available/Total:</label>
+                    <span>
+                      {selectedBook.available_items || 0}/{selectedBook.total_items || 0}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Items List */}
+              <div className="panel-section">
+                <div className="section-header">
+                  <h3>Items</h3>
+                  <Link
+                    to={`/admin/library/cataloging/books/${selectedBook.book_id}/items`}
+                    className="btn btn-outline btn-small"
+                  >
+                    <FaPlus /> Add Item
+                  </Link>
+                </div>
+
+                {loadingItems ? (
+                  <div className="loading-items">Loading items...</div>
+                ) : bookItems.length === 0 ? (
+                  <div className="empty-items">
+                    <p>No items found for this book.</p>
+                    <p className="text-muted">
+                      Click "Add Item" to create the first physical copy.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="items-list">
+                    {bookItems.map((item) => (
+                      <div key={item.item_id} className="item-card">
+                        <div className="item-info">
+                          <div className="item-barcode">
+                            <strong>Barcode:</strong> {item.barcode || 'Not assigned'}
+                          </div>
+                          <div className="item-status">
+                            <span className={`status-badge ${item.circulation_status}`}>
+                              {item.circulation_status}
+                            </span>
+                          </div>
+                          <div className="item-condition">
+                            <span className="text-muted">Condition:</span> {item.condition}
+                          </div>
+                          {item.is_borrowed && (
+                            <div className="item-borrowed">
+                              <span className="badge-warning">Currently Borrowed</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </>
       )}
     </div>

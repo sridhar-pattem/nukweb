@@ -2,7 +2,8 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
 from app.utils.auth import admin_required
 from app.utils.database import execute_query, get_db_cursor
-from app.utils.googlebooks import fetch_book_by_isbn
+from app.utils.googlebooks import fetch_book_by_isbn as fetch_google_books
+from app.utils.openlibrary import fetch_book_by_isbn as fetch_open_library
 from app.config import Config
 
 admin_books_bp = Blueprint('admin_books', __name__)
@@ -169,11 +170,55 @@ def get_book_details(book_id):
 
     return jsonify(result), 200
 
+def merge_book_data(google_data, openlibrary_data):
+    """
+    Merge book data from Google Books and OpenLibrary.
+    Google Books data takes precedence, OpenLibrary fills in missing fields.
+
+    Required fields to check: Title, Author, Publisher, Genre, Pages,
+    Publication Year, Language, Description, Cover Image URL
+    """
+    if not google_data:
+        return openlibrary_data
+
+    if not openlibrary_data:
+        return google_data
+
+    merged = google_data.copy()
+
+    # Map of Google Books fields to OpenLibrary fields
+    field_mappings = {
+        'title': 'title',
+        'author': 'author',
+        'publisher': 'publisher',
+        'genre': 'genre',
+        'page_count': 'number_of_pages',
+        'publication_year': 'publication_year',
+        'language': 'language',
+        'description': 'description',
+        'cover_image_url': 'cover_image_url',
+        'categories': 'subjects'
+    }
+
+    # Fill in missing fields from OpenLibrary
+    for google_field, openlibrary_field in field_mappings.items():
+        if not merged.get(google_field) and openlibrary_data.get(openlibrary_field):
+            merged[google_field] = openlibrary_data[openlibrary_field]
+
+    # If page_count is missing but number_of_pages is available
+    if not merged.get('page_count') and merged.get('number_of_pages'):
+        merged['page_count'] = merged['number_of_pages']
+
+    return merged
+
 @admin_books_bp.route('/books/fetch-by-isbn', methods=['POST'])
 @jwt_required()
 @admin_required
 def fetch_book_details():
-    """Fetch book details from Google Books API by ISBN"""
+    """
+    Fetch book details by ISBN.
+    First tries Google Books, then fills missing fields from OpenLibrary.
+    """
     data = request.get_json()
     isbn = data.get('isbn')
 
@@ -188,11 +233,30 @@ def fetch_book_details():
     if existing:
         return jsonify({"error": "Book with this ISBN already exists"}), 400
 
-    # Fetch from Google Books
-    book_info = fetch_book_by_isbn(isbn)
+    # Fetch from Google Books first
+    print(f"Fetching book data from Google Books for ISBN: {isbn}")
+    google_book_info = fetch_google_books(isbn)
+
+    # Check if important fields are missing from Google Books
+    missing_fields = []
+    if google_book_info:
+        required_fields = ['title', 'author', 'publisher', 'page_count',
+                          'publication_year', 'language', 'description', 'cover_image_url']
+        missing_fields = [field for field in required_fields
+                         if not google_book_info.get(field)]
+
+    # If Google Books returned no data or has missing fields, try OpenLibrary
+    openlibrary_book_info = None
+    if not google_book_info or missing_fields:
+        print(f"Fetching book data from OpenLibrary for ISBN: {isbn}")
+        print(f"Missing fields from Google Books: {missing_fields}")
+        openlibrary_book_info = fetch_open_library(isbn)
+
+    # Merge data from both sources
+    book_info = merge_book_data(google_book_info, openlibrary_book_info)
 
     if not book_info:
-        return jsonify({"error": "Book not found in Google Books"}), 404
+        return jsonify({"error": "Book not found in Google Books or OpenLibrary"}), 404
 
     return jsonify(book_info), 200
 
