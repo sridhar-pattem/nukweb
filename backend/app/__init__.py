@@ -29,6 +29,8 @@ def create_app():
     from app.routes.patron_content import patron_content_bp
     from app.routes.admin_content import admin_content_bp
     from app.routes.event_management import event_bp
+    # Website Admin
+    from app.routes.admin_website import admin_website_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(admin_patrons_bp, url_prefix='/api/admin')
@@ -46,6 +48,8 @@ def create_app():
     app.register_blueprint(patron_content_bp, url_prefix='/api/patron/content')
     app.register_blueprint(admin_content_bp, url_prefix='/api/admin/content')
     app.register_blueprint(event_bp, url_prefix='/api/events')
+    # Website Admin
+    app.register_blueprint(admin_website_bp, url_prefix='/api/admin/website')
     
     # Health check endpoint
     @app.route('/health')
