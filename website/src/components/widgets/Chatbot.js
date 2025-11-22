@@ -102,10 +102,18 @@ const Chatbot = () => {
   };
 
   const extractSearchTerms = (query) => {
-    // Remove common words
-    const cleanedQuery = query
-      .toLowerCase()
-      .replace(/\b(do|you|have|any|show|me|all|the|a|an|books?|by|on|about|find|looking|for)\b/gi, '')
+    // Remove quotes first to extract the exact title
+    let cleanedQuery = query.toLowerCase();
+
+    // Check if there's a quoted phrase - if so, use that as the search term
+    const quotedMatch = query.match(/["']([^"']+)["']/);
+    if (quotedMatch) {
+      return quotedMatch[1].trim();
+    }
+
+    // Remove common words and filler phrases
+    cleanedQuery = cleanedQuery
+      .replace(/\b(do|you|have|any|show|me|all|the|a|an|books?|by|on|about|find|looking|for|called|titled|named|of|in|with|is|are|there|that|this|it|and|or)\b/gi, '')
       .replace(/[?.,!]/g, '')
       .trim();
 
