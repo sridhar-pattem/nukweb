@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const ModernHeader = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated, isAdmin, logout } = useAuth();
+  const { isAuthenticated, isAdmin, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
@@ -22,23 +22,19 @@ const ModernHeader = () => {
       <div className="container nav-inner">
         {/* Brand */}
         <Link to="/" style={{ display: 'flex', gap: '6px', alignItems: 'center', textDecoration: 'none' }} onClick={closeMobileMenu}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '6px',
-            background: 'var(--teal)',
-            color: '#fff',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontWeight: '700',
-            fontSize: '16px'
-          }}>
-            NUK
-          </div>
+          <img
+            src="/logo.png"
+            alt="Nuk Library Cowork and Café"
+            style={{
+              width: '55px',
+              height: '55px',
+              borderRadius: '6px',
+              objectFit: 'cover'
+            }}
+          />
           <div>
-            <div style={{ fontWeight: '700', color: '#111', fontSize: '20px' }}>Nuk Library</div>
-            <div className="text-muted" style={{ marginTop: '-2px', fontSize: '12px' }}>Cowork & Café · Bangalore</div>
+            <div style={{ fontWeight: '700', color: '#111', fontSize: '14px' }}>Library</div>
+            <div style={{ marginTop: '-2px', fontSize: '12px', color: '#666', fontWeight: '500' }}>Cowork & Café · Bangalore</div>
           </div>
         </Link>
 
@@ -47,6 +43,9 @@ const ModernHeader = () => {
           {/* Public Links */}
           <NavLink to="/" className="btn btn-outline" onClick={closeMobileMenu}>
             Home
+          </NavLink>
+          <NavLink to="/about" className="btn btn-outline" onClick={closeMobileMenu}>
+            About
           </NavLink>
           <NavLink to="/catalogue" className="btn btn-outline" onClick={closeMobileMenu}>
             Catalogue
@@ -63,14 +62,9 @@ const ModernHeader = () => {
 
           {/* Auth-based Navigation */}
           {!isAuthenticated ? (
-            <>
-              <Link to="/login" className="btn btn-outline" onClick={closeMobileMenu}>
-                Sign In
-              </Link>
-              <Link to="/register" className="btn btn-primary" onClick={closeMobileMenu}>
-                Join Now
-              </Link>
-            </>
+            <Link to="/login" className="btn btn-primary" onClick={closeMobileMenu}>
+              Sign In
+            </Link>
           ) : (
             <>
               {/* Patron Links */}
@@ -85,10 +79,10 @@ const ModernHeader = () => {
                 </>
               )}
 
-              {/* Admin Link */}
+              {/* Admin Links */}
               {isAdmin() && (
-                <NavLink to="/admin/library" className="btn btn-outline" onClick={closeMobileMenu}>
-                  Library Admin
+                <NavLink to="/admin/website" className="btn btn-outline" onClick={closeMobileMenu}>
+                  Website Admin
                 </NavLink>
               )}
 
@@ -120,6 +114,9 @@ const ModernHeader = () => {
             <NavLink to="/" className="mobile-nav-link" onClick={closeMobileMenu}>
               Home
             </NavLink>
+            <NavLink to="/about" className="mobile-nav-link" onClick={closeMobileMenu}>
+              About
+            </NavLink>
             <NavLink to="/catalogue" className="mobile-nav-link" onClick={closeMobileMenu}>
               Catalogue
             </NavLink>
@@ -148,8 +145,8 @@ const ModernHeader = () => {
               )}
 
               {isAdmin() && (
-                <NavLink to="/admin/library" className="mobile-nav-link" onClick={closeMobileMenu}>
-                  Library Admin
+                <NavLink to="/admin/website" className="mobile-nav-link" onClick={closeMobileMenu}>
+                  Website Admin
                 </NavLink>
               )}
 
@@ -164,11 +161,8 @@ const ModernHeader = () => {
 
           {!isAuthenticated && (
             <div className="mobile-nav-section">
-              <Link to="/login" className="btn btn-outline" onClick={closeMobileMenu}>
+              <Link to="/login" className="btn btn-primary" onClick={closeMobileMenu}>
                 Sign In
-              </Link>
-              <Link to="/register" className="btn btn-primary" onClick={closeMobileMenu}>
-                Join Now
               </Link>
             </div>
           )}

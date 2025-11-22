@@ -9,6 +9,8 @@ from app.utils.database import get_db_cursor
 from app.utils.auth import admin_required
 import json
 from datetime import datetime
+import os
+from werkzeug.utils import secure_filename
 
 admin_website_bp = Blueprint('admin_website', __name__)
 
@@ -23,7 +25,6 @@ def get_theme_settings():
     """Get all theme settings"""
     try:
         with get_db_cursor() as cur:
-
             cur.execute("""
                 SELECT setting_id, setting_key, setting_value, setting_type,
                        category, description, updated_at
@@ -40,7 +41,6 @@ def get_theme_settings():
                 if category not in grouped_settings:
                     grouped_settings[category] = []
                 grouped_settings[category].append(setting)
-
 
             return jsonify({
                 'success': True,
@@ -65,7 +65,6 @@ def update_theme_setting(setting_id):
             return jsonify({'success': False, 'error': 'Setting value is required'}), 400
 
         with get_db_cursor() as cur:
-
             cur.execute("""
                 UPDATE website_theme_settings
                 SET setting_value = %s, updated_at = CURRENT_TIMESTAMP
@@ -77,7 +76,6 @@ def update_theme_setting(setting_id):
 
             if not updated_setting:
                 return jsonify({'success': False, 'error': 'Setting not found'}), 404
-
 
             return jsonify({
                 'success': True,
@@ -102,7 +100,6 @@ def update_theme_settings_bulk():
             return jsonify({'success': False, 'error': 'No settings provided'}), 400
 
         with get_db_cursor() as cur:
-
             updated_count = 0
             for setting in settings:
                 setting_key = setting.get('setting_key')
@@ -115,7 +112,6 @@ def update_theme_settings_bulk():
                         WHERE setting_key = %s
                     """, (setting_value, setting_key))
                     updated_count += cur.rowcount
-
 
             return jsonify({
                 'success': True,
@@ -154,7 +150,6 @@ def get_pages():
     """Get all pages"""
     try:
         with get_db_cursor() as cur:
-
             cur.execute("""
                 SELECT p.*, u.name as creator_name
                 FROM website_pages p
@@ -163,7 +158,6 @@ def get_pages():
             """)
 
             pages = cur.fetchall()
-
 
             return jsonify({
                 'success': True,
@@ -181,7 +175,6 @@ def get_page(page_id):
     """Get a specific page with all its sections"""
     try:
         with get_db_cursor() as cur:
-
             # Get page details
             cur.execute("""
                 SELECT p.*, u.name as creator_name
@@ -222,7 +215,6 @@ def get_page(page_id):
 
             page['sections'] = sections
 
-
             return jsonify({
                 'success': True,
                 'page': page
@@ -253,7 +245,6 @@ def create_page():
             return jsonify({'success': False, 'error': 'Page title and slug are required'}), 400
 
         with get_db_cursor() as cur:
-
             # Check if slug already exists
             cur.execute("SELECT page_id FROM website_pages WHERE page_slug = %s", (page_slug,))
             if cur.fetchone():
@@ -269,7 +260,6 @@ def create_page():
                   is_published, display_order, user_id))
 
             new_page = cur.fetchone()
-
 
             return jsonify({
                 'success': True,
@@ -289,38 +279,36 @@ def update_page(page_id):
     try:
         data = request.get_json()
 
+        # Build dynamic update query
+        update_fields = []
+        values = []
+
+        allowed_fields = ['page_title', 'page_slug', 'page_description', 'meta_title',
+                         'meta_description', 'is_published', 'display_order']
+
+        for field in allowed_fields:
+            if field in data:
+                update_fields.append(f"{field} = %s")
+                values.append(data[field])
+
+        if not update_fields:
+            return jsonify({'success': False, 'error': 'No fields to update'}), 400
+
+        values.append(page_id)
+
+        query = f"""
+            UPDATE website_pages
+            SET {', '.join(update_fields)}, updated_at = CURRENT_TIMESTAMP
+            WHERE page_id = %s
+            RETURNING *
+        """
+
         with get_db_cursor() as cur:
-
-            # Build dynamic update query
-            update_fields = []
-            values = []
-
-            allowed_fields = ['page_title', 'page_slug', 'page_description', 'meta_title',
-                             'meta_description', 'is_published', 'display_order']
-
-            for field in allowed_fields:
-                if field in data:
-                    update_fields.append(f"{field} = %s")
-                    values.append(data[field])
-
-            if not update_fields:
-                return jsonify({'success': False, 'error': 'No fields to update'}), 400
-
-            values.append(page_id)
-
-            query = f"""
-                UPDATE website_pages
-                SET {', '.join(update_fields)}, updated_at = CURRENT_TIMESTAMP
-                WHERE page_id = %s
-                RETURNING *
-            """
-
             cur.execute(query, values)
             updated_page = cur.fetchone()
 
             if not updated_page:
                 return jsonify({'success': False, 'error': 'Page not found'}), 404
-
 
             return jsonify({
                 'success': True,
@@ -339,13 +327,11 @@ def delete_page(page_id):
     """Delete a page"""
     try:
         with get_db_cursor() as cur:
-
             cur.execute("DELETE FROM website_pages WHERE page_id = %s RETURNING page_id", (page_id,))
             deleted = cur.fetchone()
 
             if not deleted:
                 return jsonify({'success': False, 'error': 'Page not found'}), 404
-
 
             return jsonify({
                 'success': True,
@@ -383,7 +369,6 @@ def create_section():
             return jsonify({'success': False, 'error': 'Page ID, section name, and type are required'}), 400
 
         with get_db_cursor() as cur:
-
             cur.execute("""
                 INSERT INTO website_sections
                 (page_id, section_name, section_type, section_header, section_subheader,
@@ -394,7 +379,6 @@ def create_section():
                   background_color, text_color, display_order, is_visible, custom_css))
 
             new_section = cur.fetchone()
-
 
             return jsonify({
                 'success': True,
@@ -414,38 +398,36 @@ def update_section(section_id):
     try:
         data = request.get_json()
 
+        # Build dynamic update query
+        update_fields = []
+        values = []
+
+        allowed_fields = ['section_name', 'section_type', 'section_header', 'section_subheader',
+                         'background_color', 'text_color', 'display_order', 'is_visible', 'custom_css']
+
+        for field in allowed_fields:
+            if field in data:
+                update_fields.append(f"{field} = %s")
+                values.append(data[field])
+
+        if not update_fields:
+            return jsonify({'success': False, 'error': 'No fields to update'}), 400
+
+        values.append(section_id)
+
+        query = f"""
+            UPDATE website_sections
+            SET {', '.join(update_fields)}, updated_at = CURRENT_TIMESTAMP
+            WHERE section_id = %s
+            RETURNING *
+        """
+
         with get_db_cursor() as cur:
-
-            # Build dynamic update query
-            update_fields = []
-            values = []
-
-            allowed_fields = ['section_name', 'section_type', 'section_header', 'section_subheader',
-                             'background_color', 'text_color', 'display_order', 'is_visible', 'custom_css']
-
-            for field in allowed_fields:
-                if field in data:
-                    update_fields.append(f"{field} = %s")
-                    values.append(data[field])
-
-            if not update_fields:
-                return jsonify({'success': False, 'error': 'No fields to update'}), 400
-
-            values.append(section_id)
-
-            query = f"""
-                UPDATE website_sections
-                SET {', '.join(update_fields)}, updated_at = CURRENT_TIMESTAMP
-                WHERE section_id = %s
-                RETURNING *
-            """
-
             cur.execute(query, values)
             updated_section = cur.fetchone()
 
             if not updated_section:
                 return jsonify({'success': False, 'error': 'Section not found'}), 404
-
 
             return jsonify({
                 'success': True,
@@ -464,13 +446,11 @@ def delete_section(section_id):
     """Delete a section"""
     try:
         with get_db_cursor() as cur:
-
             cur.execute("DELETE FROM website_sections WHERE section_id = %s RETURNING section_id", (section_id,))
             deleted = cur.fetchone()
 
             if not deleted:
                 return jsonify({'success': False, 'error': 'Section not found'}), 404
-
 
             return jsonify({
                 'success': True,
@@ -508,7 +488,6 @@ def create_content_block():
             return jsonify({'success': False, 'error': 'Section ID and block type are required'}), 400
 
         with get_db_cursor() as cur:
-
             cur.execute("""
                 INSERT INTO website_content_blocks
                 (section_id, block_type, block_title, block_content, image_url, link_url,
@@ -519,7 +498,6 @@ def create_content_block():
                   link_text, display_order, is_visible, json.dumps(custom_attributes)))
 
             new_block = cur.fetchone()
-
 
             return jsonify({
                 'success': True,
@@ -539,42 +517,40 @@ def update_content_block(block_id):
     try:
         data = request.get_json()
 
+        # Build dynamic update query
+        update_fields = []
+        values = []
+
+        allowed_fields = ['block_type', 'block_title', 'block_content', 'image_url',
+                         'link_url', 'link_text', 'display_order', 'is_visible']
+
+        for field in allowed_fields:
+            if field in data:
+                update_fields.append(f"{field} = %s")
+                values.append(data[field])
+
+        if 'custom_attributes' in data:
+            update_fields.append("custom_attributes = %s")
+            values.append(json.dumps(data['custom_attributes']))
+
+        if not update_fields:
+            return jsonify({'success': False, 'error': 'No fields to update'}), 400
+
+        values.append(block_id)
+
+        query = f"""
+            UPDATE website_content_blocks
+            SET {', '.join(update_fields)}, updated_at = CURRENT_TIMESTAMP
+            WHERE block_id = %s
+            RETURNING *
+        """
+
         with get_db_cursor() as cur:
-
-            # Build dynamic update query
-            update_fields = []
-            values = []
-
-            allowed_fields = ['block_type', 'block_title', 'block_content', 'image_url',
-                             'link_url', 'link_text', 'display_order', 'is_visible']
-
-            for field in allowed_fields:
-                if field in data:
-                    update_fields.append(f"{field} = %s")
-                    values.append(data[field])
-
-            if 'custom_attributes' in data:
-                update_fields.append("custom_attributes = %s")
-                values.append(json.dumps(data['custom_attributes']))
-
-            if not update_fields:
-                return jsonify({'success': False, 'error': 'No fields to update'}), 400
-
-            values.append(block_id)
-
-            query = f"""
-                UPDATE website_content_blocks
-                SET {', '.join(update_fields)}, updated_at = CURRENT_TIMESTAMP
-                WHERE block_id = %s
-                RETURNING *
-            """
-
             cur.execute(query, values)
             updated_block = cur.fetchone()
 
             if not updated_block:
                 return jsonify({'success': False, 'error': 'Content block not found'}), 404
-
 
             return jsonify({
                 'success': True,
@@ -593,13 +569,11 @@ def delete_content_block(block_id):
     """Delete a content block"""
     try:
         with get_db_cursor() as cur:
-
             cur.execute("DELETE FROM website_content_blocks WHERE block_id = %s RETURNING block_id", (block_id,))
             deleted = cur.fetchone()
 
             if not deleted:
                 return jsonify({'success': False, 'error': 'Content block not found'}), 404
-
 
             return jsonify({
                 'success': True,
@@ -638,7 +612,6 @@ def create_card():
             return jsonify({'success': False, 'error': 'Section ID and card title are required'}), 400
 
         with get_db_cursor() as cur:
-
             cur.execute("""
                 INSERT INTO website_cards
                 (section_id, card_title, card_description, card_image_url, card_icon,
@@ -649,7 +622,6 @@ def create_card():
                   link_url, link_text, background_color, text_color, display_order, is_visible))
 
             new_card = cur.fetchone()
-
 
             return jsonify({
                 'success': True,
@@ -669,39 +641,37 @@ def update_card(card_id):
     try:
         data = request.get_json()
 
+        # Build dynamic update query
+        update_fields = []
+        values = []
+
+        allowed_fields = ['card_title', 'card_description', 'card_image_url', 'card_icon',
+                         'link_url', 'link_text', 'background_color', 'text_color',
+                         'display_order', 'is_visible']
+
+        for field in allowed_fields:
+            if field in data:
+                update_fields.append(f"{field} = %s")
+                values.append(data[field])
+
+        if not update_fields:
+            return jsonify({'success': False, 'error': 'No fields to update'}), 400
+
+        values.append(card_id)
+
+        query = f"""
+            UPDATE website_cards
+            SET {', '.join(update_fields)}, updated_at = CURRENT_TIMESTAMP
+            WHERE card_id = %s
+            RETURNING *
+        """
+
         with get_db_cursor() as cur:
-
-            # Build dynamic update query
-            update_fields = []
-            values = []
-
-            allowed_fields = ['card_title', 'card_description', 'card_image_url', 'card_icon',
-                             'link_url', 'link_text', 'background_color', 'text_color',
-                             'display_order', 'is_visible']
-
-            for field in allowed_fields:
-                if field in data:
-                    update_fields.append(f"{field} = %s")
-                    values.append(data[field])
-
-            if not update_fields:
-                return jsonify({'success': False, 'error': 'No fields to update'}), 400
-
-            values.append(card_id)
-
-            query = f"""
-                UPDATE website_cards
-                SET {', '.join(update_fields)}, updated_at = CURRENT_TIMESTAMP
-                WHERE card_id = %s
-                RETURNING *
-            """
-
             cur.execute(query, values)
             updated_card = cur.fetchone()
 
             if not updated_card:
                 return jsonify({'success': False, 'error': 'Card not found'}), 404
-
 
             return jsonify({
                 'success': True,
@@ -720,13 +690,11 @@ def delete_card(card_id):
     """Delete a card"""
     try:
         with get_db_cursor() as cur:
-
             cur.execute("DELETE FROM website_cards WHERE card_id = %s RETURNING card_id", (card_id,))
             deleted = cur.fetchone()
 
             if not deleted:
                 return jsonify({'success': False, 'error': 'Card not found'}), 404
-
 
             return jsonify({
                 'success': True,
@@ -748,7 +716,6 @@ def get_menu_items(menu_location):
     """Get menu items for a specific location"""
     try:
         with get_db_cursor() as cur:
-
             cur.execute("""
                 SELECT * FROM website_menu_items
                 WHERE menu_location = %s
@@ -756,7 +723,6 @@ def get_menu_items(menu_location):
             """, (menu_location,))
 
             menu_items = cur.fetchall()
-
 
             return jsonify({
                 'success': True,
@@ -774,7 +740,6 @@ def get_all_menu_items():
     """Get all menu items grouped by location"""
     try:
         with get_db_cursor() as cur:
-
             cur.execute("""
                 SELECT * FROM website_menu_items
                 ORDER BY menu_location, display_order
@@ -789,7 +754,6 @@ def get_all_menu_items():
                 if location not in grouped_menu:
                     grouped_menu[location] = []
                 grouped_menu[location].append(item)
-
 
             return jsonify({
                 'success': True,
@@ -822,7 +786,6 @@ def create_menu_item():
             return jsonify({'success': False, 'error': 'Menu location, text, and URL are required'}), 400
 
         with get_db_cursor() as cur:
-
             cur.execute("""
                 INSERT INTO website_menu_items
                 (menu_location, menu_text, menu_url, parent_id, display_order,
@@ -833,7 +796,6 @@ def create_menu_item():
                   is_visible, target, icon))
 
             new_item = cur.fetchone()
-
 
             return jsonify({
                 'success': True,
@@ -853,38 +815,36 @@ def update_menu_item(item_id):
     try:
         data = request.get_json()
 
+        # Build dynamic update query
+        update_fields = []
+        values = []
+
+        allowed_fields = ['menu_location', 'menu_text', 'menu_url', 'parent_id',
+                         'display_order', 'is_visible', 'target', 'icon']
+
+        for field in allowed_fields:
+            if field in data:
+                update_fields.append(f"{field} = %s")
+                values.append(data[field])
+
+        if not update_fields:
+            return jsonify({'success': False, 'error': 'No fields to update'}), 400
+
+        values.append(item_id)
+
+        query = f"""
+            UPDATE website_menu_items
+            SET {', '.join(update_fields)}, updated_at = CURRENT_TIMESTAMP
+            WHERE menu_item_id = %s
+            RETURNING *
+        """
+
         with get_db_cursor() as cur:
-
-            # Build dynamic update query
-            update_fields = []
-            values = []
-
-            allowed_fields = ['menu_location', 'menu_text', 'menu_url', 'parent_id',
-                             'display_order', 'is_visible', 'target', 'icon']
-
-            for field in allowed_fields:
-                if field in data:
-                    update_fields.append(f"{field} = %s")
-                    values.append(data[field])
-
-            if not update_fields:
-                return jsonify({'success': False, 'error': 'No fields to update'}), 400
-
-            values.append(item_id)
-
-            query = f"""
-                UPDATE website_menu_items
-                SET {', '.join(update_fields)}, updated_at = CURRENT_TIMESTAMP
-                WHERE menu_item_id = %s
-                RETURNING *
-            """
-
             cur.execute(query, values)
             updated_item = cur.fetchone()
 
             if not updated_item:
                 return jsonify({'success': False, 'error': 'Menu item not found'}), 404
-
 
             return jsonify({
                 'success': True,
@@ -903,13 +863,11 @@ def delete_menu_item(item_id):
     """Delete a menu item"""
     try:
         with get_db_cursor() as cur:
-
             cur.execute("DELETE FROM website_menu_items WHERE menu_item_id = %s RETURNING menu_item_id", (item_id,))
             deleted = cur.fetchone()
 
             if not deleted:
                 return jsonify({'success': False, 'error': 'Menu item not found'}), 404
-
 
             return jsonify({
                 'success': True,
@@ -933,7 +891,6 @@ def get_media():
         media_type = request.args.get('type', None)
 
         with get_db_cursor() as cur:
-
             if media_type:
                 cur.execute("""
                     SELECT m.*, u.name as uploader_name
@@ -951,7 +908,6 @@ def get_media():
                 """)
 
             media_files = cur.fetchall()
-
 
             return jsonify({
                 'success': True,
@@ -983,7 +939,6 @@ def upload_media():
             return jsonify({'success': False, 'error': 'Media name and URL are required'}), 400
 
         with get_db_cursor() as cur:
-
             cur.execute("""
                 INSERT INTO website_media
                 (media_name, media_url, media_type, file_size, mime_type,
@@ -994,7 +949,6 @@ def upload_media():
                   alt_text, caption, user_id))
 
             new_media = cur.fetchone()
-
 
             return jsonify({
                 'success': True,
@@ -1014,37 +968,35 @@ def update_media(media_id):
     try:
         data = request.get_json()
 
+        # Build dynamic update query
+        update_fields = []
+        values = []
+
+        allowed_fields = ['media_name', 'alt_text', 'caption']
+
+        for field in allowed_fields:
+            if field in data:
+                update_fields.append(f"{field} = %s")
+                values.append(data[field])
+
+        if not update_fields:
+            return jsonify({'success': False, 'error': 'No fields to update'}), 400
+
+        values.append(media_id)
+
+        query = f"""
+            UPDATE website_media
+            SET {', '.join(update_fields)}, updated_at = CURRENT_TIMESTAMP
+            WHERE media_id = %s
+            RETURNING *
+        """
+
         with get_db_cursor() as cur:
-
-            # Build dynamic update query
-            update_fields = []
-            values = []
-
-            allowed_fields = ['media_name', 'alt_text', 'caption']
-
-            for field in allowed_fields:
-                if field in data:
-                    update_fields.append(f"{field} = %s")
-                    values.append(data[field])
-
-            if not update_fields:
-                return jsonify({'success': False, 'error': 'No fields to update'}), 400
-
-            values.append(media_id)
-
-            query = f"""
-                UPDATE website_media
-                SET {', '.join(update_fields)}, updated_at = CURRENT_TIMESTAMP
-                WHERE media_id = %s
-                RETURNING *
-            """
-
             cur.execute(query, values)
             updated_media = cur.fetchone()
 
             if not updated_media:
                 return jsonify({'success': False, 'error': 'Media not found'}), 404
-
 
             return jsonify({
                 'success': True,
@@ -1063,13 +1015,11 @@ def delete_media(media_id):
     """Delete a media file"""
     try:
         with get_db_cursor() as cur:
-
             cur.execute("DELETE FROM website_media WHERE media_id = %s RETURNING media_id", (media_id,))
             deleted = cur.fetchone()
 
             if not deleted:
                 return jsonify({'success': False, 'error': 'Media not found'}), 404
-
 
             return jsonify({
                 'success': True,
@@ -1091,10 +1041,8 @@ def get_global_settings():
     """Get global website settings"""
     try:
         with get_db_cursor() as cur:
-
             cur.execute("SELECT * FROM website_global_settings LIMIT 1")
             settings = cur.fetchone()
-
 
             if not settings:
                 return jsonify({'success': False, 'error': 'Settings not found'}), 404
@@ -1116,40 +1064,38 @@ def update_global_settings():
     try:
         data = request.get_json()
 
+        # Build dynamic update query
+        update_fields = []
+        values = []
+
+        allowed_fields = ['site_name', 'site_tagline', 'site_logo_url', 'site_favicon_url',
+                         'contact_email', 'contact_phone', 'contact_address', 'footer_text',
+                         'copyright_text', 'analytics_code', 'custom_head_code', 'custom_footer_code']
+
+        for field in allowed_fields:
+            if field in data:
+                update_fields.append(f"{field} = %s")
+                values.append(data[field])
+
+        if 'social_media_links' in data:
+            update_fields.append("social_media_links = %s")
+            values.append(json.dumps(data['social_media_links']))
+
+        if not update_fields:
+            return jsonify({'success': False, 'error': 'No fields to update'}), 400
+
+        query = f"""
+            UPDATE website_global_settings
+            SET {', '.join(update_fields)}, updated_at = CURRENT_TIMESTAMP
+            RETURNING *
+        """
+
         with get_db_cursor() as cur:
-
-            # Build dynamic update query
-            update_fields = []
-            values = []
-
-            allowed_fields = ['site_name', 'site_tagline', 'site_logo_url', 'site_favicon_url',
-                             'contact_email', 'contact_phone', 'contact_address', 'footer_text',
-                             'copyright_text', 'analytics_code', 'custom_head_code', 'custom_footer_code']
-
-            for field in allowed_fields:
-                if field in data:
-                    update_fields.append(f"{field} = %s")
-                    values.append(data[field])
-
-            if 'social_media_links' in data:
-                update_fields.append("social_media_links = %s")
-                values.append(json.dumps(data['social_media_links']))
-
-            if not update_fields:
-                return jsonify({'success': False, 'error': 'No fields to update'}), 400
-
-            query = f"""
-                UPDATE website_global_settings
-                SET {', '.join(update_fields)}, updated_at = CURRENT_TIMESTAMP
-                RETURNING *
-            """
-
             cur.execute(query, values)
             updated_settings = cur.fetchone()
 
             if not updated_settings:
                 return jsonify({'success': False, 'error': 'Settings not found'}), 404
-
 
             return jsonify({
                 'success': True,
@@ -1159,3 +1105,78 @@ def update_global_settings():
 
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+# ============================================
+# BANNER IMAGE UPLOAD
+# ============================================
+
+# Allowed extensions for banner images
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+def allowed_file(filename):
+    """Check if file extension is allowed"""
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@admin_website_bp.route('/upload-banner', methods=['POST'])
+@jwt_required()
+@admin_required
+def upload_banner_image():
+    """Upload a new banner image for a page"""
+    try:
+        # Check if image file is in the request
+        if 'image' not in request.files:
+            return jsonify({'success': False, 'message': 'No image file provided'}), 400
+        
+        file = request.files['image']
+        page_name = request.form.get('pageName', 'home')
+        
+        # Check if file was selected
+        if file.filename == '':
+            return jsonify({'success': False, 'message': 'No file selected'}), 400
+        
+        # Validate file type
+        if not allowed_file(file.filename):
+            return jsonify({'success': False, 'message': 'Invalid file type. Allowed: PNG, JPG, JPEG, GIF, WEBP'}), 400
+        
+        # Get file extension
+        ext = file.filename.rsplit('.', 1)[1].lower()
+        
+        # Create a meaningful filename based on page name
+        page_name_mapping = {
+            'home': 'Home_Banner',
+            'about': 'Nuk-10',
+            'contact': 'Nuk-15',
+            'events': 'Nuk-17',
+            'blog': 'Nuk-20'
+        }
+        
+        base_filename = page_name_mapping.get(page_name, f'{page_name}_Banner')
+        filename = f'{base_filename}.{ext}'
+        
+        # Get the absolute path to the website images directory
+        # The backend is at /backend/, website is at /website/
+        backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        project_root = os.path.dirname(backend_dir)
+        upload_path = os.path.join(project_root, 'website', 'public', 'assets', 'images')
+        
+        # Create directory if it doesn't exist
+        os.makedirs(upload_path, exist_ok=True)
+        
+        # Full file path
+        filepath = os.path.join(upload_path, filename)
+        
+        # Save the file
+        file.save(filepath)
+        
+        # Return the image path
+        image_path = f'/assets/images/{filename}'
+        
+        return jsonify({
+            'success': True,
+            'message': 'Banner image uploaded successfully',
+            'imagePath': image_path,
+            'filename': filename
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Upload failed: {str(e)}'}), 500

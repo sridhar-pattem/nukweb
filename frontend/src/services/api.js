@@ -58,6 +58,11 @@ export const adminPatronsAPI = {
   createMembershipPlan: (planData) => api.post('/admin/membership-plans', planData),
   updateMembershipPlan: (planId, planData) => api.put(`/admin/membership-plans/${planId}`, planData),
   deleteMembershipPlan: (planId) => api.delete(`/admin/membership-plans/${planId}`),
+  // Patron Import
+  previewPatronImport: (formData) => api.post('/admin/import/patrons/preview', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  executePatronImport: (data) => api.post('/admin/import/patrons/execute', data),
 };
 
 // Admin - Books API
@@ -77,6 +82,11 @@ export const adminBooksAPI = {
     api.delete(`/admin/books/${bookId}/contributors/${bookContributorId}`),
   getAgeRatings: () => api.get('/admin/age-ratings'),
   addAgeRating: (ratingData) => api.post('/admin/age-ratings', ratingData),
+  // Book Import
+  previewBookImport: (formData) => api.post('/admin/import/books/preview', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  executeBookImport: (data) => api.post('/admin/import/books/execute', data),
 };
 
 // Admin - Contributors API

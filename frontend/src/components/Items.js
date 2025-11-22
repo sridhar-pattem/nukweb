@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { adminLibraryAPI } from '../../../services/api';
-import { FaPlus, FaEdit, FaTrash, FaSearch, FaBook, FaBarcode } from 'react-icons/fa';
-import '../../../styles/admin-library.css';
+import { adminItemsAPI, adminBooksAPI } from '../services/api';
 
 const Items = () => {
-  const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,16 +26,18 @@ const Items = () => {
 
   useEffect(() => {
     fetchItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     filterItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items, searchTerm, statusFilter]);
 
   const fetchItems = async () => {
     try {
       setLoading(true);
-      const response = await adminLibraryAPI.getItems();
+      const response = await adminItemsAPI.getItems();
       // Handle different response formats from backend
       const itemsData = Array.isArray(response.data)
         ? response.data
@@ -84,7 +82,7 @@ const Items = () => {
     }
 
     try {
-      const response = await adminLibraryAPI.getBooks({ search: query });
+      const response = await adminBooksAPI.getBooks(1, { search: query });
       setBookSearchResults(response.data.books || []);
     } catch (err) {
       console.error('Error searching books:', err);
@@ -139,7 +137,7 @@ const Items = () => {
 
     try {
       setError('');
-      await adminLibraryAPI.createItem(formData);
+      await adminItemsAPI.addItem(formData);
       setSuccess('Item added successfully!');
       setShowAddModal(false);
       fetchItems();
@@ -156,7 +154,7 @@ const Items = () => {
     }
 
     try {
-      await adminLibraryAPI.deleteItem(id);
+      await adminItemsAPI.deleteItem(id);
       setSuccess('Item deleted successfully!');
       fetchItems();
       setTimeout(() => setSuccess(''), 3000);
@@ -197,45 +195,44 @@ const Items = () => {
 
   if (loading) {
     return (
-      <div className="admin-library loading">
-        <div className="spinner"></div>
+      <div style={{ padding: '2rem', textAlign: 'center' }}>
         <p>Loading items...</p>
       </div>
     );
   }
 
   return (
-    <div className="admin-library">
-      <div className="admin-header">
+    <div style={{ padding: '2rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
           <h1>Library Items</h1>
           <p>Manage physical copies of books in the library</p>
         </div>
         <button onClick={handleAdd} className="btn btn-primary">
-          <FaPlus /> Add Item
+          + Add Item
         </button>
       </div>
 
-      {error && <div className="error-message">{error}</div>}
-      {success && <div className="success-message">{success}</div>}
+      {error && <div style={{ padding: '1rem', background: '#f8d7da', color: '#721c24', borderRadius: '4px', marginBottom: '1rem' }}>{error}</div>}
+      {success && <div style={{ padding: '1rem', background: '#d4edda', color: '#155724', borderRadius: '4px', marginBottom: '1rem' }}>{success}</div>}
 
       {/* Search and Filters */}
-      <div className="filters-section">
-        <div className="search-box">
-          <FaSearch />
+      <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+        <div style={{ flex: 1 }}>
           <input
             type="text"
             placeholder="Search by barcode or book title..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
           />
         </div>
 
-        <div className="filter-group">
+        <div>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="form-control"
+            style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
           >
             <option value="">All Statuses</option>
             <option value="Available">Available</option>
@@ -248,23 +245,23 @@ const Items = () => {
         </div>
       </div>
 
-      <div className="table-container">
-        <table className="data-table">
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr>
-              <th>Barcode</th>
-              <th>Book Title</th>
-              <th>Status</th>
-              <th>Condition</th>
-              <th>Location</th>
-              <th>Acquisition Date</th>
-              <th>Actions</th>
+            <tr style={{ background: '#f5f5f5' }}>
+              <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Barcode</th>
+              <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Book Title</th>
+              <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Status</th>
+              <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Condition</th>
+              <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Location</th>
+              <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Acquisition Date</th>
+              <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredItems.length === 0 ? (
               <tr>
-                <td colSpan="7" className="no-data">
+                <td colSpan="7" style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>
                   {searchTerm || statusFilter
                     ? 'No items found matching your filters'
                     : 'No items found. Add your first item!'}
@@ -272,43 +269,32 @@ const Items = () => {
               </tr>
             ) : (
               filteredItems.map((item) => (
-                <tr key={item.item_id}>
-                  <td>
-                    <strong>
-                      <FaBarcode /> {item.barcode}
-                    </strong>
+                <tr key={item.item_id} style={{ borderBottom: '1px solid #ddd' }}>
+                  <td style={{ padding: '0.75rem' }}>
+                    <strong>{item.barcode}</strong>
                   </td>
-                  <td>
+                  <td style={{ padding: '0.75rem' }}>
                     <div>
                       <strong>{item.title}</strong>
-                      {item.isbn && <div className="text-muted small">ISBN: {item.isbn}</div>}
+                      {item.isbn && <div style={{ fontSize: '0.875rem', color: '#666' }}>ISBN: {item.isbn}</div>}
                     </div>
                   </td>
-                  <td>{getStatusBadge(item.status)}</td>
-                  <td>{getConditionBadge(item.condition)}</td>
-                  <td>{item.location || '-'}</td>
-                  <td>
+                  <td style={{ padding: '0.75rem' }}>{getStatusBadge(item.status)}</td>
+                  <td style={{ padding: '0.75rem' }}>{getConditionBadge(item.condition)}</td>
+                  <td style={{ padding: '0.75rem' }}>{item.location || '-'}</td>
+                  <td style={{ padding: '0.75rem' }}>
                     {item.acquisition_date
                       ? new Date(item.acquisition_date).toLocaleDateString()
                       : '-'}
                   </td>
-                  <td>
-                    <div className="action-buttons">
-                      <button
-                        onClick={() => navigate(`/admin/library/items/${item.item_id}`)}
-                        className="btn btn-icon btn-small"
-                        title="Edit"
-                      >
-                        <FaEdit />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(item.item_id)}
-                        className="btn btn-icon btn-small btn-danger"
-                        title="Delete"
-                      >
-                        <FaTrash />
-                      </button>
-                    </div>
+                  <td style={{ padding: '0.75rem' }}>
+                    <button
+                      onClick={() => handleDelete(item.item_id)}
+                      className="btn"
+                      style={{ fontSize: '0.875rem' }}
+                    >
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))
@@ -317,29 +303,49 @@ const Items = () => {
         </table>
       </div>
 
-      <div className="results-info">
+      <div style={{ marginTop: '1rem', color: '#666' }}>
         Showing {filteredItems.length} of {items.length} items
       </div>
 
       {/* Add Item Modal */}
       {showAddModal && (
-        <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}
+          onClick={() => setShowAddModal(false)}
+        >
           <div
-            className="modal-content modal-large"
+            style={{
+              background: 'white',
+              padding: '2rem',
+              borderRadius: '8px',
+              maxWidth: '600px',
+              width: '90%',
+              maxHeight: '90vh',
+              overflow: 'auto'
+            }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="modal-header">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <h2>Add New Item</h2>
-              <button onClick={() => setShowAddModal(false)} className="btn btn-icon">
-                ×
-              </button>
+              <button onClick={() => setShowAddModal(false)} className="btn">×</button>
             </div>
 
             <form onSubmit={handleSubmit}>
               {/* Book Search */}
-              <div className="form-group">
-                <label htmlFor="book_search">
-                  <FaBook /> Select Book *
+              <div style={{ marginBottom: '1rem' }}>
+                <label htmlFor="book_search" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
+                  Select Book *
                 </label>
                 <input
                   type="text"
@@ -349,36 +355,36 @@ const Items = () => {
                     setBookSearchTerm(e.target.value);
                     handleSearchBooks(e.target.value);
                   }}
-                  className="form-control"
                   placeholder="Search for a book by title or ISBN..."
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
                   autoComplete="off"
                 />
                 {bookSearchResults.length > 0 && (
-                  <div className="search-results-dropdown">
+                  <div style={{ marginTop: '0.5rem', border: '1px solid #ddd', borderRadius: '4px', maxHeight: '200px', overflow: 'auto' }}>
                     {bookSearchResults.map((book) => (
                       <div
                         key={book.book_id}
-                        className="search-result-item"
+                        style={{ padding: '0.75rem', cursor: 'pointer', borderBottom: '1px solid #eee' }}
                         onClick={() => handleSelectBook(book)}
                       >
                         <strong>{book.title}</strong>
-                        {book.subtitle && <div className="text-muted">{book.subtitle}</div>}
-                        {book.isbn && <div className="text-muted small">ISBN: {book.isbn}</div>}
+                        {book.subtitle && <div style={{ fontSize: '0.875rem', color: '#666' }}>{book.subtitle}</div>}
+                        {book.isbn && <div style={{ fontSize: '0.75rem', color: '#999' }}>ISBN: {book.isbn}</div>}
                       </div>
                     ))}
                   </div>
                 )}
                 {selectedBook && (
-                  <div className="selected-book">
+                  <div style={{ marginTop: '0.5rem', padding: '0.5rem', background: '#e8f4f8', borderRadius: '4px' }}>
                     Selected: <strong>{selectedBook.title}</strong>
                   </div>
                 )}
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="barcode">
-                    <FaBarcode /> Barcode *
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <div>
+                  <label htmlFor="barcode" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
+                    Barcode *
                   </label>
                   <input
                     type="text"
@@ -386,33 +392,37 @@ const Items = () => {
                     name="barcode"
                     value={formData.barcode}
                     onChange={handleChange}
-                    className="form-control"
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
                     required
                   />
                 </div>
 
-                <div className="form-group">
-                  <label htmlFor="acquisition_date">Acquisition Date</label>
+                <div>
+                  <label htmlFor="acquisition_date" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
+                    Acquisition Date
+                  </label>
                   <input
                     type="date"
                     id="acquisition_date"
                     name="acquisition_date"
                     value={formData.acquisition_date}
                     onChange={handleChange}
-                    className="form-control"
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
                   />
                 </div>
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="condition">Condition *</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <div>
+                  <label htmlFor="condition" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
+                    Condition *
+                  </label>
                   <select
                     id="condition"
                     name="condition"
                     value={formData.condition}
                     onChange={handleChange}
-                    className="form-control"
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
                     required
                   >
                     <option value="New">New</option>
@@ -423,38 +433,42 @@ const Items = () => {
                   </select>
                 </div>
 
-                <div className="form-group">
-                  <label htmlFor="location">Location</label>
+                <div>
+                  <label htmlFor="location" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
+                    Location
+                  </label>
                   <input
                     type="text"
                     id="location"
                     name="location"
                     value={formData.location}
                     onChange={handleChange}
-                    className="form-control"
                     placeholder="e.g., Shelf A3, Row 5"
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
                   />
                 </div>
               </div>
 
-              <div className="form-group">
-                <label htmlFor="notes">Notes</label>
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label htmlFor="notes" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
+                  Notes
+                </label>
                 <textarea
                   id="notes"
                   name="notes"
                   value={formData.notes}
                   onChange={handleChange}
-                  className="form-control"
                   rows="3"
                   placeholder="Additional notes about this item..."
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
                 />
               </div>
 
-              <div className="modal-actions">
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="btn btn-outline"
+                  className="btn"
                 >
                   Cancel
                 </button>

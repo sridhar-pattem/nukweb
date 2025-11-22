@@ -10,7 +10,8 @@ import MembershipPlans from './components/MembershipPlans';
 import Collections from './components/Collections';
 import Dashboard from './components/Dashboard';
 import CoworkInvoices from './components/CoworkInvoices';
-import WebsiteAdminDashboard from './components/WebsiteAdmin/WebsiteAdminDashboard';
+import Import from './components/Import';
+import Items from './components/Items';
 
 // Context for authentication
 export const AuthContext = createContext();
@@ -162,7 +163,7 @@ function AdminTopNav() {
           onMouseEnter={() => setShowLibraryDropdown(true)}
           onMouseLeave={() => setShowLibraryDropdown(false)}
         >
-          <span className={`nav-link ${isActive('/admin/books') || isActive('/admin/collections') ? 'active' : ''}`}>
+          <span className={`nav-link ${isActive('/admin/books') || isActive('/admin/collections') || isActive('/admin/items') || isActive('/admin/import') ? 'active' : ''}`}>
             Library ▾
           </span>
           {showLibraryDropdown && (
@@ -172,6 +173,12 @@ function AdminTopNav() {
               </Link>
               <Link to="/admin/collections" className="nav-dropdown-item">
                 📂 Collections
+              </Link>
+              <Link to="/admin/items" className="nav-dropdown-item">
+                📦 Items
+              </Link>
+              <Link to="/admin/import" className="nav-dropdown-item">
+                📥 Import
               </Link>
             </div>
           )}
@@ -236,10 +243,6 @@ function AdminTopNav() {
             </div>
           )}
         </div>
-
-        <Link to="/admin/website" className={`nav-link ${isActive('/admin/website') ? 'active' : ''}`}>
-          🌐 Website Admin
-        </Link>
       </div>
 
       <div className="nav-right">
@@ -307,11 +310,12 @@ function AdminDashboard() {
           <Route path="books" element={<BookCatalogue />} />
           <Route path="books/:bookId" element={<BookDetail />} />
           <Route path="collections" element={<Collections />} />
+          <Route path="items" element={<Items />} />
+          <Route path="import" element={<Import />} />
           <Route path="checkouts" element={<BorrowingsManagement />} />
           <Route path="invoicing" element={<div>Invoicing - Coming Soon</div>} />
           <Route path="cowork-requests" element={<div>Cowork Booking Requests - Coming Soon</div>} />
           <Route path="cowork-invoices" element={<CoworkInvoices />} />
-          <Route path="website" element={<WebsiteAdminDashboard />} />
         </Routes>
       </main>
     </div>

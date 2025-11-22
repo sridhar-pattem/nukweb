@@ -1,17 +1,29 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { FaBook, FaUsers, FaAward, FaHeart } from 'react-icons/fa';
+import BannerImageManager from '../admin/BannerImageManager';
 
 const AboutUs = () => {
   return (
     <div className="about-page">
       {/* Hero Section */}
-      <section className="hero" style={{ height: '400px' }}>
+      <section
+        className="hero"
+        style={{
+          height: '400px',
+          backgroundImage: 'url(/assets/images/Nuk-10.jpeg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          position: 'relative'
+        }}
+      >
         <div className="hero-overlay"></div>
         <div className="hero-content">
           <h1>About Nuk Library</h1>
           <p>14 years of fostering a love for reading and learning in Bangalore</p>
         </div>
+        <BannerImageManager pageName="about" currentImage="Nuk-10.jpeg" />
       </section>
 
       {/* Our Story */}
@@ -175,33 +187,50 @@ const AboutUs = () => {
               <h2>Visit Us</h2>
               <h4>Location</h4>
               <p>
-                We're located in the heart of Bangalore, easily accessible by public transport
-                and with convenient parking options nearby.
+                <strong>1st Floor, PGK Chambers</strong><br />
+                Hosa Road, Kasavanahalli<br />
+                Bengaluru 560035<br />
+                Diagonally opposite La Casa Restaurant
+              </p>
+              <p style={{ marginTop: '1rem' }}>
+                We're located on Hosa Road, 1 km from Sarjapur Road in South Bengaluru.
+                Easily accessible by public transport and personal vehicles.
+              </p>
+              <h4 style={{ marginTop: '1.5rem' }}>Contact</h4>
+              <p>
+                <strong>Phone:</strong> <a href="tel:+917259528336">+91 725 952 8336</a><br />
+                <strong>Email:</strong> <a href="mailto:sridhar@mynuk.com">sridhar@mynuk.com</a>
               </p>
               <h4 style={{ marginTop: '1.5rem' }}>Parking</h4>
               <p>
-                Street parking is available on a first-come, first-served basis. We also have
-                tie-ups with nearby parking facilities for long-term parking needs.
+                Ample street parking available in the lane opposite to the library and
+                adjacent to La Casa Restaurant on a first-come, first-served basis.
               </p>
-              <Link to="/contact" className="btn btn-primary" style={{ marginTop: '1rem' }}>
+              <a
+                href="https://maps.app.goo.gl/Sd8rqGCfzvc42Jyr9"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-primary"
+                style={{ marginTop: '1rem' }}
+              >
                 Get Directions
-              </Link>
+              </a>
             </div>
             <div>
-              {/* Placeholder for Google Maps */}
-              <div
+              {/* Google Maps Embed */}
+              <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3889.059633998531!2d77.6734572750037!3d12.9038869874053!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bae13dca99ee72b%3A0x3f3200cbc7b53c0d!2sNuk%20Library%20Caf%C4%97%20and%20Cowork!5e0!3m2!1sen!2sin!4v1763819333991!5m2!1sen!2sin"
+                width="100%"
+                height="400"
                 style={{
-                  height: '400px',
-                  backgroundColor: 'var(--light-gray)',
+                  border: 0,
                   borderRadius: 'var(--radius-lg)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'var(--text-charcoal)',
                 }}
-              >
-                <p>Google Maps Integration</p>
-              </div>
+                allowFullScreen=""
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Nuk Library Location"
+              ></iframe>
             </div>
           </div>
         </div>

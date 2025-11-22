@@ -24,7 +24,6 @@ import Chatbot from './components/widgets/Chatbot';
 
 // Auth Components
 import Login from './components/auth/Login';
-import Register from './components/auth/Register';
 import Profile from './components/auth/Profile';
 
 // Patron Components
@@ -45,8 +44,8 @@ import ModerationQueue from './components/admin/ModerationQueue';
 import EventManagement from './components/admin/EventManagement';
 import EventForm from './components/admin/EventForm';
 
-// Admin Library Components
-import LibraryAdmin from './components/admin/library/LibraryAdmin';
+// Website Admin Component
+import WebsiteAdminDashboard from './components/admin/WebsiteAdmin/WebsiteAdminDashboard';
 
 function App() {
   return (
@@ -76,7 +75,6 @@ function App() {
 
               {/* Auth Routes */}
               <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
               <Route
                 path="/profile"
                 element={
@@ -204,12 +202,12 @@ function App() {
                 }
               />
 
-              {/* Admin Library Routes (Protected - Admin Only) */}
+              {/* Website Admin Route (Protected - Admin Only) */}
               <Route
-                path="/admin/library/*"
+                path="/admin/website"
                 element={
                   <ProtectedRoute adminOnly={true}>
-                    <LibraryAdmin />
+                    <WebsiteAdminDashboard />
                   </ProtectedRoute>
                 }
               />
