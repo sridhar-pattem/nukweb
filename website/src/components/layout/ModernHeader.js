@@ -22,23 +22,19 @@ const ModernHeader = () => {
       <div className="container nav-inner">
         {/* Brand */}
         <Link to="/" style={{ display: 'flex', gap: '6px', alignItems: 'center', textDecoration: 'none' }} onClick={closeMobileMenu}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '6px',
-            background: 'var(--teal)',
-            color: '#fff',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontWeight: '700',
-            fontSize: '16px'
-          }}>
-            NUK
-          </div>
+          <img
+            src="/logo.png"
+            alt="Nuk Library Logo"
+            style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '6px',
+              objectFit: 'cover'
+            }}
+          />
           <div>
             <div style={{ fontWeight: '700', color: '#111', fontSize: '20px' }}>Nuk Library</div>
-            <div className="text-muted" style={{ marginTop: '-2px', fontSize: '12px' }}>Cowork & Café · Bangalore</div>
+            <div style={{ marginTop: '-2px', fontSize: '12px', color: '#666', fontWeight: '500' }}>Cowork & Café · Bangalore</div>
           </div>
         </Link>
 
