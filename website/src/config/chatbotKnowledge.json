@@ -27,8 +27,38 @@
     "parking": "Ample street parking in the lane opposite to the library and adjacent to La Casa Restaurant",
     "restroom": "Available",
     "airConditioning": "Available in all halls of the library",
-    "wifi": "High-speed WiFi (100 Mbps) for all cowork and study space members",
-    "powerBackup": "Generator backup for uninterrupted service"
+    "wifi": "High-speed WiFi (300 Mbps) for all cowork and study space members",
+    "powerBackup": "Generator backup and backup Wi-Fi for uninterrupted service",
+    "chargingPoints": "Charging points available in all halls",
+    "meetingRoom": "Meeting room available on prior booking",
+    "freeTrial": "Free trial for 5 hours is offered"
+  },
+  "coworkPricing": {
+    "sharedDesk": {
+      "name": "Shared Desk",
+      "location": "Library hall on first-cum-first-serve basis",
+      "pricing": {
+        "monthly": "Rs 4000 per month",
+        "daily": "Rs 500 per day",
+        "halfDay": "Available - call for details"
+      }
+    },
+    "dedicatedDesk": {
+      "name": "Dedicated Desk",
+      "location": "Glass-partitioned cabins",
+      "pricing": {
+        "monthly": "Rs 7000 per month",
+        "daily": "Rs 750 per day",
+        "halfDay": "Available - call for details"
+      }
+    },
+    "notes": [
+      "Free trial for 5 hours is offered",
+      "Special prices for students",
+      "Additional discount for students below 18 years",
+      "Meeting room available on prior booking",
+      "Includes: 300 Mbps Wi-Fi, charging points, AC, power backup and backup Wi-Fi"
+    ]
   },
   "membership": {
     "oneBook": {
@@ -101,11 +131,11 @@
     },
     "facilities": {
       "keywords": ["facility", "facilities", "amenities", "amenity"],
-      "response": "🏢 OUR FACILITIES:\n✅ Air conditioning in all halls\n✅ Clean restrooms available\n✅ High-speed WiFi (100 Mbps)\n✅ Generator power backup\n✅ Street parking available\n\nWhat else would you like to know?"
+      "response": "🏢 OUR FACILITIES:\n✅ Air conditioning in all halls\n✅ Clean restrooms available\n✅ High-speed WiFi (300 Mbps) with backup Wi-Fi\n✅ Generator power backup\n✅ Charging points in all halls\n✅ Meeting room (prior booking required)\n✅ Street parking available\n✅ FREE TRIAL: 5 hours offered!\n\nWhat else would you like to know?"
     },
     "wifi": {
       "keywords": ["wifi", "internet", "connection"],
-      "response": "📶 Yes! We provide high-speed WiFi (100 Mbps) for all cowork and study space members."
+      "response": "📶 Yes! We provide high-speed WiFi (300 Mbps) with backup Wi-Fi for all cowork and study space members."
     },
     "airConditioning": {
       "keywords": ["ac", "air condition", "cool", "temperature"],
@@ -125,11 +155,11 @@
     },
     "cowork": {
       "keywords": ["cowork", "workspace", "desk", "office"],
-      "response": "💼 COWORK SPACE:\n• Monday - Friday: 9 AM to 9 PM\n• Saturday - Sunday: 10 AM to 9 PM\n\nIncludes: High-speed WiFi (100 Mbps), AC, power backup, and comfortable workspace.\n\nWould you like to know about pricing or book a visit?"
+      "response": "💼 COWORK SPACE OPTIONS:\n\n📌 SHARED DESK (First-cum-first-serve in library hall):\n• Monthly: Rs 4,000\n• Daily: Rs 500\n• Half-day plans available\n\n📌 DEDICATED DESK (Glass-partitioned cabins):\n• Monthly: Rs 7,000\n• Daily: Rs 750\n• Half-day plans available\n\n✨ INCLUDES:\n• 300 Mbps WiFi + Backup WiFi\n• Charging points | AC | Power backup\n• Meeting room (prior booking)\n\n🎁 FREE 5-hour trial!\n🎓 Special student discounts available!\n💰 Extra discount for students below 18 years\n\nCall +91 725 952 8336 for half-day plans!"
     },
     "study": {
       "keywords": ["study", "study space", "reading room"],
-      "response": "📝 STUDY SPACE:\n• Monday - Friday: 9 AM to 9 PM\n• Saturday - Sunday: 10 AM to 9 PM\n\nQuiet, focused environment perfect for students and researchers. Includes AC, WiFi, and power backup.\n\nInterested in our study space plans?"
+      "response": "📝 STUDY SPACE OPTIONS:\n\n⏰ HOURS:\n• Monday - Friday: 9 AM to 9 PM\n• Saturday - Sunday: 10 AM to 9 PM\n\n📌 SHARED DESK: Rs 4,000/month | Rs 500/day\n📌 DEDICATED DESK: Rs 7,000/month | Rs 750/day\n\n✨ INCLUDES:\n• 300 Mbps WiFi + Backup WiFi\n• Charging points | AC | Power backup\n• Quiet, focused environment\n\n🎁 FREE 5-hour trial!\n🎓 Student discounts available!\n\nCall +91 725 952 8336 for details!"
     },
     "contact": {
       "keywords": ["contact", "phone", "email", "call", "reach"],
