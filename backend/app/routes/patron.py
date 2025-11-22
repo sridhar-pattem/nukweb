@@ -46,6 +46,76 @@ def get_new_arrivals():
         "books": [dict(b) for b in (books or [])]
     }), 200
 
+@patron_bp.route('/books/search', methods=['GET'])
+def search_books_public():
+    """Public endpoint to search books (no authentication required)"""
+    search = request.args.get('search', '')
+    page = request.args.get('page', 1, type=int)
+    limit = request.args.get('limit', 20, type=int)
+
+    # Limit to prevent abuse
+    if limit > 50:
+        limit = 50
+
+    offset = (page - 1) * limit
+
+    where_clauses = ["b.is_active = TRUE"]
+    params = []
+
+    if search:
+        where_clauses.append("""
+            (b.title ILIKE %s OR b.subtitle ILIKE %s OR
+             EXISTS (
+                 SELECT 1 FROM book_contributors bc
+                 JOIN contributors c ON bc.contributor_id = c.contributor_id
+                 WHERE bc.book_id = b.book_id AND c.name ILIKE %s
+             ))
+        """)
+        search_param = f'%{search}%'
+        params.extend([search_param, search_param, search_param])
+
+    where_sql = "WHERE " + " AND ".join(where_clauses)
+
+    # Get total count
+    count_query = f"SELECT COUNT(*) as total FROM books b {where_sql}"
+    total_result = execute_query(count_query, tuple(params) if params else None, fetch_one=True)
+    total = total_result['total'] if total_result else 0
+
+    # Get books with contributors and availability
+    query = f"""
+        SELECT b.book_id, b.isbn, b.title, b.subtitle,
+               b.publisher, b.publication_year,
+               b.collection_id, c.collection_name,
+               b.age_rating, b.cover_image_url,
+               ba.available_items, ba.total_items,
+               COALESCE((SELECT json_agg(
+                   json_build_object('name', contrib.name, 'role', bc.role)
+                   ORDER BY bc.role, bc.sequence_number
+               )
+                FROM book_contributors bc
+                JOIN contributors contrib ON bc.contributor_id = contrib.contributor_id
+                WHERE bc.book_id = b.book_id
+               ), '[]'::json) as contributors,
+               (SELECT AVG(rating) FROM reviews WHERE book_id = b.book_id) as avg_rating,
+               (SELECT COUNT(*) FROM reviews WHERE book_id = b.book_id) as review_count
+        FROM books b
+        LEFT JOIN collections c ON b.collection_id = c.collection_id
+        LEFT JOIN mv_book_availability ba ON b.book_id = ba.book_id
+        {where_sql}
+        ORDER BY b.title
+        LIMIT %s OFFSET %s
+    """
+    params.extend([limit, offset])
+
+    books = execute_query(query, tuple(params), fetch_all=True)
+
+    return jsonify({
+        "books": [dict(b) for b in (books or [])],
+        "total": total,
+        "page": page,
+        "per_page": limit
+    }), 200
+
 @patron_bp.route('/books', methods=['GET'])
 @jwt_required()
 def browse_books():

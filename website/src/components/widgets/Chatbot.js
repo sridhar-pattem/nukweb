@@ -114,11 +114,7 @@ const Chatbot = () => {
 
   const searchBooks = async (searchTerm) => {
     try {
-      const response = await fetch(`http://localhost:5001/api/patron/books?search=${encodeURIComponent(searchTerm)}&page=1`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
-        },
-      });
+      const response = await fetch(`http://localhost:5001/api/patron/books/search?search=${encodeURIComponent(searchTerm)}&page=1&limit=10`);
 
       const data = await response.json();
 
