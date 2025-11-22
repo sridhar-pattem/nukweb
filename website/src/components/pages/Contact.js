@@ -274,34 +274,34 @@ const Contact = () => {
             <div className="card">
               <h5>What are your membership fees?</h5>
               <p>
-                We offer three library membership plans starting from ₹500/month.
-                Cowork and study space have separate pricing. Visit our{' '}
-                <a href="/membership">Membership Plans</a> page for details.
+                Library membership plans start from Rs 1,000 for 3 months (1 book at a time).
+                Cowork and study space: Shared desk Rs 4,000/month, Dedicated desk Rs 7,000/month.
+                Visit our <a href="/membership">Membership Plans</a> page for complete details.
               </p>
             </div>
 
             <div className="card">
               <h5>Can I visit without being a member?</h5>
               <p>
-                Yes! You're welcome to visit us during operating hours. However, borrowing books
-                and accessing certain facilities requires a membership.
+                Yes! You're welcome to visit us during operating hours. We offer a FREE one-day trial
+                for cowork and study space. Borrowing books requires a library membership.
               </p>
             </div>
 
             <div className="card">
-              <h5>Do you offer trial memberships?</h5>
+              <h5>Do you offer trial for cowork/study space?</h5>
               <p>
-                Yes, we offer a 7-day trial membership for new members. Contact us to learn more
-                about our trial period and get started.
+                Yes! We offer a FREE one-day trial for both cowork and study space.
+                Experience our facilities including 300 Mbps WiFi, charging points, AC, and power backup.
+                Contact us to book your trial!
               </p>
             </div>
 
             <div className="card">
               <h5>Can I book a meeting room?</h5>
               <p>
-                Yes, we have meeting rooms available for booking. Rates are ₹200-400/hour
-                depending on room size. Contact us or visit the{' '}
-                <a href="/services/cowork">Cowork Space</a> page for details.
+                Yes, meeting rooms are available on prior booking for cowork and study space members.
+                Contact us at +91 725 952 8336 or email sridhar@mynuk.com to check availability and book.
               </p>
             </div>
           </div>
