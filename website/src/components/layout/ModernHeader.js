@@ -24,16 +24,16 @@ const ModernHeader = () => {
         <Link to="/" style={{ display: 'flex', gap: '6px', alignItems: 'center', textDecoration: 'none' }} onClick={closeMobileMenu}>
           <img
             src="/logo.png"
-            alt="Nuk Library Logo"
+            alt="Nuk Library Cowork and Café"
             style={{
-              width: '40px',
-              height: '40px',
+              width: '55px',
+              height: '55px',
               borderRadius: '6px',
               objectFit: 'cover'
             }}
           />
           <div>
-            <div style={{ fontWeight: '700', color: '#111', fontSize: '20px' }}>Nuk Library</div>
+            <div style={{ fontWeight: '700', color: '#111', fontSize: '14px' }}>Library</div>
             <div style={{ marginTop: '-2px', fontSize: '12px', color: '#666', fontWeight: '500' }}>Cowork & Café · Bangalore</div>
           </div>
         </Link>
