@@ -85,11 +85,16 @@ const ModernHeader = () => {
                 </>
               )}
 
-              {/* Admin Link */}
+              {/* Admin Links */}
               {isAdmin() && (
-                <NavLink to="/admin/library" className="btn btn-outline" onClick={closeMobileMenu}>
-                  Library Admin
-                </NavLink>
+                <>
+                  <NavLink to="/admin/library" className="btn btn-outline" onClick={closeMobileMenu}>
+                    Library Admin
+                  </NavLink>
+                  <NavLink to="/admin/website" className="btn btn-outline" onClick={closeMobileMenu}>
+                    🌐 Website Admin
+                  </NavLink>
+                </>
               )}
 
               {/* Profile & Logout */}
@@ -148,9 +153,14 @@ const ModernHeader = () => {
               )}
 
               {isAdmin() && (
-                <NavLink to="/admin/library" className="mobile-nav-link" onClick={closeMobileMenu}>
-                  Library Admin
-                </NavLink>
+                <>
+                  <NavLink to="/admin/library" className="mobile-nav-link" onClick={closeMobileMenu}>
+                    Library Admin
+                  </NavLink>
+                  <NavLink to="/admin/website" className="mobile-nav-link" onClick={closeMobileMenu}>
+                    🌐 Website Admin
+                  </NavLink>
+                </>
               )}
 
               <NavLink to="/profile" className="mobile-nav-link" onClick={closeMobileMenu}>

@@ -48,6 +48,9 @@ import EventForm from './components/admin/EventForm';
 // Admin Library Components
 import LibraryAdmin from './components/admin/library/LibraryAdmin';
 
+// Website Admin Component
+import WebsiteAdminDashboard from './components/admin/WebsiteAdmin/WebsiteAdminDashboard';
+
 function App() {
   return (
     <AuthProvider>
@@ -210,6 +213,16 @@ function App() {
                 element={
                   <ProtectedRoute adminOnly={true}>
                     <LibraryAdmin />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Website Admin Route (Protected - Admin Only) */}
+              <Route
+                path="/admin/website"
+                element={
+                  <ProtectedRoute adminOnly={true}>
+                    <WebsiteAdminDashboard />
                   </ProtectedRoute>
                 }
               />
