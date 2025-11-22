@@ -118,6 +118,7 @@ img {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
+  padding: 24px;
 }
 
 .card--pad {

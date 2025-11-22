@@ -66,14 +66,9 @@ const ModernHeader = () => {
 
           {/* Auth-based Navigation */}
           {!isAuthenticated ? (
-            <>
-              <Link to="/login" className="btn btn-outline" onClick={closeMobileMenu}>
-                Sign In
-              </Link>
-              <Link to="/register" className="btn btn-primary" onClick={closeMobileMenu}>
-                Join Now
-              </Link>
-            </>
+            <Link to="/login" className="btn btn-primary" onClick={closeMobileMenu}>
+              Sign In
+            </Link>
           ) : (
             <>
               {/* Patron Links */}
@@ -170,11 +165,8 @@ const ModernHeader = () => {
 
           {!isAuthenticated && (
             <div className="mobile-nav-section">
-              <Link to="/login" className="btn btn-outline" onClick={closeMobileMenu}>
+              <Link to="/login" className="btn btn-primary" onClick={closeMobileMenu}>
                 Sign In
-              </Link>
-              <Link to="/register" className="btn btn-primary" onClick={closeMobileMenu}>
-                Join Now
               </Link>
             </div>
           )}

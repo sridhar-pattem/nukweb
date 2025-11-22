@@ -24,7 +24,6 @@ import Chatbot from './components/widgets/Chatbot';
 
 // Auth Components
 import Login from './components/auth/Login';
-import Register from './components/auth/Register';
 import Profile from './components/auth/Profile';
 
 // Patron Components
@@ -76,7 +75,6 @@ function App() {
 
               {/* Auth Routes */}
               <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
               <Route
                 path="/profile"
                 element={
