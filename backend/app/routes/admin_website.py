@@ -9,6 +9,8 @@ from app.utils.database import get_db_cursor
 from app.utils.auth import admin_required
 import json
 from datetime import datetime
+import os
+from werkzeug.utils import secure_filename
 
 admin_website_bp = Blueprint('admin_website', __name__)
 
@@ -1103,3 +1105,78 @@ def update_global_settings():
 
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+# ============================================
+# BANNER IMAGE UPLOAD
+# ============================================
+
+# Allowed extensions for banner images
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+def allowed_file(filename):
+    """Check if file extension is allowed"""
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@admin_website_bp.route('/upload-banner', methods=['POST'])
+@jwt_required()
+@admin_required
+def upload_banner_image():
+    """Upload a new banner image for a page"""
+    try:
+        # Check if image file is in the request
+        if 'image' not in request.files:
+            return jsonify({'success': False, 'message': 'No image file provided'}), 400
+        
+        file = request.files['image']
+        page_name = request.form.get('pageName', 'home')
+        
+        # Check if file was selected
+        if file.filename == '':
+            return jsonify({'success': False, 'message': 'No file selected'}), 400
+        
+        # Validate file type
+        if not allowed_file(file.filename):
+            return jsonify({'success': False, 'message': 'Invalid file type. Allowed: PNG, JPG, JPEG, GIF, WEBP'}), 400
+        
+        # Get file extension
+        ext = file.filename.rsplit('.', 1)[1].lower()
+        
+        # Create a meaningful filename based on page name
+        page_name_mapping = {
+            'home': 'Home_Banner',
+            'about': 'Nuk-10',
+            'contact': 'Nuk-15',
+            'events': 'Nuk-17',
+            'blog': 'Nuk-20'
+        }
+        
+        base_filename = page_name_mapping.get(page_name, f'{page_name}_Banner')
+        filename = f'{base_filename}.{ext}'
+        
+        # Get the absolute path to the website images directory
+        # The backend is at /backend/, website is at /website/
+        backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        project_root = os.path.dirname(backend_dir)
+        upload_path = os.path.join(project_root, 'website', 'public', 'assets', 'images')
+        
+        # Create directory if it doesn't exist
+        os.makedirs(upload_path, exist_ok=True)
+        
+        # Full file path
+        filepath = os.path.join(upload_path, filename)
+        
+        # Save the file
+        file.save(filepath)
+        
+        # Return the image path
+        image_path = f'/assets/images/{filename}'
+        
+        return jsonify({
+            'success': True,
+            'message': 'Banner image uploaded successfully',
+            'imagePath': image_path,
+            'filename': filename
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Upload failed: {str(e)}'}), 500

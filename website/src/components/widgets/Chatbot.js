@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FaComment, FaTimes, FaPaperPlane, FaRobot } from 'react-icons/fa';
+import { FaTimes, FaPaperPlane, FaRobot } from 'react-icons/fa';
 import knowledgeBase from '../../config/chatbotKnowledge.json';
 
 const Chatbot = () => {
@@ -56,10 +56,8 @@ const Chatbot = () => {
   };
 
   const generateBotResponse = (query) => {
-    const lowerQuery = query.toLowerCase();
-
     // Search through all response categories in the knowledge base
-    for (const [key, value] of Object.entries(knowledgeBase.responses)) {
+    for (const value of Object.values(knowledgeBase.responses)) {
       if (value.keywords && value.keywords.some(keyword => {
         // Use word boundary matching to avoid substring matches (e.g., "hi" in "membership")
         const regex = new RegExp('\\b' + keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
@@ -328,8 +326,14 @@ const Chatbot = () => {
                       cursor: 'pointer',
                       transition: 'background-color var(--transition-fast)',
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--accent-peru)', e.currentTarget.style.color = 'white')}
-                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--light-beige)', e.currentTarget.style.color = 'var(--text-charcoal)')}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--accent-peru)';
+                      e.currentTarget.style.color = 'white';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--light-beige)';
+                      e.currentTarget.style.color = 'var(--text-charcoal)';
+                    }}
                   >
                     {question}
                   </button>

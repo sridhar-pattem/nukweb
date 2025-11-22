@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FaBook, FaUser, FaCalendar, FaComment } from 'react-icons/fa';
+import { FaBook, FaCalendar, FaComment } from 'react-icons/fa';
 import BannerImageManager from '../admin/BannerImageManager';
 
 const Blog = () => {
