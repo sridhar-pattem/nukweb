@@ -36,7 +36,7 @@ const BannerImageManager = ({ pageName, currentImage, onImageUpdate }) => {
       formData.append('image', file);
       formData.append('pageName', pageName);
 
-      const response = await fetch('http://localhost:5001/api/admin/upload-banner', {
+      const response = await fetch('http://localhost:5001/api/admin/website/upload-banner', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
