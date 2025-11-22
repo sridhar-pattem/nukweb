@@ -79,7 +79,17 @@ const Events = () => {
   return (
     <div className="events-page">
       {/* Hero */}
-      <section className="hero" style={{ height: '350px' }}>
+      <section
+        className="hero"
+        style={{
+          height: '350px',
+          backgroundImage: 'url(/assets/images/Nuk-17.jpeg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          position: 'relative'
+        }}
+      >
         <div className="hero-overlay"></div>
         <div className="hero-content">
           <h1><FaCalendar style={{ marginRight: '1rem' }} />Events & Activities</h1>

@@ -6,7 +6,17 @@ const AboutUs = () => {
   return (
     <div className="about-page">
       {/* Hero Section */}
-      <section className="hero" style={{ height: '400px' }}>
+      <section
+        className="hero"
+        style={{
+          height: '400px',
+          backgroundImage: 'url(/assets/images/Nuk-10.jpeg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          position: 'relative'
+        }}
+      >
         <div className="hero-overlay"></div>
         <div className="hero-content">
           <h1>About Nuk Library</h1>

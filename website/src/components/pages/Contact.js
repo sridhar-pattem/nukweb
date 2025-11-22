@@ -30,7 +30,17 @@ const Contact = () => {
   return (
     <div className="contact-page">
       {/* Hero */}
-      <section className="hero" style={{ height: '350px' }}>
+      <section
+        className="hero"
+        style={{
+          height: '350px',
+          backgroundImage: 'url(/assets/images/Nuk-15.jpeg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          position: 'relative'
+        }}
+      >
         <div className="hero-overlay"></div>
         <div className="hero-content">
           <h1>Contact Us</h1>

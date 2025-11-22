@@ -58,7 +58,17 @@ const Blog = () => {
   return (
     <div className="blog-page">
       {/* Hero */}
-      <section className="hero" style={{ height: '350px' }}>
+      <section
+        className="hero"
+        style={{
+          height: '350px',
+          backgroundImage: 'url(/assets/images/Nuk-20.jpeg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          position: 'relative'
+        }}
+      >
         <div className="hero-overlay"></div>
         <div className="hero-content">
           <h1><FaBook style={{ marginRight: '1rem' }} />Member Blog</h1>
