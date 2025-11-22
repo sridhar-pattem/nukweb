@@ -45,9 +45,6 @@ import ModerationQueue from './components/admin/ModerationQueue';
 import EventManagement from './components/admin/EventManagement';
 import EventForm from './components/admin/EventForm';
 
-// Admin Library Components
-import LibraryAdmin from './components/admin/library/LibraryAdmin';
-
 // Website Admin Component
 import WebsiteAdminDashboard from './components/admin/WebsiteAdmin/WebsiteAdminDashboard';
 
@@ -203,16 +200,6 @@ function App() {
                 element={
                   <ProtectedRoute adminOnly={true}>
                     <EventForm />
-                  </ProtectedRoute>
-                }
-              />
-
-              {/* Admin Library Routes (Protected - Admin Only) */}
-              <Route
-                path="/admin/library/*"
-                element={
-                  <ProtectedRoute adminOnly={true}>
-                    <LibraryAdmin />
                   </ProtectedRoute>
                 }
               />
