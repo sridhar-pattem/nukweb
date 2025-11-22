@@ -2,10 +2,15 @@
   "libraryInfo": {
     "name": "Nuk Library",
     "location": {
-      "address": "Kasavanahalli, on Hosa Road, 1 km from Sarjapur Road, south Bengaluru",
-      "landmarks": "Located diagonally opposite La Casa Restaurant and Brewery. Other landmarks are Med Plus Pharmacy.",
+      "address": "1st Floor, PGK Chambers, Hosa Road, Kasavanahalli, Bengaluru 560035",
+      "landmarks": "Diagonally opposite La Casa Restaurant and Brewery. Near Med Plus Pharmacy.",
       "building": "First floor of PGK Chambers",
-      "googleMaps": "https://maps.google.com/?q=Nuk+Library+Kasavanahalli"
+      "directions": "On Hosa Road, 1 km from Sarjapur Road in south Bengaluru",
+      "googleMaps": "https://maps.app.goo.gl/Sd8rqGCfzvc42Jyr9"
+    },
+    "contact": {
+      "phone": "+91 725 952 8336",
+      "email": "sridhar@mynuk.com"
     }
   },
   "hours": {
@@ -88,7 +93,7 @@
     },
     "location": {
       "keywords": ["location", "address", "where", "find", "direction", "directions"],
-      "response": "📍 NUK LIBRARY LOCATION:\nWe're located in Kasavanahalli, on Hosa Road, 1 km from Sarjapur Road, in south Bengaluru.\n\nLANDMARKS:\n• Diagonally opposite La Casa Restaurant and Brewery\n• Near Med Plus Pharmacy\n• First floor of PGK Chambers\n\nYou can find us easily on Google Maps!"
+      "response": "📍 NUK LIBRARY LOCATION:\n\n1st Floor, PGK Chambers\nHosa Road, Kasavanahalli\nBengaluru 560035\n\nLANDMARKS:\n• Diagonally opposite La Casa Restaurant and Brewery\n• Near Med Plus Pharmacy\n• 1 km from Sarjapur Road\n\nGoogle Maps: https://maps.app.goo.gl/Sd8rqGCfzvc42Jyr9"
     },
     "parking": {
       "keywords": ["parking", "park", "car"],
@@ -128,7 +133,7 @@
     },
     "contact": {
       "keywords": ["contact", "phone", "email", "call", "reach"],
-      "response": "📞 CONTACT US:\n\nFor membership inquiries, general questions, or to schedule a visit, please contact our front desk.\n\nVISIT US:\nFirst floor, PGK Chambers\nKasavanahalli, Hosa Road\nSouth Bengaluru\n\nWe're here to help!"
+      "response": "📞 CONTACT US:\n\nPhone: +91 725 952 8336\nEmail: sridhar@mynuk.com\n\nVISIT US:\n1st Floor, PGK Chambers\nHosa Road, Kasavanahalli\nBengaluru 560035\nDiagonally opp La Casa Restaurant\n\nWe're here to help!"
     },
     "thankyou": {
       "keywords": ["thank", "thanks", "appreciate"],

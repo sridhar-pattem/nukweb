@@ -48,10 +48,10 @@ const Contact = () => {
               </div>
               <h4>Location</h4>
               <p>
-                Nuk Library<br />
-                [Address Line 1]<br />
-                Bangalore, Karnataka<br />
-                India - 560001
+                1st Floor, PGK Chambers<br />
+                Hosa Road, Kasavanahalli<br />
+                Bengaluru 560035<br />
+                Diagonally opp La Casa Restaurant
               </p>
             </div>
 
@@ -61,8 +61,8 @@ const Contact = () => {
               </div>
               <h4>Phone</h4>
               <p>
-                <a href="tel:+911234567890" style={{ color: 'var(--text-charcoal)' }}>
-                  +91 12345 67890
+                <a href="tel:+917259528336" style={{ color: 'var(--text-charcoal)' }}>
+                  +91 725 952 8336
                 </a>
               </p>
               <p className="text-muted">Mon-Fri: 9 AM - 9 PM<br />Sat-Sun: 10 AM - 9 PM</p>
@@ -74,13 +74,9 @@ const Contact = () => {
               </div>
               <h4>Email</h4>
               <p>
-                General Inquiries:<br />
-                <a href="mailto:info@mynuk.com">info@mynuk.com</a>
+                <a href="mailto:sridhar@mynuk.com">sridhar@mynuk.com</a>
               </p>
-              <p>
-                Membership:<br />
-                <a href="mailto:membership@mynuk.com">membership@mynuk.com</a>
-              </p>
+              <p className="text-muted">We'll respond within 24 hours</p>
             </div>
           </div>
         </div>
@@ -185,23 +181,34 @@ const Contact = () => {
             <div>
               <h2>Find Us</h2>
               <p className="text-muted" style={{ marginBottom: '1rem' }}>
-                We're located in the heart of Bangalore, easily accessible by public transport.
+                We're located on Hosa Road, 1 km from Sarjapur Road in South Bengaluru.
               </p>
 
-              {/* Google Maps Placeholder */}
-              <div
+              {/* Google Maps Embed */}
+              <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3889.1897926474786!2d77.6879!3d12.8997!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTLCsDUzJzU5LjAiTiA3N8KwNDEnMTYuNCJF!5e0!3m2!1sen!2sin!4v1234567890123!5m2!1sen!2sin"
+                width="100%"
+                height="350"
                 style={{
-                  height: '350px',
-                  backgroundColor: 'var(--light-gray)',
+                  border: 0,
                   borderRadius: 'var(--radius-lg)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
                   marginBottom: '2rem',
                 }}
+                allowFullScreen=""
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Nuk Library Location"
+              ></iframe>
+
+              <a
+                href="https://maps.app.goo.gl/Sd8rqGCfzvc42Jyr9"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-secondary"
+                style={{ width: '100%', marginBottom: '2rem' }}
               >
-                <p style={{ color: 'var(--text-charcoal)' }}>Google Maps Integration</p>
-              </div>
+                Open in Google Maps
+              </a>
 
               <div className="card">
                 <h4><FaClock style={{ marginRight: '0.5rem', color: 'var(--accent-peru)' }} />Operating Hours</h4>
@@ -229,16 +236,17 @@ const Contact = () => {
               <div className="card" style={{ marginTop: '1rem' }}>
                 <h4><FaParking style={{ marginRight: '0.5rem', color: 'var(--accent-peru)' }} />Parking</h4>
                 <p>
-                  Street parking available on a first-come, first-served basis.
-                  Paid parking facilities nearby for extended visits.
+                  Ample street parking available in the lane opposite to the library and
+                  adjacent to La Casa Restaurant on a first-come, first-served basis.
                 </p>
               </div>
 
               <div className="card" style={{ marginTop: '1rem' }}>
-                <h4><FaBus style={{ marginRight: '0.5rem', color: 'var(--accent-peru)' }} />Public Transport</h4>
+                <h4><FaBus style={{ marginRight: '0.5rem', color: 'var(--accent-peru)' }} />Getting Here</h4>
                 <p>
-                  Nearest Metro Station: [Station Name] (10 min walk)<br />
-                  Bus Routes: 123, 456, 789
+                  <strong>From Sarjapur Road:</strong> 1 km on Hosa Road<br />
+                  <strong>Landmark:</strong> Diagonally opposite La Casa Restaurant<br />
+                  <strong>Near:</strong> Med Plus Pharmacy, Kasavanahalli
                 </p>
               </div>
             </div>

@@ -44,15 +44,17 @@ const Footer = () => {
           <h4>Contact Us</h4>
           <p>
             <FaMapMarkerAlt style={{ marginRight: '8px' }} />
-            Bangalore, Karnataka, India
+            1st Floor, PGK Chambers, Hosa Road<br />
+            <span style={{ marginLeft: '24px' }}>Kasavanahalli, Bengaluru 560035</span><br />
+            <span style={{ marginLeft: '24px' }}>Diagonally opp La Casa Restaurant</span>
           </p>
           <p>
             <FaPhone style={{ marginRight: '8px' }} />
-            +91 12345 67890
+            <a href="tel:+917259528336">+91 725 952 8336</a>
           </p>
           <p>
             <FaEnvelope style={{ marginRight: '8px' }} />
-            <a href="mailto:info@mynuk.com">info@mynuk.com</a>
+            <a href="mailto:sridhar@mynuk.com">sridhar@mynuk.com</a>
           </p>
           <p style={{ marginTop: '1rem', fontSize: '0.875rem' }}>
             <strong>Hours:</strong><br />
