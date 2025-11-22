@@ -10,8 +10,9 @@
 # Database connection details (update these for your local database)
 DB_HOST="${DB_HOST:-localhost}"
 DB_PORT="${DB_PORT:-5432}"
-DB_NAME="${DB_NAME:-nukweb}"
-DB_USER="${DB_USER:-postgres}"
+DB_NAME="${DB_NAME:-nuk_library}"
+DB_USER="${DB_USER:-sridharpattem}"
+DB_PASSWORD="${DB_PASSWORD:-}"
 
 # Output directory
 OUTPUT_DIR="./data_export"
@@ -24,25 +25,47 @@ EXPORT_FILE="$OUTPUT_DIR/nukweb_data_${TIMESTAMP}.sql"
 echo "============================================"
 echo "NUK LIBRARY - DATA EXPORT"
 echo "============================================"
-echo "Exporting data from database: $DB_NAME"
+echo "Database: $DB_NAME"
+echo "Host: $DB_HOST:$DB_PORT"
+echo "User: $DB_USER"
 echo "Output file: $EXPORT_FILE"
 echo ""
 
 # Export data only (no schema) from all tables
 # This uses pg_dump with --data-only flag
+# If DB_PASSWORD is empty, pg_dump will use peer/trust authentication (macOS default)
 
-PGPASSWORD="$DB_PASSWORD" pg_dump \
-  -h "$DB_HOST" \
-  -p "$DB_PORT" \
-  -U "$DB_USER" \
-  -d "$DB_NAME" \
-  --data-only \
-  --no-owner \
-  --no-privileges \
-  --column-inserts \
-  --disable-triggers \
-  --exclude-table=mv_book_availability \
-  --file="$EXPORT_FILE"
+if [ -n "$DB_PASSWORD" ]; then
+    # Password is set, use it
+    echo "Using password authentication..."
+    PGPASSWORD="$DB_PASSWORD" pg_dump \
+      -h "$DB_HOST" \
+      -p "$DB_PORT" \
+      -U "$DB_USER" \
+      -d "$DB_NAME" \
+      --data-only \
+      --no-owner \
+      --no-privileges \
+      --column-inserts \
+      --disable-triggers \
+      --exclude-table=mv_book_availability \
+      --file="$EXPORT_FILE"
+else
+    # No password needed (peer/trust authentication)
+    echo "Using peer/trust authentication (no password)..."
+    pg_dump \
+      -h "$DB_HOST" \
+      -p "$DB_PORT" \
+      -U "$DB_USER" \
+      -d "$DB_NAME" \
+      --data-only \
+      --no-owner \
+      --no-privileges \
+      --column-inserts \
+      --disable-triggers \
+      --exclude-table=mv_book_availability \
+      --file="$EXPORT_FILE"
+fi
 
 if [ $? -eq 0 ]; then
     echo "✓ Data export completed successfully!"
