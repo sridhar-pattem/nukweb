@@ -1,0 +1,139 @@
+{
+  "libraryInfo": {
+    "name": "Nuk Library",
+    "location": {
+      "address": "Kasavanahalli, on Hosa Road, 1 km from Sarjapur Road, south Bengaluru",
+      "landmarks": "Located diagonally opposite La Casa Restaurant and Brewery. Other landmarks are Med Plus Pharmacy.",
+      "building": "First floor of PGK Chambers",
+      "googleMaps": "https://maps.google.com/?q=Nuk+Library+Kasavanahalli"
+    }
+  },
+  "hours": {
+    "library": {
+      "weekdays": "10:30 AM to 9 PM from Tuesday to Sunday",
+      "holiday": "Monday weekly holiday"
+    },
+    "coworkStudy": {
+      "weekdays": "9 AM to 9 PM from Monday to Friday",
+      "weekends": "10 AM to 9 PM on Saturday and Sunday"
+    }
+  },
+  "facilities": {
+    "parking": "Ample street parking in the lane opposite to the library and adjacent to La Casa Restaurant",
+    "restroom": "Available",
+    "airConditioning": "Available in all halls of the library",
+    "wifi": "High-speed WiFi (100 Mbps) for all cowork and study space members",
+    "powerBackup": "Generator backup for uninterrupted service"
+  },
+  "membership": {
+    "oneBook": {
+      "name": "One Book Plan",
+      "borrowingLimit": 1,
+      "pricing": {
+        "3months": "Rs 1000",
+        "6months": "Rs 1600",
+        "1year": "Rs 2800"
+      }
+    },
+    "twoBook": {
+      "name": "Two Book Plan",
+      "borrowingLimit": 2,
+      "pricing": {
+        "3months": "Rs 1300",
+        "6months": "Rs 2300",
+        "1year": "Rs 4100"
+      }
+    },
+    "threeBook": {
+      "name": "Three Book Plan",
+      "borrowingLimit": 3,
+      "pricing": {
+        "3months": "Rs 1500",
+        "6months": "Rs 2600",
+        "1year": "Rs 4400"
+      }
+    },
+    "fourBook": {
+      "name": "Four Book Plan",
+      "borrowingLimit": 4,
+      "pricing": {
+        "3months": "Rs 1900",
+        "6months": "Rs 3400",
+        "1year": "Rs 5600"
+      }
+    },
+    "sixBook": {
+      "name": "Six Book Plan",
+      "borrowingLimit": 6,
+      "pricing": {
+        "3months": "Rs 2300",
+        "6months": "Rs 4100",
+        "1year": "Rs 6800"
+      }
+    },
+    "notes": [
+      "The borrowing limit is imposed on the number of books a member can borrow at a time. There is no limit on how many times a member can exchange the books.",
+      "There is a one time registration fee of Rs 200 that is common to all plans and a refundable security deposit which varies from plan to plan depending on the borrowing limit of the plan.",
+      "Contact the front desk of the library for higher plans"
+    ]
+  },
+  "responses": {
+    "greeting": {
+      "keywords": ["hello", "hi", "hey", "start"],
+      "response": "Hello! Welcome to Nuk Library. How can I help you today? You can ask me about:\n• Our location and facilities\n• Library hours\n• Membership plans\n• Parking and amenities\n• Book availability"
+    },
+    "hours": {
+      "keywords": ["hour", "open", "time", "close", "schedule", "timing"],
+      "response": "**Library Hours:**\n• Tuesday - Sunday: 10:30 AM to 9:00 PM\n• Monday: Weekly holiday\n\n**Cowork & Study Space:**\n• Monday - Friday: 9:00 AM to 9:00 PM\n• Saturday - Sunday: 10:00 AM to 9:00 PM"
+    },
+    "location": {
+      "keywords": ["location", "address", "where", "find", "direction"],
+      "response": "📍 **Nuk Library Location:**\nWe're located in Kasavanahalli, on Hosa Road, 1 km from Sarjapur Road, in south Bengaluru.\n\n**Landmarks:**\n• Diagonally opposite La Casa Restaurant and Brewery\n• Near Med Plus Pharmacy\n• First floor of PGK Chambers\n\nYou can find us easily on Google Maps!"
+    },
+    "parking": {
+      "keywords": ["parking", "park", "car"],
+      "response": "🚗 **Parking:**\nAmple street parking is available in the lane opposite to the library and adjacent to La Casa Restaurant on a first-come, first-served basis."
+    },
+    "facilities": {
+      "keywords": ["facility", "facilities", "amenities", "amenity"],
+      "response": "**Our Facilities:**\n✅ Air conditioning in all halls\n✅ Clean restrooms available\n✅ High-speed WiFi (100 Mbps)\n✅ Generator power backup\n✅ Street parking available\n\nWhat else would you like to know?"
+    },
+    "wifi": {
+      "keywords": ["wifi", "internet", "connection"],
+      "response": "📶 Yes! We provide high-speed WiFi (100 Mbps) for all cowork and study space members."
+    },
+    "airConditioning": {
+      "keywords": ["ac", "air condition", "cool", "temperature"],
+      "response": "❄️ Yes, air conditioning is available in all halls of the library for your comfort."
+    },
+    "restroom": {
+      "keywords": ["restroom", "washroom", "toilet", "bathroom"],
+      "response": "🚻 Clean and well-maintained restrooms are available for all members and visitors."
+    },
+    "membership": {
+      "keywords": ["membership", "member", "join", "plan", "subscribe", "cost", "price", "fee"],
+      "response": "📚 **Library Membership Plans:**\n\n**1 Book Plan:**\n• 3 months: Rs 1,000 | 6 months: Rs 1,600 | 1 year: Rs 2,800\n\n**2 Book Plan:**\n• 3 months: Rs 1,300 | 6 months: Rs 2,300 | 1 year: Rs 4,100\n\n**3 Book Plan:**\n• 3 months: Rs 1,500 | 6 months: Rs 2,600 | 1 year: Rs 4,400\n\n**4 Book Plan:**\n• 3 months: Rs 1,900 | 6 months: Rs 3,400 | 1 year: Rs 5,600\n\n**6 Book Plan:**\n• 3 months: Rs 2,300 | 6 months: Rs 4,100 | 1 year: Rs 6,800\n\n💡 All plans include a one-time registration fee of Rs 200 and a refundable security deposit. You can exchange books unlimited times! Contact our front desk for higher plans."
+    },
+    "books": {
+      "keywords": ["book", "collection", "catalogue", "reading"],
+      "response": "📖 **Our Collection:**\nWe have over 10,000 books covering all genres and age groups - from toddlers to adults!\n\n• Fiction, Non-fiction, Children's books\n• Reference materials\n• Best sellers and classics\n\nYou can browse our online catalogue or visit us to explore the collection. What genre interests you?"
+    },
+    "cowork": {
+      "keywords": ["cowork", "workspace", "desk", "office"],
+      "response": "💼 **Cowork Space:**\n• Monday - Friday: 9 AM to 9 PM\n• Saturday - Sunday: 10 AM to 9 PM\n\nIncludes: High-speed WiFi (100 Mbps), AC, power backup, and comfortable workspace.\n\nWould you like to know about pricing or book a visit?"
+    },
+    "study": {
+      "keywords": ["study", "study space", "reading room"],
+      "response": "📝 **Study Space:**\n• Monday - Friday: 9 AM to 9 PM\n• Saturday - Sunday: 10 AM to 9 PM\n\nQuiet, focused environment perfect for students and researchers. Includes AC, WiFi, and power backup.\n\nInterested in our study space plans?"
+    },
+    "contact": {
+      "keywords": ["contact", "phone", "email", "call", "reach"],
+      "response": "📞 **Contact Us:**\n\nFor membership inquiries, general questions, or to schedule a visit, please contact our front desk.\n\n**Visit us:**\nFirst floor, PGK Chambers\nKasavanahalli, Hosa Road\nSouth Bengaluru\n\nWe're here to help!"
+    },
+    "thankyou": {
+      "keywords": ["thank", "thanks", "appreciate"],
+      "response": "You're welcome! Feel free to ask if you have any other questions. Happy reading! 📚\n\nVisit us at Nuk Library, Kasavanahalli!"
+    }
+  },
+  "fallback": "I can help you with information about:\n\n• 📍 Location and directions\n• ⏰ Operating hours\n• 📚 Membership plans and pricing\n• 🚗 Parking facilities\n• 💼 Cowork and Study spaces\n• 📖 Book collection\n• 🏢 Amenities (AC, WiFi, restrooms)\n\nWhat would you like to know?"
+}

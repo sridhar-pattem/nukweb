@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FaComment, FaTimes, FaPaperPlane, FaRobot } from 'react-icons/fa';
+import knowledgeBase from '../../config/chatbotKnowledge.json';
 
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     {
       id: 1,
-      text: 'Hello! Welcome to Nuk Library. How can I help you today?',
+      text: knowledgeBase.responses.greeting.response,
       sender: 'bot',
       timestamp: new Date(),
     },
@@ -57,96 +58,15 @@ const Chatbot = () => {
   const generateBotResponse = (query) => {
     const lowerQuery = query.toLowerCase();
 
-    // Facility & Services
-    if (lowerQuery.includes('hour') || lowerQuery.includes('open') || lowerQuery.includes('time')) {
-      return 'We are open:\n• Monday - Friday: 9:00 AM - 9:00 PM\n• Saturday - Sunday: 10:00 AM - 9:00 PM\n• Library is closed on Mondays (facility remains open)\n• Closed on public holidays';
-    }
-
-    if (lowerQuery.includes('location') || lowerQuery.includes('address') || lowerQuery.includes('where')) {
-      return 'Nuk Library is located in Bangalore, Karnataka, India. We\'re easily accessible by public transport. Would you like directions?';
-    }
-
-    if (lowerQuery.includes('parking')) {
-      return 'Street parking is available on a first-come, first-served basis. We also have tie-ups with nearby paid parking facilities for long-term parking needs.';
-    }
-
-    if (lowerQuery.includes('wifi') || lowerQuery.includes('internet')) {
-      return 'Yes! We provide high-speed WiFi (100 Mbps) for all cowork and study space members.';
-    }
-
-    if (lowerQuery.includes('ac') || lowerQuery.includes('air condition')) {
-      return 'Yes, our entire facility is air-conditioned for your comfort.';
-    }
-
-    if (lowerQuery.includes('restroom') || lowerQuery.includes('washroom') || lowerQuery.includes('toilet')) {
-      return 'We have clean, well-maintained restrooms available for all members and visitors.';
-    }
-
-    if (lowerQuery.includes('power backup') || lowerQuery.includes('generator')) {
-      return 'Yes, we have power backup with a generator to ensure uninterrupted service.';
-    }
-
-    // Membership Plans
-    if (lowerQuery.includes('membership') || lowerQuery.includes('join') || lowerQuery.includes('plan')) {
-      return 'We offer three library membership plans:\n• Basic: ₹500/month - Borrow 2 books\n• Standard: ₹800/month - Borrow 4 books (Most Popular!)\n• Premium: ₹1,200/month - Borrow 6 books + extra perks\n\nWould you like to know more about any specific plan?';
-    }
-
-    // Cowork Space
-    if (lowerQuery.includes('cowork') || lowerQuery.includes('workspace')) {
-      return 'Our Cowork Space offers:\n• Day Pass: ₹300\n• Weekly: ₹1,800\n• Monthly: ₹6,000 (includes dedicated desk & locker)\n\nAll plans include high-speed WiFi, AC, power backup, and café access. Would you like to book a tour?';
-    }
-
-    // Study Space
-    if (lowerQuery.includes('study')) {
-      return 'Our Study Space pricing:\n• Half-Day (4 hours): ₹100\n• Full Day: ₹150\n• Monthly: ₹3,000 (includes reserved desk & locker)\n\nAll plans provide a completely silent environment perfect for focused learning.';
-    }
-
-    // Meeting Rooms
-    if (lowerQuery.includes('meeting room')) {
-      return 'We have two meeting rooms available:\n• Small Room (4-6 people): ₹200/hour\n• Large Room (10-12 people): ₹400/hour\n\nBoth include whiteboard, presentation equipment, and AC. Booking required 24 hours in advance.';
-    }
-
-    // Seating
-    if (lowerQuery.includes('seat') || lowerQuery.includes('capacity')) {
-      return 'We have:\n• 30+ cowork seats\n• 50+ study space seats\n• 2 meeting rooms\n\nAll seating is first-come, first-served for day passes. Monthly members get reserved desks.';
-    }
-
-    // Books & Catalogue
-    if (lowerQuery.includes('book') && !lowerQuery.includes('facebook')) {
-      if (lowerQuery.includes('how many') || lowerQuery.includes('collection')) {
-        return 'We have over 10,000 books in our collection covering all genres and age groups - from toddlers to adults!';
+    // Search through all response categories in the knowledge base
+    for (const [key, value] of Object.entries(knowledgeBase.responses)) {
+      if (value.keywords && value.keywords.some(keyword => lowerQuery.includes(keyword))) {
+        return value.response;
       }
-      return 'To search for specific books, please use our online catalogue or visit us. I can help with general questions about our collection!';
     }
 
-    // Activities
-    if (lowerQuery.includes('chess')) {
-      return 'Chess classes are held on Wednesdays & Saturdays, 5:00 PM - 6:30 PM for children (6-12) and teens (13-17). Monthly tournaments are organized!';
-    }
-
-    if (lowerQuery.includes('art')) {
-      return 'Our Art Club meets on Saturdays & Sundays, 4:00 PM - 6:00 PM. Learn watercolors, acrylics, sketching, and more with our in-house artists!';
-    }
-
-    if (lowerQuery.includes('toastmaster') || lowerQuery.includes('speaking')) {
-      return 'We host two Toastmasters clubs (for children and adults) every Friday, 6:00 PM - 8:00 PM. Great for developing public speaking skills!';
-    }
-
-    if (lowerQuery.includes('rubik')) {
-      return 'Rubik\'s Cube training is held on Thursdays, 5:00 PM - 6:00 PM. Learn solving techniques and improve your speed!';
-    }
-
-    // Greetings
-    if (lowerQuery.includes('hello') || lowerQuery.includes('hi') || lowerQuery.includes('hey')) {
-      return 'Hello! How can I help you today? You can ask me about:\n• Our services and facilities\n• Membership plans\n• Operating hours\n• Location and parking\n• Events and activities\n• Book availability';
-    }
-
-    if (lowerQuery.includes('thank')) {
-      return 'You\'re welcome! Feel free to ask if you have any other questions. Happy reading! 📚';
-    }
-
-    // Default response
-    return 'I can help you with:\n• Facility information (hours, location, parking, amenities)\n• Membership plans (library, cowork, study space)\n• Services details\n• Activities and events\n• General questions\n\nWhat would you like to know?';
+    // Return fallback if no match found
+    return knowledgeBase.fallback;
   };
 
   const quickQuestions = [
