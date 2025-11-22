@@ -100,7 +100,7 @@ const Chatbot = () => {
               width: '80px',
               height: '80px',
               borderRadius: '50%',
-              backgroundColor: 'var(--accent-peru)',
+              backgroundColor: '#FFD24E',
               opacity: 0.3,
               animation: 'pulse 2s ease-in-out infinite',
             }}
@@ -119,7 +119,7 @@ const Chatbot = () => {
               whiteSpace: 'nowrap',
               fontSize: '0.9rem',
               fontWeight: '600',
-              color: 'var(--text-charcoal)',
+              color: '#1E1E1E',
               animation: 'fadeInUp 0.5s ease-out',
             }}
           >
@@ -133,8 +133,8 @@ const Chatbot = () => {
               width: '70px',
               height: '70px',
               borderRadius: '50%',
-              backgroundColor: 'var(--accent-peru)',
-              color: 'white',
+              backgroundColor: '#FFD24E',
+              color: '#003d7a',
               border: 'none',
               boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
               cursor: 'pointer',
@@ -208,7 +208,7 @@ const Chatbot = () => {
           <div
             style={{
               padding: '1rem',
-              backgroundColor: 'var(--secondary-brown)',
+              backgroundColor: '#003d7a',
               color: 'white',
               display: 'flex',
               alignItems: 'center',
@@ -244,7 +244,7 @@ const Chatbot = () => {
               flex: 1,
               overflowY: 'auto',
               padding: '1rem',
-              backgroundColor: 'var(--light-beige)',
+              backgroundColor: '#F5F5DC',
             }}
           >
             {messages.map((message) => (
@@ -260,10 +260,10 @@ const Chatbot = () => {
                   style={{
                     maxWidth: '75%',
                     padding: '0.75rem 1rem',
-                    borderRadius: 'var(--radius-lg)',
-                    backgroundColor: message.sender === 'user' ? 'var(--accent-peru)' : 'white',
-                    color: message.sender === 'user' ? 'white' : 'var(--text-charcoal)',
-                    boxShadow: 'var(--shadow-sm)',
+                    borderRadius: '12px',
+                    backgroundColor: message.sender === 'user' ? '#003d7a' : 'white',
+                    color: message.sender === 'user' ? 'white' : '#1E1E1E',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
                     whiteSpace: 'pre-line',
                     lineHeight: '1.5',
                   }}
@@ -311,7 +311,7 @@ const Chatbot = () => {
           {/* Quick Questions */}
           {messages.length === 1 && (
             <div style={{ padding: '0.5rem 1rem', backgroundColor: 'white', borderTop: '1px solid var(--light-gray)' }}>
-              <p style={{ fontSize: '0.875rem', margin: '0 0 0.5rem', color: '#6c757d' }}>Quick questions:</p>
+              <p style={{ fontSize: '0.875rem', margin: '0 0 0.5rem', color: '#1E1E1E' }}>Quick questions:</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                 {quickQuestions.map((question, index) => (
                   <button
@@ -320,19 +320,20 @@ const Chatbot = () => {
                     style={{
                       padding: '0.5rem 0.75rem',
                       fontSize: '0.75rem',
-                      backgroundColor: 'var(--light-beige)',
-                      border: '1px solid var(--light-gray)',
-                      borderRadius: 'var(--radius-md)',
+                      backgroundColor: '#F5F5DC',
+                      color: '#1E1E1E',
+                      border: '1px solid #EAE7E0',
+                      borderRadius: '8px',
                       cursor: 'pointer',
-                      transition: 'background-color var(--transition-fast)',
+                      transition: 'all 0.2s ease',
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--accent-peru)';
+                      e.currentTarget.style.backgroundColor = '#003d7a';
                       e.currentTarget.style.color = 'white';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--light-beige)';
-                      e.currentTarget.style.color = 'var(--text-charcoal)';
+                      e.currentTarget.style.backgroundColor = '#F5F5DC';
+                      e.currentTarget.style.color = '#1E1E1E';
                     }}
                   >
                     {question}
@@ -361,10 +362,11 @@ const Chatbot = () => {
               style={{
                 flex: 1,
                 padding: '0.75rem',
-                border: '1px solid var(--light-gray)',
-                borderRadius: 'var(--radius-md)',
+                border: '1px solid #EAE7E0',
+                borderRadius: '8px',
                 outline: 'none',
                 fontSize: '0.95rem',
+                color: '#1E1E1E',
               }}
             />
             <button
@@ -372,10 +374,10 @@ const Chatbot = () => {
               disabled={!inputMessage.trim()}
               style={{
                 padding: '0.75rem 1rem',
-                backgroundColor: 'var(--accent-peru)',
+                backgroundColor: '#003d7a',
                 color: 'white',
                 border: 'none',
-                borderRadius: 'var(--radius-md)',
+                borderRadius: '8px',
                 cursor: inputMessage.trim() ? 'pointer' : 'not-allowed',
                 opacity: inputMessage.trim() ? 1 : 0.5,
                 display: 'flex',
