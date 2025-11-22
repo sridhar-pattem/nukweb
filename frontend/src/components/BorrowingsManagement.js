@@ -1,690 +1,500 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { adminBorrowingsAPI } from '../services/api';
 
 function BorrowingsManagement() {
   const [borrowings, setBorrowings] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [statusFilter, setStatusFilter] = useState('active');
+  const [searchTerm, setSearchTerm] = useState('');
   const [showIssueForm, setShowIssueForm] = useState(false);
-
-  // Filters
-  const [patronFilter, setPatronFilter] = useState('');
-  const [bookFilter, setBookFilter] = useState('');
 
   // Autocomplete state for patron search
   const [patronSearch, setPatronSearch] = useState('');
   const [patronResults, setPatronResults] = useState([]);
   const [selectedPatron, setSelectedPatron] = useState(null);
   const [showPatronDropdown, setShowPatronDropdown] = useState(false);
-  const patronRef = useRef(null);
 
   // Autocomplete state for item search
   const [itemSearch, setItemSearch] = useState('');
   const [itemResults, setItemResults] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
   const [showItemDropdown, setShowItemDropdown] = useState(false);
-  const itemRef = useRef(null);
 
-  // History modal
-  const [showHistory, setShowHistory] = useState(false);
-  const [historyData, setHistoryData] = useState([]);
-  const [historyTitle, setHistoryTitle] = useState('');
-
-  // Load all borrowings on mount
   useEffect(() => {
-    loadAllBorrowings();
-  }, []);
+    loadBorrowings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter]);
 
-  // Close dropdowns when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (patronRef.current && !patronRef.current.contains(event.target)) {
-        setShowPatronDropdown(false);
-      }
-      if (itemRef.current && !itemRef.current.contains(event.target)) {
-        setShowItemDropdown(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // Search patrons as user types
-  useEffect(() => {
-    const searchPatrons = async () => {
-      if (patronSearch.length < 2) {
-        setPatronResults([]);
-        return;
-      }
-
-      try {
-        const response = await adminBorrowingsAPI.searchPatrons(patronSearch);
-        setPatronResults(response.data);
-        setShowPatronDropdown(true);
-      } catch (err) {
-        console.error('Failed to search patrons:', err);
-      }
-    };
-
-    const timeoutId = setTimeout(searchPatrons, 300);
-    return () => clearTimeout(timeoutId);
-  }, [patronSearch]);
-
-  // Search items as user types
-  useEffect(() => {
-    const searchItems = async () => {
-      if (itemSearch.length < 2) {
-        setItemResults([]);
-        setShowItemDropdown(false);
-        return;
-      }
-
-      try {
-        const response = await adminBorrowingsAPI.searchItems(itemSearch);
-        console.log('Item search response:', response);
-        console.log('Item search data:', response.data);
-        console.log('Item search data type:', Array.isArray(response.data));
-        console.log('Item results count:', response.data ? response.data.length : 0);
-
-        if (response.data && Array.isArray(response.data)) {
-          setItemResults(response.data);
-          setShowItemDropdown(true);
-          console.log('Item dropdown should show now, results:', response.data.length);
-        } else {
-          console.error('Response data is not an array:', response.data);
-          setItemResults([]);
-          setShowItemDropdown(false);
-        }
-      } catch (err) {
-        console.error('Failed to search items:', err);
-        setItemResults([]);
-        setShowItemDropdown(false);
-      }
-    };
-
-    const timeoutId = setTimeout(searchItems, 300);
-    return () => clearTimeout(timeoutId);
-  }, [itemSearch]);
-
-  const loadAllBorrowings = async () => {
+  const loadBorrowings = async () => {
     try {
       setLoading(true);
       setError('');
-      const response = await adminBorrowingsAPI.getAllBorrowings(patronFilter, bookFilter);
-      setBorrowings(response.data);
+
+      const params = {};
+      if (searchTerm) {
+        params.patron = searchTerm;
+        params.book = searchTerm;
+      }
+
+      const response = await adminBorrowingsAPI.getAllBorrowings(params.patron || '', params.book || '');
+      let data = response.data || [];
+
+      // Filter by status
+      if (statusFilter === 'overdue') {
+        data = data.filter(b => b.status !== 'returned' && new Date(b.due_date) < new Date());
+      } else if (statusFilter === 'returned') {
+        data = data.filter(b => b.status === 'returned');
+      } else if (statusFilter === 'active') {
+        data = data.filter(b => b.status !== 'returned');
+      }
+
+      setBorrowings(data);
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to load borrowings');
+      console.error('Error loading borrowings:', err);
+      setError('Failed to load borrowings');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFilter = () => {
-    loadAllBorrowings();
+  const handleSearch = (e) => {
+    e.preventDefault();
+    loadBorrowings();
   };
 
-  const handleClearFilters = () => {
-    setPatronFilter('');
-    setBookFilter('');
-    setTimeout(() => loadAllBorrowings(), 0);
+  const handleReturn = async (borrowingId) => {
+    if (!window.confirm('Mark this item as returned?')) return;
+
+    try {
+      setError('');
+      await adminBorrowingsAPI.returnBook(borrowingId);
+      setSuccess('Item returned successfully!');
+      loadBorrowings();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to return item');
+    }
+  };
+
+  const handleRenew = async (borrowingId) => {
+    if (!window.confirm('Renew this borrowing?')) return;
+
+    try {
+      setError('');
+      await adminBorrowingsAPI.renewBorrowing(borrowingId);
+      setSuccess('Borrowing renewed successfully!');
+      loadBorrowings();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to renew borrowing');
+    }
+  };
+
+  const handlePatronSearch = async (query) => {
+    if (!query || query.length < 2) {
+      setPatronResults([]);
+      setShowPatronDropdown(false);
+      return;
+    }
+
+    try {
+      const response = await adminBorrowingsAPI.searchPatrons(query);
+      setPatronResults(response.data || []);
+      setShowPatronDropdown(true);
+    } catch (err) {
+      console.error('Error searching patrons:', err);
+    }
+  };
+
+  const handleItemSearch = async (query) => {
+    if (!query || query.length < 2) {
+      setItemResults([]);
+      setShowItemDropdown(false);
+      return;
+    }
+
+    try {
+      const response = await adminBorrowingsAPI.searchItems(query);
+      setItemResults(response.data || []);
+      setShowItemDropdown(true);
+    } catch (err) {
+      console.error('Error searching items:', err);
+    }
+  };
+
+  const handleSelectPatron = (patron) => {
+    setSelectedPatron(patron);
+    setPatronSearch(`${patron.first_name} ${patron.last_name}`);
+    setShowPatronDropdown(false);
+  };
+
+  const handleSelectItem = (item) => {
+    setSelectedItem(item);
+    setItemSearch(`${item.title} (Barcode: ${item.barcode})`);
+    setShowItemDropdown(false);
   };
 
   const handleIssueBook = async (e) => {
     e.preventDefault();
 
     if (!selectedPatron) {
-      alert('Please select a patron');
+      setError('Please select a patron');
       return;
     }
 
     if (!selectedItem) {
-      alert('Please select an item');
-      return;
-    }
-
-    if (selectedItem.circulation_status !== 'available') {
-      alert(`This item is ${selectedItem.circulation_status}`);
+      setError('Please select an item');
       return;
     }
 
     try {
+      setError('');
       await adminBorrowingsAPI.issueBook(selectedPatron.patron_id, selectedItem.item_id);
+      setSuccess('Book issued successfully!');
       setShowIssueForm(false);
       setPatronSearch('');
       setItemSearch('');
       setSelectedPatron(null);
       setSelectedItem(null);
-      setPatronResults([]);
-      setItemResults([]);
-      alert('Item issued successfully!');
-      loadAllBorrowings();
+      loadBorrowings();
+      setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to issue item');
+      setError(err.response?.data?.error || 'Failed to issue book');
     }
   };
 
-  const handleRenew = async (borrowingId) => {
-    if (window.confirm('Renew this item for 14 more days?')) {
-      try {
-        const response = await adminBorrowingsAPI.renewBorrowing(borrowingId);
-        alert(response.data.message);
-        loadAllBorrowings();
-      } catch (err) {
-        alert(err.response?.data?.error || 'Failed to renew item');
-      }
-    }
+  const isOverdue = (dueDate) => {
+    return new Date(dueDate) < new Date();
   };
 
-  const handleReturn = async (borrowingId) => {
-    if (window.confirm('Mark this item as returned?')) {
-      try {
-        await adminBorrowingsAPI.returnBook(borrowingId);
-        alert('Item returned successfully!');
-        loadAllBorrowings();
-      } catch (err) {
-        alert(err.response?.data?.error || 'Failed to return item');
-      }
-    }
+  const getDaysRemaining = (dueDate) => {
+    const diff = new Date(dueDate) - new Date();
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
   };
 
-  const loadOverdue = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      const response = await adminBorrowingsAPI.getOverdue();
-      setBorrowings(response.data);
-      setPatronFilter('');
-      setBookFilter('');
-    } catch (err) {
-      setError('Failed to load overdue borrowings');
-    } finally {
-      setLoading(false);
-    }
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
   };
 
-  const showPatronHistory = async (patronId, patronFirstName, patronLastName) => {
-    try {
-      setLoading(true);
-      const response = await adminBorrowingsAPI.getBorrowingHistory(patronId, null, null);
-      setHistoryData(response.data);
-      setHistoryTitle(`Borrowing History - ${patronFirstName} ${patronLastName}`);
-      setShowHistory(true);
-    } catch (err) {
-      alert('Failed to load history');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const showBookHistory = async (bookId, bookTitle) => {
-    try {
-      setLoading(true);
-      const response = await adminBorrowingsAPI.getBorrowingHistory(null, null, bookId);
-      setHistoryData(response.data);
-      setHistoryTitle(`Borrowing History - ${bookTitle}`);
-      setShowHistory(true);
-    } catch (err) {
-      alert('Failed to load history');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const selectPatron = (patron) => {
-    setSelectedPatron(patron);
-    setPatronSearch(`${patron.first_name} ${patron.last_name}`);
-    setShowPatronDropdown(false);
-  };
-
-  const selectItem = (item) => {
-    setSelectedItem(item);
-    setItemSearch(`${item.title} (${item.barcode})`);
-    setShowItemDropdown(false);
-  };
-
-  // Helper function to display contributors
-  const getContributorDisplay = (contributors) => {
-    try {
-      console.log('getContributorDisplay called with:', contributors);
-
-      // Handle null, undefined, or empty array
-      if (!contributors || !Array.isArray(contributors) || contributors.length === 0) {
-        return 'Unknown';
-      }
-
-      // Find authors
-      const authors = contributors.filter(c => c && c.role === 'author');
-      if (authors.length > 0) {
-        const authorNames = authors.map(a => a && a.name ? a.name : 'Unknown').join(', ');
-        return authorNames;
-      }
-
-      // Fall back to first contributor
-      if (contributors[0] && contributors[0].name) {
-        return contributors[0].name;
-      }
-
-      return 'Unknown';
-    } catch (error) {
-      console.error('Error in getContributorDisplay:', error);
-      return 'Unknown';
-    }
-  };
+  if (loading && borrowings.length === 0) {
+    return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>;
+  }
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h1>Borrowings Management</h1>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={() => setShowIssueForm(!showIssueForm)} className="btn btn-primary">
-            {showIssueForm ? 'Cancel' : 'Issue Item'}
-          </button>
-          <button onClick={loadOverdue} className="btn btn-danger">
-            View Overdue
-          </button>
+    <div style={{ padding: '2rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        <div>
+          <h1>Circulation</h1>
+          <p>Manage checkouts, returns, and renewals</p>
         </div>
+        <button onClick={() => setShowIssueForm(true)} className="btn btn-primary">
+          + Issue Book
+        </button>
       </div>
 
-      {error && <div className="error-message">{error}</div>}
+      {error && <div style={{ padding: '1rem', background: '#f8d7da', color: '#721c24', borderRadius: '4px', marginBottom: '1rem' }}>{error}</div>}
+      {success && <div style={{ padding: '1rem', background: '#d4edda', color: '#155724', borderRadius: '4px', marginBottom: '1rem' }}>{success}</div>}
 
-      {/* Issue Book Form */}
+      {/* Issue Book Modal */}
       {showIssueForm && (
-        <div className="card" style={{ marginBottom: '20px' }}>
-          <h3>Issue Item to Patron</h3>
-          <form onSubmit={handleIssueBook}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-              {/* Patron Autocomplete */}
-              <div className="form-group" ref={patronRef}>
-                <label>Search Patron by Name *</label>
-                <input
-                  type="text"
-                  value={patronSearch}
-                  onChange={(e) => {
-                    setPatronSearch(e.target.value);
-                    setSelectedPatron(null);
-                  }}
-                  placeholder="Start typing patron name..."
-                  required
-                  style={{ width: '100%', padding: '10px' }}
-                />
-                {showPatronDropdown && patronResults.length > 0 && (
-                  <div style={{
-                    position: 'absolute',
-                    zIndex: 1000,
-                    backgroundColor: 'white',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    maxHeight: '200px',
-                    overflowY: 'auto',
-                    width: 'calc(50% - 15px)',
-                    marginTop: '2px',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                  }}>
-                    {patronResults.map((patron) => (
-                      <div
-                        key={patron.patron_id}
-                        onClick={() => selectPatron(patron)}
-                        style={{
-                          padding: '10px',
-                          cursor: 'pointer',
-                          borderBottom: '1px solid #f0f0f0'
-                        }}
-                        onMouseEnter={(e) => e.target.style.backgroundColor = '#f5f5f5'}
-                        onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
-                      >
-                        <div><strong>{patron.first_name} {patron.last_name}</strong></div>
-                        <div style={{ fontSize: '12px', color: '#666' }}>
-                          {patron.email} | ID: {patron.patron_id}
-                        </div>
-                        {patron.plan_name && (
-                          <div style={{ fontSize: '11px', color: '#888' }}>
-                            Plan: {patron.plan_name}
-                          </div>
-                        )}
-                        {patron.active_borrowings !== undefined && (
-                          <div style={{ fontSize: '11px', color: '#888' }}>
-                            Active Borrowings: {patron.active_borrowings}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {selectedPatron && (
-                  <div style={{ marginTop: '5px', padding: '5px', backgroundColor: '#e8f5e9', borderRadius: '3px' }}>
-                    <small>Selected: {selectedPatron.first_name} {selectedPatron.last_name} ({selectedPatron.patron_id})</small>
-                  </div>
-                )}
-              </div>
-
-              {/* Item Autocomplete */}
-              <div className="form-group" ref={itemRef}>
-                <label>Search Item by Title, ISBN, or Barcode *</label>
-                <input
-                  type="text"
-                  value={itemSearch}
-                  onChange={(e) => {
-                    console.log('Item search input changed:', e.target.value);
-                    setItemSearch(e.target.value);
-                    setSelectedItem(null);
-                  }}
-                  placeholder="Start typing title, ISBN, or barcode..."
-                  required
-                  style={{ width: '100%', padding: '10px' }}
-                />
-                {console.log('Rendering item dropdown section - showItemDropdown:', showItemDropdown, 'itemResults.length:', itemResults.length)}
-                {showItemDropdown && itemResults.length > 0 && (
-                  <div style={{
-                    position: 'absolute',
-                    zIndex: 1000,
-                    backgroundColor: 'white',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    maxHeight: '200px',
-                    overflowY: 'auto',
-                    width: 'calc(50% - 15px)',
-                    marginTop: '2px',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                  }}>
-                    {console.log('About to map itemResults:', itemResults)}
-                    {itemResults.map((item) => {
-                      console.log('Rendering item:', item);
-                      return (
-                      <div
-                        key={item.item_id}
-                        onClick={() => selectItem(item)}
-                        style={{
-                          padding: '10px',
-                          cursor: item.circulation_status === 'available' ? 'pointer' : 'not-allowed',
-                          borderBottom: '1px solid #f0f0f0',
-                          backgroundColor: item.circulation_status !== 'available' ? '#ffebee' : 'white',
-                          opacity: item.circulation_status !== 'available' ? 0.6 : 1
-                        }}
-                        onMouseEnter={(e) => {
-                          if (item.circulation_status === 'available') {
-                            e.target.style.backgroundColor = '#f5f5f5';
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (item.circulation_status === 'available') {
-                            e.target.style.backgroundColor = 'white';
-                          } else {
-                            e.target.style.backgroundColor = '#ffebee';
-                          }
-                        }}
-                      >
-                        <div>
-                          <strong>{item.title}</strong>
-                          {item.circulation_status !== 'available' && (
-                            <span style={{ color: 'red', marginLeft: '5px', fontSize: '11px' }}>
-                              ({item.circulation_status.replace('_', ' ').toUpperCase()})
-                            </span>
-                          )}
-                        </div>
-                        <div style={{ fontSize: '12px', color: '#666' }}>
-                          {getContributorDisplay(item.contributors)} | ISBN: {item.isbn}
-                        </div>
-                        <div style={{ fontSize: '11px', color: item.circulation_status === 'available' ? '#388e3c' : '#d32f2f' }}>
-                          Barcode: {item.barcode} | Available: {item.available_items || 0}/{item.total_items || 0}
-                        </div>
-                      </div>
-                      );
-                    })}
-                  </div>
-                )}
-                {selectedItem && (
-                  <div style={{
-                    marginTop: '5px',
-                    padding: '5px',
-                    backgroundColor: selectedItem.circulation_status === 'available' ? '#e3f2fd' : '#ffebee',
-                    borderRadius: '3px'
-                  }}>
-                    <small>
-                      Selected: {selectedItem.title} (Barcode: {selectedItem.barcode})
-                      {selectedItem.circulation_status === 'available' ? (
-                        ` - Available`
-                      ) : (
-                        <span style={{ color: 'red' }}> - {selectedItem.circulation_status.replace('_', ' ').toUpperCase()}</span>
-                      )}
-                    </small>
-                  </div>
-                )}
-              </div>
-            </div>
-            <button
-              type="submit"
-              className="btn btn-success"
-              style={{ marginTop: '10px' }}
-              disabled={!selectedPatron || !selectedItem || selectedItem.circulation_status !== 'available'}
-            >
-              Issue Item (14 days)
-            </button>
-          </form>
-        </div>
-      )}
-
-      {/* Filter Section */}
-      <div className="card" style={{ marginBottom: '20px' }}>
-        <h3>Filter Borrowings</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto auto', gap: '10px', alignItems: 'end' }}>
-          <div className="form-group">
-            <label>Patron Name</label>
-            <input
-              type="text"
-              value={patronFilter}
-              onChange={(e) => setPatronFilter(e.target.value)}
-              placeholder="Filter by patron name..."
-              style={{ width: '100%', padding: '10px' }}
-            />
-          </div>
-          <div className="form-group">
-            <label>Book Title</label>
-            <input
-              type="text"
-              value={bookFilter}
-              onChange={(e) => setBookFilter(e.target.value)}
-              placeholder="Filter by book title..."
-              style={{ width: '100%', padding: '10px' }}
-            />
-          </div>
-          <button onClick={handleFilter} className="btn btn-primary">
-            Apply Filters
-          </button>
-          <button onClick={handleClearFilters} className="btn btn-secondary">
-            Clear
-          </button>
-        </div>
-      </div>
-
-      {/* Results */}
-      {loading && <div className="loading">Loading...</div>}
-
-      {!loading && borrowings.length > 0 && (
-        <div className="card">
-          <h3>Active Borrowings ({borrowings.length})</h3>
-          <div style={{ overflowX: 'auto' }}>
-            <table>
-              <thead>
-                <tr>
-                  <th>Patron</th>
-                  <th>Book</th>
-                  <th>Barcode</th>
-                  <th>Checkout Date</th>
-                  <th>Due Date</th>
-                  <th>Renewals</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {borrowings.map((borrowing) => {
-                  const isOverdue = new Date(borrowing.due_date) < new Date() && borrowing.status === 'active';
-                  return (
-                    <tr key={borrowing.borrowing_id} style={{ backgroundColor: isOverdue ? '#ffe6e6' : 'transparent' }}>
-                      <td>
-                        <strong>{borrowing.first_name} {borrowing.last_name}</strong><br />
-                        <small>{borrowing.email}</small><br />
-                        <small>ID: {borrowing.patron_id}</small><br />
-                        <button
-                          onClick={() => showPatronHistory(borrowing.patron_id, borrowing.first_name, borrowing.last_name)}
-                          className="btn btn-secondary"
-                          style={{ fontSize: '10px', padding: '2px 6px', marginTop: '3px' }}
-                        >
-                          View History
-                        </button>
-                      </td>
-                      <td>
-                        <strong>{borrowing.title}</strong><br />
-                        <small>ISBN: {borrowing.isbn}</small><br />
-                        <button
-                          onClick={() => showBookHistory(borrowing.book_id, borrowing.title)}
-                          className="btn btn-secondary"
-                          style={{ fontSize: '10px', padding: '2px 6px', marginTop: '3px' }}
-                        >
-                          View History
-                        </button>
-                      </td>
-                      <td>
-                        <code>{borrowing.barcode}</code>
-                        {borrowing.call_number && <><br /><small>{borrowing.call_number}</small></>}
-                      </td>
-                      <td>{new Date(borrowing.checkout_date).toLocaleDateString()}</td>
-                      <td>
-                        {new Date(borrowing.due_date).toLocaleDateString()}
-                        {isOverdue && <span style={{ color: 'red', marginLeft: '5px' }}>(OVERDUE)</span>}
-                      </td>
-                      <td>{borrowing.renewal_count}/2</td>
-                      <td>
-                        <span style={{
-                          padding: '3px 8px',
-                          borderRadius: '3px',
-                          fontSize: '12px',
-                          backgroundColor: borrowing.status === 'active' ? '#3498db' : '#27ae60',
-                          color: 'white'
-                        }}>
-                          {borrowing.status}
-                        </span>
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
-                          {borrowing.renewal_count < 2 && borrowing.status === 'active' && (
-                            <button
-                              onClick={() => handleRenew(borrowing.borrowing_id)}
-                              className="btn btn-primary"
-                              style={{ fontSize: '12px', padding: '5px 10px' }}
-                            >
-                              Renew
-                            </button>
-                          )}
-                          {borrowing.status === 'active' && (
-                            <button
-                              onClick={() => handleReturn(borrowing.borrowing_id)}
-                              className="btn btn-success"
-                              style={{ fontSize: '12px', padding: '5px 10px' }}
-                            >
-                              Return
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {!loading && borrowings.length === 0 && (
-        <div className="card">
-          <p style={{ textAlign: 'center', color: '#666' }}>
-            {patronFilter || bookFilter ? 'No borrowings match the filters' : 'No active borrowings'}
-          </p>
-        </div>
-      )}
-
-      {/* History Modal */}
-      {showHistory && (
         <div style={{
           position: 'fixed',
           top: 0,
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)',
+          background: 'rgba(0,0,0,0.5)',
           display: 'flex',
-          justifyContent: 'center',
           alignItems: 'center',
-          zIndex: 2000
-        }}>
+          justifyContent: 'center',
+          zIndex: 1000
+        }}
+        onClick={() => setShowIssueForm(false)}
+        >
           <div style={{
-            backgroundColor: 'white',
-            padding: '20px',
+            background: 'white',
+            padding: '2rem',
             borderRadius: '8px',
-            maxWidth: '900px',
+            maxWidth: '600px',
             width: '90%',
-            maxHeight: '80vh',
+            maxHeight: '90vh',
             overflow: 'auto'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-              <h2>{historyTitle}</h2>
-              <button onClick={() => setShowHistory(false)} className="btn btn-secondary">
-                Close
-              </button>
+          }}
+          onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+              <h2>Issue Book</h2>
+              <button onClick={() => setShowIssueForm(false)} className="btn">×</button>
             </div>
-            <div style={{ overflowX: 'auto' }}>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Book/Patron</th>
-                    <th>Barcode</th>
-                    <th>Checkout</th>
-                    <th>Due Date</th>
-                    <th>Return Date</th>
-                    <th>Renewals</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {historyData.map((record, idx) => (
-                    <tr key={idx}>
-                      <td>
-                        {record.title ? (
-                          <>
-                            <strong>{record.title}</strong><br />
-                            <small>ISBN: {record.isbn}</small>
-                          </>
-                        ) : (
-                          <>
-                            <strong>{record.first_name} {record.last_name}</strong><br />
-                            <small>{record.email}</small>
-                          </>
-                        )}
-                      </td>
-                      <td><code>{record.barcode}</code></td>
-                      <td>{new Date(record.checkout_date).toLocaleDateString()}</td>
-                      <td>{new Date(record.due_date).toLocaleDateString()}</td>
-                      <td>{record.return_date ? new Date(record.return_date).toLocaleDateString() : 'Not returned'}</td>
-                      <td>{record.renewal_count}/2</td>
-                      <td>
-                        <span style={{
-                          padding: '3px 8px',
-                          borderRadius: '3px',
-                          fontSize: '11px',
-                          backgroundColor: record.status === 'active' ? '#3498db' : record.status === 'returned' ? '#27ae60' : '#95a5a6',
-                          color: 'white'
-                        }}>
-                          {record.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+
+            <form onSubmit={handleIssueBook}>
+              {/* Patron Search */}
+              <div style={{ marginBottom: '1rem', position: 'relative' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Patron *</label>
+                <input
+                  type="text"
+                  value={patronSearch}
+                  onChange={(e) => {
+                    setPatronSearch(e.target.value);
+                    setSelectedPatron(null);
+                    handlePatronSearch(e.target.value);
+                  }}
+                  placeholder="Search by patron name..."
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  autoComplete="off"
+                />
+                {showPatronDropdown && patronResults.length > 0 && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    background: 'white',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    maxHeight: '200px',
+                    overflow: 'auto',
+                    zIndex: 1001,
+                    marginTop: '4px'
+                  }}>
+                    {patronResults.map((patron) => (
+                      <div
+                        key={patron.patron_id}
+                        onClick={() => handleSelectPatron(patron)}
+                        style={{
+                          padding: '0.75rem',
+                          cursor: 'pointer',
+                          borderBottom: '1px solid #eee'
+                        }}
+                      >
+                        <strong>{patron.first_name} {patron.last_name}</strong>
+                        <div style={{ fontSize: '0.875rem', color: '#666' }}>{patron.email}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {selectedPatron && (
+                  <div style={{ marginTop: '0.5rem', padding: '0.5rem', background: '#e8f4f8', borderRadius: '4px', fontSize: '0.875rem' }}>
+                    ✓ Selected: {selectedPatron.first_name} {selectedPatron.last_name}
+                  </div>
+                )}
+              </div>
+
+              {/* Item Search */}
+              <div style={{ marginBottom: '1.5rem', position: 'relative' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Book / Item *</label>
+                <input
+                  type="text"
+                  value={itemSearch}
+                  onChange={(e) => {
+                    setItemSearch(e.target.value);
+                    setSelectedItem(null);
+                    handleItemSearch(e.target.value);
+                  }}
+                  placeholder="Search by title, author, ISBN, or barcode..."
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  autoComplete="off"
+                />
+                {showItemDropdown && itemResults.length > 0 && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    background: 'white',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    maxHeight: '200px',
+                    overflow: 'auto',
+                    zIndex: 1001,
+                    marginTop: '4px'
+                  }}>
+                    {itemResults.map((item) => (
+                      <div
+                        key={item.item_id}
+                        onClick={() => handleSelectItem(item)}
+                        style={{
+                          padding: '0.75rem',
+                          cursor: 'pointer',
+                          borderBottom: '1px solid #eee'
+                        }}
+                      >
+                        <strong>{item.title}</strong>
+                        <div style={{ fontSize: '0.875rem', color: '#666' }}>Barcode: {item.barcode}</div>
+                        <div style={{ fontSize: '0.75rem', color: item.status === 'Available' ? '#28a745' : '#dc3545' }}>
+                          {item.status}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {selectedItem && (
+                  <div style={{ marginTop: '0.5rem', padding: '0.5rem', background: '#e8f4f8', borderRadius: '4px', fontSize: '0.875rem' }}>
+                    ✓ Selected: {selectedItem.title} (Barcode: {selectedItem.barcode})
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                <button type="button" onClick={() => setShowIssueForm(false)} className="btn">
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Issue Book
+                </button>
+              </div>
+            </form>
           </div>
+        </div>
+      )}
+
+      {/* Tabs */}
+      <div style={{ borderBottom: '2px solid #ddd', marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', gap: '0' }}>
+          {['active', 'returned', 'overdue'].map((status) => (
+            <button
+              key={status}
+              onClick={() => setStatusFilter(status)}
+              style={{
+                padding: '0.75rem 1.5rem',
+                border: 'none',
+                background: statusFilter === status ? '#5BC0BE' : 'transparent',
+                color: statusFilter === status ? 'white' : '#333',
+                borderRadius: '8px 8px 0 0',
+                fontWeight: statusFilter === status ? '600' : '400',
+                cursor: 'pointer',
+                fontSize: '1rem',
+                textTransform: 'capitalize',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              {status}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Search */}
+      <form onSubmit={handleSearch} style={{ marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <input
+            type="text"
+            placeholder="Search by patron, barcode, or book title..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{ flex: 1, padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+          />
+          <button type="submit" className="btn btn-primary">Search</button>
+        </div>
+      </form>
+
+      <div style={{ marginBottom: '1rem', color: '#666' }}>
+        Found {borrowings.length} borrowing(s)
+      </div>
+
+      {/* Borrowings Table */}
+      {borrowings.length === 0 ? (
+        <div style={{ padding: '3rem', textAlign: 'center', color: '#666' }}>
+          <p>No borrowings found</p>
+        </div>
+      ) : (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: '#f5f5f5' }}>
+                <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Patron</th>
+                <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Book</th>
+                <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Barcode</th>
+                <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Checkout Date</th>
+                <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Due Date</th>
+                <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Status</th>
+                <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {borrowings.map((borrowing) => {
+                const overdue = statusFilter === 'active' && isOverdue(borrowing.due_date);
+                const daysRemaining = getDaysRemaining(borrowing.due_date);
+
+                return (
+                  <tr key={borrowing.borrowing_id} style={{ borderBottom: '1px solid #ddd', background: overdue ? '#fff3cd' : 'white' }}>
+                    <td style={{ padding: '0.75rem' }}>
+                      <div>
+                        <strong>{borrowing.first_name} {borrowing.last_name}</strong>
+                        <div style={{ fontSize: '0.875rem', color: '#666' }}>{borrowing.email}</div>
+                      </div>
+                    </td>
+                    <td style={{ padding: '0.75rem' }}>
+                      <strong>{borrowing.title}</strong>
+                    </td>
+                    <td style={{ padding: '0.75rem' }}>{borrowing.barcode}</td>
+                    <td style={{ padding: '0.75rem' }}>{formatDate(borrowing.checkout_date)}</td>
+                    <td style={{ padding: '0.75rem' }}>
+                      <div>
+                        {formatDate(borrowing.due_date)}
+                        {statusFilter === 'active' && (
+                          <div style={{ fontSize: '0.75rem', color: overdue ? '#dc3545' : daysRemaining <= 3 ? '#ffc107' : '#666' }}>
+                            {overdue ? (
+                              `⚠ ${Math.abs(daysRemaining)} days overdue`
+                            ) : daysRemaining <= 3 ? (
+                              `⏰ ${daysRemaining} days left`
+                            ) : (
+                              `${daysRemaining} days`
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td style={{ padding: '0.75rem' }}>
+                      <span style={{
+                        padding: '0.25rem 0.5rem',
+                        borderRadius: '4px',
+                        fontSize: '0.875rem',
+                        background: borrowing.status === 'returned' ? '#d4edda' : overdue ? '#f8d7da' : '#cfe2ff',
+                        color: borrowing.status === 'returned' ? '#155724' : overdue ? '#721c24' : '#084298'
+                      }}>
+                        {borrowing.status === 'returned' ? 'Returned' : overdue ? 'Overdue' : 'Active'}
+                      </span>
+                      {borrowing.renewal_count > 0 && (
+                        <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '4px' }}>
+                          Renewed {borrowing.renewal_count}x
+                        </div>
+                      )}
+                    </td>
+                    <td style={{ padding: '0.75rem' }}>
+                      {borrowing.status !== 'returned' && (
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button
+                            onClick={() => handleReturn(borrowing.borrowing_id)}
+                            className="btn"
+                            style={{ fontSize: '0.875rem' }}
+                            title="Return"
+                          >
+                            ✓ Return
+                          </button>
+                          <button
+                            onClick={() => handleRenew(borrowing.borrowing_id)}
+                            className="btn"
+                            style={{ fontSize: '0.875rem' }}
+                            title="Renew"
+                          >
+                            ↻ Renew
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
