@@ -48,6 +48,9 @@ const ModernHeader = () => {
           <NavLink to="/" className="btn btn-outline" onClick={closeMobileMenu}>
             Home
           </NavLink>
+          <NavLink to="/about" className="btn btn-outline" onClick={closeMobileMenu}>
+            About
+          </NavLink>
           <NavLink to="/catalogue" className="btn btn-outline" onClick={closeMobileMenu}>
             Catalogue
           </NavLink>
@@ -119,6 +122,9 @@ const ModernHeader = () => {
           <div className="mobile-nav-section">
             <NavLink to="/" className="mobile-nav-link" onClick={closeMobileMenu}>
               Home
+            </NavLink>
+            <NavLink to="/about" className="mobile-nav-link" onClick={closeMobileMenu}>
+              About
             </NavLink>
             <NavLink to="/catalogue" className="mobile-nav-link" onClick={closeMobileMenu}>
               Catalogue
