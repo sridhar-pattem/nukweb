@@ -86,7 +86,7 @@ const ModernHeader = () => {
               {/* Admin Links */}
               {isAdmin() && (
                 <NavLink to="/admin/website" className="btn btn-outline" onClick={closeMobileMenu}>
-                  🌐 Website Admin
+                  Website Admin
                 </NavLink>
               )}
 
@@ -150,7 +150,7 @@ const ModernHeader = () => {
 
               {isAdmin() && (
                 <NavLink to="/admin/website" className="mobile-nav-link" onClick={closeMobileMenu}>
-                  🌐 Website Admin
+                  Website Admin
                 </NavLink>
               )}
 
