@@ -1,16 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
 import { FaFacebook, FaInstagram, FaTwitter, FaYoutube, FaEnvelope, FaPhone, FaMapMarkerAlt } from 'react-icons/fa';
 
 const Footer = () => {
-  const { isAuthenticated } = useAuth();
-
-  // Hide footer for authenticated users
-  if (isAuthenticated) {
-    return null;
-  }
-
   return (
     <footer className="footer">
       <div className="footer-content">
