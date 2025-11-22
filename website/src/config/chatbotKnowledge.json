@@ -115,7 +115,7 @@
   "responses": {
     "greeting": {
       "keywords": ["hello", "hi", "hey", "start"],
-      "response": "Hello! Welcome to Nuk Library. How can I help you today? You can ask me about:\n• Our location and facilities\n• Library hours\n• Membership plans\n• Parking and amenities\n• Book availability"
+      "response": "Hello! Welcome to Nuk Library. How can I help you today? You can ask me about:\n• Our location and facilities\n• Library hours\n• Membership plans\n• Book search (e.g., 'Do you have books on psychology?')\n• Cowork & Study space\n• Parking and amenities"
     },
     "hours": {
       "keywords": ["hour", "hours", "open", "time", "close", "schedule", "timing"],
@@ -151,7 +151,7 @@
     },
     "books": {
       "keywords": ["book", "collection", "catalogue", "reading"],
-      "response": "📖 OUR COLLECTION:\nWe have over 10,000 books covering all genres and age groups - from toddlers to adults!\n\n• Fiction, Non-fiction, Children's books\n• Reference materials\n• Best sellers and classics\n\nYou can browse our online catalogue or visit us to explore the collection. What genre interests you?"
+      "response": "📖 OUR COLLECTION:\nWe have over 10,000 books covering all genres and age groups - from toddlers to adults!\n\n• Fiction, Non-fiction, Children's books\n• Reference materials\n• Best sellers and classics\n\n💡 TIP: You can ask me to search for specific books!\nTry: \"Do you have books on psychology?\" or \"Books by Tolstoy\" or \"Do you have Crime and Punishment?\"\n\nWhat are you looking for?"
     },
     "cowork": {
       "keywords": ["cowork", "workspace", "desk", "office"],
@@ -170,5 +170,5 @@
       "response": "You're welcome! Feel free to ask if you have any other questions. Happy reading! 📚\n\nVisit us at Nuk Library, Kasavanahalli!"
     }
   },
-  "fallback": "I can help you with information about:\n\n• 📍 Location and directions\n• ⏰ Operating hours\n• 📚 Membership plans and pricing\n• 🚗 Parking facilities\n• 💼 Cowork and Study spaces\n• 📖 Book collection\n• 🏢 Amenities (AC, WiFi, restrooms)\n\nWhat would you like to know?"
+  "fallback": "I can help you with information about:\n\n• 📍 Location and directions\n• ⏰ Operating hours\n• 📚 Membership plans and pricing\n• 📖 Book search (Try: 'Do you have books on chemistry?' or 'Books by Tolstoy')\n• 💼 Cowork and Study spaces\n• 🚗 Parking facilities\n• 🏢 Amenities (AC, WiFi, restrooms)\n\nWhat would you like to know?"
 }

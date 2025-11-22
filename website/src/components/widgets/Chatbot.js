@@ -35,18 +35,28 @@ const Chatbot = () => {
       timestamp: new Date(),
     };
 
+    const userQuery = inputMessage;
     setMessages([...messages, userMessage]);
     setInputMessage('');
     setIsTyping(true);
 
-    // Simulate bot response - will be replaced with API call
-    setTimeout(() => {
-      const botResponse = generateBotResponse(inputMessage);
+    // Get bot response
+    setTimeout(async () => {
+      const botResponse = await generateBotResponse(userQuery);
+
+      let finalResponse = botResponse;
+
+      // If it's a book search query, perform the search
+      if (botResponse === '__BOOK_SEARCH__') {
+        const searchTerms = extractSearchTerms(userQuery);
+        finalResponse = await searchBooks(searchTerms);
+      }
+
       setMessages((prev) => [
         ...prev,
         {
           id: prev.length + 1,
-          text: botResponse,
+          text: finalResponse,
           sender: 'bot',
           timestamp: new Date(),
         },
@@ -55,7 +65,27 @@ const Chatbot = () => {
     }, 1000);
   };
 
-  const generateBotResponse = (query) => {
+  const generateBotResponse = async (query) => {
+    // Check if query is about books/catalogue
+    const bookQuestionPatterns = [
+      /do you have.*book/i,
+      /show me.*book/i,
+      /books? (on|about|by)/i,
+      /search.*book/i,
+      /catalogue/i,
+      /catalog/i,
+      /find.*book/i,
+      /looking for.*book/i,
+      /any.*books/i,
+    ];
+
+    const isBookQuery = bookQuestionPatterns.some(pattern => pattern.test(query));
+
+    if (isBookQuery) {
+      // This is a book search query - return a placeholder that will be replaced with API results
+      return '__BOOK_SEARCH__';
+    }
+
     // Search through all response categories in the knowledge base
     for (const value of Object.values(knowledgeBase.responses)) {
       if (value.keywords && value.keywords.some(keyword => {
@@ -71,11 +101,55 @@ const Chatbot = () => {
     return knowledgeBase.fallback;
   };
 
+  const extractSearchTerms = (query) => {
+    // Remove common words
+    const cleanedQuery = query
+      .toLowerCase()
+      .replace(/\b(do|you|have|any|show|me|all|the|a|an|books?|by|on|about|find|looking|for)\b/gi, '')
+      .replace(/[?.,!]/g, '')
+      .trim();
+
+    return cleanedQuery;
+  };
+
+  const searchBooks = async (searchTerm) => {
+    try {
+      const response = await fetch(`http://localhost:5001/api/patron/books?search=${encodeURIComponent(searchTerm)}&page=1`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.books && data.books.length > 0) {
+        // Format the book results
+        const bookList = data.books.slice(0, 5).map((book, index) => {
+          const authors = book.contributors
+            ? book.contributors.filter(c => c.role === 'author').map(c => c.name).join(', ')
+            : 'Unknown Author';
+          const available = book.available_items > 0 ? '✅ Available' : '❌ Not Available';
+          return `${index + 1}. "${book.title}" by ${authors}\n   ${available} (${book.available_items}/${book.total_items} copies)`;
+        }).join('\n\n');
+
+        const totalCount = data.total || data.books.length;
+        const showingMessage = totalCount > 5 ? `\n\nShowing 5 of ${totalCount} results.` : '';
+
+        return `📚 BOOKS FOUND:\n\n${bookList}${showingMessage}\n\nVisit our catalogue to see more details or reserve a book!`;
+      } else {
+        return `📚 I couldn't find any books matching "${searchTerm}".\n\nTry:\n• Different keywords\n• Author names\n• Book titles\n\nOr visit our catalogue to browse all ${data.total || 10000}+ books!`;
+      }
+    } catch (error) {
+      console.error('Book search error:', error);
+      return '📚 Sorry, I\'m having trouble searching our catalogue right now. Please try again or visit our physical library to browse our collection!';
+    }
+  };
+
   const quickQuestions = [
     'What are your operating hours?',
     'How much is a library membership?',
-    'Do you have WiFi?',
-    'What activities do you offer?',
+    'Do you have books on psychology?',
+    'What are your cowork space prices?',
   ];
 
   return (
