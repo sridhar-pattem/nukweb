@@ -10,7 +10,6 @@ import MembershipPlans from './components/MembershipPlans';
 import Collections from './components/Collections';
 import Dashboard from './components/Dashboard';
 import CoworkInvoices from './components/CoworkInvoices';
-import WebsiteAdminDashboard from './components/WebsiteAdmin/WebsiteAdminDashboard';
 
 // Context for authentication
 export const AuthContext = createContext();
@@ -236,10 +235,6 @@ function AdminTopNav() {
             </div>
           )}
         </div>
-
-        <Link to="/admin/website" className={`nav-link ${isActive('/admin/website') ? 'active' : ''}`}>
-          🌐 Website Admin
-        </Link>
       </div>
 
       <div className="nav-right">
@@ -311,7 +306,6 @@ function AdminDashboard() {
           <Route path="invoicing" element={<div>Invoicing - Coming Soon</div>} />
           <Route path="cowork-requests" element={<div>Cowork Booking Requests - Coming Soon</div>} />
           <Route path="cowork-invoices" element={<CoworkInvoices />} />
-          <Route path="website" element={<WebsiteAdminDashboard />} />
         </Routes>
       </main>
     </div>

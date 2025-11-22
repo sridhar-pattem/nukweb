@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const ModernHeader = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated, isAdmin, logout } = useAuth();
+  const { isAuthenticated, isAdmin, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {

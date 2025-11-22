@@ -19,6 +19,7 @@ const MediaManager = () => {
 
     useEffect(() => {
         fetchMedia();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filterType]);
 
     const fetchMedia = async () => {
