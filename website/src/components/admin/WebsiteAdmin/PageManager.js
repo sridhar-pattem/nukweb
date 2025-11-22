@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import SectionEditor from './SectionEditor';
 import CardEditor from './CardEditor';
-import ContentBlockEditor from './ContentBlockEditor';
 
 const PageManager = () => {
     const [pages, setPages] = useState([]);

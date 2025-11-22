@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FaMapMarkerAlt, FaPhone, FaEnvelope, FaClock, FaParking, FaBus } from 'react-icons/fa';
+import BannerImageManager from '../admin/BannerImageManager';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -30,12 +31,23 @@ const Contact = () => {
   return (
     <div className="contact-page">
       {/* Hero */}
-      <section className="hero" style={{ height: '350px' }}>
+      <section
+        className="hero"
+        style={{
+          height: '350px',
+          backgroundImage: 'url(/assets/images/Nuk-15.jpeg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          position: 'relative'
+        }}
+      >
         <div className="hero-overlay"></div>
         <div className="hero-content">
           <h1>Contact Us</h1>
           <p>We'd love to hear from you</p>
         </div>
+        <BannerImageManager pageName="contact" currentImage="Nuk-15.jpeg" />
       </section>
 
       {/* Contact Information */}
@@ -48,10 +60,10 @@ const Contact = () => {
               </div>
               <h4>Location</h4>
               <p>
-                Nuk Library<br />
-                [Address Line 1]<br />
-                Bangalore, Karnataka<br />
-                India - 560001
+                1st Floor, PGK Chambers<br />
+                Hosa Road, Kasavanahalli<br />
+                Bengaluru 560035<br />
+                Diagonally opp La Casa Restaurant
               </p>
             </div>
 
@@ -61,8 +73,8 @@ const Contact = () => {
               </div>
               <h4>Phone</h4>
               <p>
-                <a href="tel:+911234567890" style={{ color: 'var(--text-charcoal)' }}>
-                  +91 12345 67890
+                <a href="tel:+917259528336" style={{ color: 'var(--text-charcoal)' }}>
+                  +91 725 952 8336
                 </a>
               </p>
               <p className="text-muted">Mon-Fri: 9 AM - 9 PM<br />Sat-Sun: 10 AM - 9 PM</p>
@@ -74,13 +86,9 @@ const Contact = () => {
               </div>
               <h4>Email</h4>
               <p>
-                General Inquiries:<br />
-                <a href="mailto:info@mynuk.com">info@mynuk.com</a>
+                <a href="mailto:sridhar@mynuk.com">sridhar@mynuk.com</a>
               </p>
-              <p>
-                Membership:<br />
-                <a href="mailto:membership@mynuk.com">membership@mynuk.com</a>
-              </p>
+              <p className="text-muted">We'll respond within 24 hours</p>
             </div>
           </div>
         </div>
@@ -185,23 +193,34 @@ const Contact = () => {
             <div>
               <h2>Find Us</h2>
               <p className="text-muted" style={{ marginBottom: '1rem' }}>
-                We're located in the heart of Bangalore, easily accessible by public transport.
+                We're located on Hosa Road, 1 km from Sarjapur Road in South Bengaluru.
               </p>
 
-              {/* Google Maps Placeholder */}
-              <div
+              {/* Google Maps Embed */}
+              <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3889.059633998531!2d77.6734572750037!3d12.9038869874053!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bae13dca99ee72b%3A0x3f3200cbc7b53c0d!2sNuk%20Library%20Caf%C4%97%20and%20Cowork!5e0!3m2!1sen!2sin!4v1763819333991!5m2!1sen!2sin"
+                width="100%"
+                height="350"
                 style={{
-                  height: '350px',
-                  backgroundColor: 'var(--light-gray)',
+                  border: 0,
                   borderRadius: 'var(--radius-lg)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
                   marginBottom: '2rem',
                 }}
+                allowFullScreen=""
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Nuk Library Location"
+              ></iframe>
+
+              <a
+                href="https://maps.app.goo.gl/Sd8rqGCfzvc42Jyr9"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-secondary"
+                style={{ width: '100%', marginBottom: '2rem' }}
               >
-                <p style={{ color: 'var(--text-charcoal)' }}>Google Maps Integration</p>
-              </div>
+                Open in Google Maps
+              </a>
 
               <div className="card">
                 <h4><FaClock style={{ marginRight: '0.5rem', color: 'var(--accent-peru)' }} />Operating Hours</h4>
@@ -229,16 +248,17 @@ const Contact = () => {
               <div className="card" style={{ marginTop: '1rem' }}>
                 <h4><FaParking style={{ marginRight: '0.5rem', color: 'var(--accent-peru)' }} />Parking</h4>
                 <p>
-                  Street parking available on a first-come, first-served basis.
-                  Paid parking facilities nearby for extended visits.
+                  Ample street parking available in the lane opposite to the library and
+                  adjacent to La Casa Restaurant on a first-come, first-served basis.
                 </p>
               </div>
 
               <div className="card" style={{ marginTop: '1rem' }}>
-                <h4><FaBus style={{ marginRight: '0.5rem', color: 'var(--accent-peru)' }} />Public Transport</h4>
+                <h4><FaBus style={{ marginRight: '0.5rem', color: 'var(--accent-peru)' }} />Getting Here</h4>
                 <p>
-                  Nearest Metro Station: [Station Name] (10 min walk)<br />
-                  Bus Routes: 123, 456, 789
+                  <strong>From Sarjapur Road:</strong> 1 km on Hosa Road<br />
+                  <strong>Landmark:</strong> Diagonally opposite La Casa Restaurant<br />
+                  <strong>Near:</strong> Med Plus Pharmacy, Kasavanahalli
                 </p>
               </div>
             </div>
@@ -254,34 +274,34 @@ const Contact = () => {
             <div className="card">
               <h5>What are your membership fees?</h5>
               <p>
-                We offer three library membership plans starting from ₹500/month.
-                Cowork and study space have separate pricing. Visit our{' '}
-                <a href="/membership">Membership Plans</a> page for details.
+                Library membership plans start from Rs 1,000 for 3 months (1 book at a time).
+                Cowork and study space: Shared desk Rs 4,000/month, Dedicated desk Rs 7,000/month.
+                Visit our <a href="/membership">Membership Plans</a> page for complete details.
               </p>
             </div>
 
             <div className="card">
               <h5>Can I visit without being a member?</h5>
               <p>
-                Yes! You're welcome to visit us during operating hours. However, borrowing books
-                and accessing certain facilities requires a membership.
+                Yes! You're welcome to visit us during operating hours. We offer a FREE one-day trial
+                for cowork and study space. Borrowing books requires a library membership.
               </p>
             </div>
 
             <div className="card">
-              <h5>Do you offer trial memberships?</h5>
+              <h5>Do you offer trial for cowork/study space?</h5>
               <p>
-                Yes, we offer a 7-day trial membership for new members. Contact us to learn more
-                about our trial period and get started.
+                Yes! We offer a FREE one-day trial for both cowork and study space.
+                Experience our facilities including 300 Mbps WiFi, charging points, AC, and power backup.
+                Contact us to book your trial!
               </p>
             </div>
 
             <div className="card">
               <h5>Can I book a meeting room?</h5>
               <p>
-                Yes, we have meeting rooms available for booking. Rates are ₹200-400/hour
-                depending on room size. Contact us or visit the{' '}
-                <a href="/services/cowork">Cowork Space</a> page for details.
+                Yes, meeting rooms are available on prior booking for cowork and study space members.
+                Contact us at +91 725 952 8336 or email sridhar@mynuk.com to check availability and book.
               </p>
             </div>
           </div>

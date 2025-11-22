@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FaComment, FaTimes, FaPaperPlane, FaRobot } from 'react-icons/fa';
+import { FaTimes, FaPaperPlane, FaRobot } from 'react-icons/fa';
+import knowledgeBase from '../../config/chatbotKnowledge.json';
 
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     {
       id: 1,
-      text: 'Hello! Welcome to Nuk Library. How can I help you today?',
+      text: knowledgeBase.responses.greeting.response,
       sender: 'bot',
       timestamp: new Date(),
     },
@@ -34,18 +35,28 @@ const Chatbot = () => {
       timestamp: new Date(),
     };
 
+    const userQuery = inputMessage;
     setMessages([...messages, userMessage]);
     setInputMessage('');
     setIsTyping(true);
 
-    // Simulate bot response - will be replaced with API call
-    setTimeout(() => {
-      const botResponse = generateBotResponse(inputMessage);
+    // Get bot response
+    setTimeout(async () => {
+      const botResponse = await generateBotResponse(userQuery);
+
+      let finalResponse = botResponse;
+
+      // If it's a book search query, perform the search
+      if (botResponse === '__BOOK_SEARCH__') {
+        const searchTerms = extractSearchTerms(userQuery);
+        finalResponse = await searchBooks(searchTerms);
+      }
+
       setMessages((prev) => [
         ...prev,
         {
           id: prev.length + 1,
-          text: botResponse,
+          text: finalResponse,
           sender: 'bot',
           timestamp: new Date(),
         },
@@ -54,139 +65,201 @@ const Chatbot = () => {
     }, 1000);
   };
 
-  const generateBotResponse = (query) => {
-    const lowerQuery = query.toLowerCase();
+  const generateBotResponse = async (query) => {
+    // Check if query is about books/catalogue
+    const bookQuestionPatterns = [
+      /do you have.*book/i,
+      /show me.*book/i,
+      /books? (on|about|by)/i,
+      /search.*book/i,
+      /catalogue/i,
+      /catalog/i,
+      /find.*book/i,
+      /looking for.*book/i,
+      /any.*books/i,
+    ];
 
-    // Facility & Services
-    if (lowerQuery.includes('hour') || lowerQuery.includes('open') || lowerQuery.includes('time')) {
-      return 'We are open:\n• Monday - Friday: 9:00 AM - 9:00 PM\n• Saturday - Sunday: 10:00 AM - 9:00 PM\n• Library is closed on Mondays (facility remains open)\n• Closed on public holidays';
+    const isBookQuery = bookQuestionPatterns.some(pattern => pattern.test(query));
+
+    if (isBookQuery) {
+      // This is a book search query - return a placeholder that will be replaced with API results
+      return '__BOOK_SEARCH__';
     }
 
-    if (lowerQuery.includes('location') || lowerQuery.includes('address') || lowerQuery.includes('where')) {
-      return 'Nuk Library is located in Bangalore, Karnataka, India. We\'re easily accessible by public transport. Would you like directions?';
-    }
-
-    if (lowerQuery.includes('parking')) {
-      return 'Street parking is available on a first-come, first-served basis. We also have tie-ups with nearby paid parking facilities for long-term parking needs.';
-    }
-
-    if (lowerQuery.includes('wifi') || lowerQuery.includes('internet')) {
-      return 'Yes! We provide high-speed WiFi (100 Mbps) for all cowork and study space members.';
-    }
-
-    if (lowerQuery.includes('ac') || lowerQuery.includes('air condition')) {
-      return 'Yes, our entire facility is air-conditioned for your comfort.';
-    }
-
-    if (lowerQuery.includes('restroom') || lowerQuery.includes('washroom') || lowerQuery.includes('toilet')) {
-      return 'We have clean, well-maintained restrooms available for all members and visitors.';
-    }
-
-    if (lowerQuery.includes('power backup') || lowerQuery.includes('generator')) {
-      return 'Yes, we have power backup with a generator to ensure uninterrupted service.';
-    }
-
-    // Membership Plans
-    if (lowerQuery.includes('membership') || lowerQuery.includes('join') || lowerQuery.includes('plan')) {
-      return 'We offer three library membership plans:\n• Basic: ₹500/month - Borrow 2 books\n• Standard: ₹800/month - Borrow 4 books (Most Popular!)\n• Premium: ₹1,200/month - Borrow 6 books + extra perks\n\nWould you like to know more about any specific plan?';
-    }
-
-    // Cowork Space
-    if (lowerQuery.includes('cowork') || lowerQuery.includes('workspace')) {
-      return 'Our Cowork Space offers:\n• Day Pass: ₹300\n• Weekly: ₹1,800\n• Monthly: ₹6,000 (includes dedicated desk & locker)\n\nAll plans include high-speed WiFi, AC, power backup, and café access. Would you like to book a tour?';
-    }
-
-    // Study Space
-    if (lowerQuery.includes('study')) {
-      return 'Our Study Space pricing:\n• Half-Day (4 hours): ₹100\n• Full Day: ₹150\n• Monthly: ₹3,000 (includes reserved desk & locker)\n\nAll plans provide a completely silent environment perfect for focused learning.';
-    }
-
-    // Meeting Rooms
-    if (lowerQuery.includes('meeting room')) {
-      return 'We have two meeting rooms available:\n• Small Room (4-6 people): ₹200/hour\n• Large Room (10-12 people): ₹400/hour\n\nBoth include whiteboard, presentation equipment, and AC. Booking required 24 hours in advance.';
-    }
-
-    // Seating
-    if (lowerQuery.includes('seat') || lowerQuery.includes('capacity')) {
-      return 'We have:\n• 30+ cowork seats\n• 50+ study space seats\n• 2 meeting rooms\n\nAll seating is first-come, first-served for day passes. Monthly members get reserved desks.';
-    }
-
-    // Books & Catalogue
-    if (lowerQuery.includes('book') && !lowerQuery.includes('facebook')) {
-      if (lowerQuery.includes('how many') || lowerQuery.includes('collection')) {
-        return 'We have over 10,000 books in our collection covering all genres and age groups - from toddlers to adults!';
+    // Search through all response categories in the knowledge base
+    for (const value of Object.values(knowledgeBase.responses)) {
+      if (value.keywords && value.keywords.some(keyword => {
+        // Use word boundary matching to avoid substring matches (e.g., "hi" in "membership")
+        const regex = new RegExp('\\b' + keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+        return regex.test(query);
+      })) {
+        return value.response;
       }
-      return 'To search for specific books, please use our online catalogue or visit us. I can help with general questions about our collection!';
     }
 
-    // Activities
-    if (lowerQuery.includes('chess')) {
-      return 'Chess classes are held on Wednesdays & Saturdays, 5:00 PM - 6:30 PM for children (6-12) and teens (13-17). Monthly tournaments are organized!';
+    // Return fallback if no match found
+    return knowledgeBase.fallback;
+  };
+
+  const extractSearchTerms = (query) => {
+    // Remove quotes first to extract the exact title
+    let cleanedQuery = query.toLowerCase();
+
+    // Check if there's a quoted phrase - if so, use that as the search term
+    const quotedMatch = query.match(/["']([^"']+)["']/);
+    if (quotedMatch) {
+      return quotedMatch[1].trim();
     }
 
-    if (lowerQuery.includes('art')) {
-      return 'Our Art Club meets on Saturdays & Sundays, 4:00 PM - 6:00 PM. Learn watercolors, acrylics, sketching, and more with our in-house artists!';
-    }
+    // Remove common words and filler phrases
+    cleanedQuery = cleanedQuery
+      .replace(/\b(do|you|have|any|show|me|all|the|a|an|books?|by|on|about|find|looking|for|called|titled|named|of|in|with|is|are|there|that|this|it|and|or)\b/gi, '')
+      .replace(/[?.,!]/g, '')
+      .trim();
 
-    if (lowerQuery.includes('toastmaster') || lowerQuery.includes('speaking')) {
-      return 'We host two Toastmasters clubs (for children and adults) every Friday, 6:00 PM - 8:00 PM. Great for developing public speaking skills!';
-    }
+    return cleanedQuery;
+  };
 
-    if (lowerQuery.includes('rubik')) {
-      return 'Rubik\'s Cube training is held on Thursdays, 5:00 PM - 6:00 PM. Learn solving techniques and improve your speed!';
-    }
+  const searchBooks = async (searchTerm) => {
+    try {
+      const response = await fetch(`http://localhost:5001/api/patron/books/search?search=${encodeURIComponent(searchTerm)}&page=1&limit=10`);
 
-    // Greetings
-    if (lowerQuery.includes('hello') || lowerQuery.includes('hi') || lowerQuery.includes('hey')) {
-      return 'Hello! How can I help you today? You can ask me about:\n• Our services and facilities\n• Membership plans\n• Operating hours\n• Location and parking\n• Events and activities\n• Book availability';
-    }
+      const data = await response.json();
 
-    if (lowerQuery.includes('thank')) {
-      return 'You\'re welcome! Feel free to ask if you have any other questions. Happy reading! 📚';
-    }
+      if (response.ok && data.books && data.books.length > 0) {
+        // Format the book results
+        const bookList = data.books.slice(0, 5).map((book, index) => {
+          const authors = book.contributors
+            ? book.contributors.filter(c => c.role === 'author').map(c => c.name).join(', ')
+            : 'Unknown Author';
+          const available = book.available_items > 0 ? '✅ Available' : '❌ Not Available';
+          return `${index + 1}. "${book.title}" by ${authors}\n   ${available} (${book.available_items}/${book.total_items} copies)`;
+        }).join('\n\n');
 
-    // Default response
-    return 'I can help you with:\n• Facility information (hours, location, parking, amenities)\n• Membership plans (library, cowork, study space)\n• Services details\n• Activities and events\n• General questions\n\nWhat would you like to know?';
+        const totalCount = data.total || data.books.length;
+        const showingMessage = totalCount > 5 ? `\n\nShowing 5 of ${totalCount} results.` : '';
+
+        return `📚 BOOKS FOUND:\n\n${bookList}${showingMessage}\n\nVisit our catalogue to see more details or reserve a book!`;
+      } else {
+        return `📚 I couldn't find any books matching "${searchTerm}".\n\nTry:\n• Different keywords\n• Author names\n• Book titles\n\nOr visit our catalogue to browse all ${data.total || 10000}+ books!`;
+      }
+    } catch (error) {
+      console.error('Book search error:', error);
+      return '📚 Sorry, I\'m having trouble searching our catalogue right now. Please try again or visit our physical library to browse our collection!';
+    }
   };
 
   const quickQuestions = [
     'What are your operating hours?',
     'How much is a library membership?',
-    'Do you have WiFi?',
-    'What activities do you offer?',
+    'Do you have books on psychology?',
+    'What are your cowork space prices?',
   ];
 
   return (
     <>
       {/* Chat Button */}
       {!isOpen && (
-        <button
-          onClick={() => setIsOpen(true)}
+        <div
           style={{
             position: 'fixed',
             bottom: '2rem',
             right: '2rem',
-            width: '60px',
-            height: '60px',
-            borderRadius: '50%',
-            backgroundColor: 'var(--accent-peru)',
-            color: 'white',
-            border: 'none',
-            boxShadow: 'var(--shadow-lg)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '1.5rem',
             zIndex: 1000,
-            transition: 'transform var(--transition-fast)',
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.1)')}
-          onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-          aria-label="Open chatbot"
         >
-          <FaComment />
-        </button>
+          {/* Pulsing ring animation */}
+          <div
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: '80px',
+              height: '80px',
+              borderRadius: '50%',
+              backgroundColor: '#FFD24E',
+              opacity: 0.3,
+              animation: 'pulse 2s ease-in-out infinite',
+            }}
+          />
+
+          {/* Helper text bubble */}
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '75px',
+              right: '0',
+              backgroundColor: 'white',
+              padding: '0.75rem 1rem',
+              borderRadius: '12px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              whiteSpace: 'nowrap',
+              fontSize: '0.9rem',
+              fontWeight: '600',
+              color: '#1E1E1E',
+              animation: 'fadeInUp 0.5s ease-out',
+            }}
+          >
+            👋 Need help? Ask me anything!
+          </div>
+
+          <button
+            onClick={() => setIsOpen(true)}
+            style={{
+              position: 'relative',
+              width: '70px',
+              height: '70px',
+              borderRadius: '50%',
+              backgroundColor: '#FFD24E',
+              color: '#003d7a',
+              border: 'none',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '2rem',
+              transition: 'all 0.3s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.1)';
+              e.currentTarget.style.boxShadow = '0 12px 32px rgba(0,0,0,0.3)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.2)';
+            }}
+            aria-label="Open chatbot"
+          >
+            <FaRobot />
+          </button>
+
+          {/* Add CSS animations */}
+          <style>{`
+            @keyframes pulse {
+              0%, 100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0.3;
+              }
+              50% {
+                transform: translate(-50%, -50%) scale(1.2);
+                opacity: 0.1;
+              }
+            }
+
+            @keyframes fadeInUp {
+              from {
+                opacity: 0;
+                transform: translateY(10px);
+              }
+              to {
+                opacity: 1;
+                transform: translateY(0);
+              }
+            }
+          `}</style>
+        </div>
       )}
 
       {/* Chat Window */}
@@ -213,7 +286,7 @@ const Chatbot = () => {
           <div
             style={{
               padding: '1rem',
-              backgroundColor: 'var(--secondary-brown)',
+              backgroundColor: '#003d7a',
               color: 'white',
               display: 'flex',
               alignItems: 'center',
@@ -249,7 +322,7 @@ const Chatbot = () => {
               flex: 1,
               overflowY: 'auto',
               padding: '1rem',
-              backgroundColor: 'var(--light-beige)',
+              backgroundColor: '#F5F5DC',
             }}
           >
             {messages.map((message) => (
@@ -265,10 +338,10 @@ const Chatbot = () => {
                   style={{
                     maxWidth: '75%',
                     padding: '0.75rem 1rem',
-                    borderRadius: 'var(--radius-lg)',
-                    backgroundColor: message.sender === 'user' ? 'var(--accent-peru)' : 'white',
-                    color: message.sender === 'user' ? 'white' : 'var(--text-charcoal)',
-                    boxShadow: 'var(--shadow-sm)',
+                    borderRadius: '12px',
+                    backgroundColor: message.sender === 'user' ? '#003d7a' : 'white',
+                    color: message.sender === 'user' ? 'white' : '#1E1E1E',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
                     whiteSpace: 'pre-line',
                     lineHeight: '1.5',
                   }}
@@ -316,7 +389,7 @@ const Chatbot = () => {
           {/* Quick Questions */}
           {messages.length === 1 && (
             <div style={{ padding: '0.5rem 1rem', backgroundColor: 'white', borderTop: '1px solid var(--light-gray)' }}>
-              <p style={{ fontSize: '0.875rem', margin: '0 0 0.5rem', color: '#6c757d' }}>Quick questions:</p>
+              <p style={{ fontSize: '0.875rem', margin: '0 0 0.5rem', color: '#1E1E1E' }}>Quick questions:</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                 {quickQuestions.map((question, index) => (
                   <button
@@ -325,14 +398,21 @@ const Chatbot = () => {
                     style={{
                       padding: '0.5rem 0.75rem',
                       fontSize: '0.75rem',
-                      backgroundColor: 'var(--light-beige)',
-                      border: '1px solid var(--light-gray)',
-                      borderRadius: 'var(--radius-md)',
+                      backgroundColor: '#F5F5DC',
+                      color: '#1E1E1E',
+                      border: '1px solid #EAE7E0',
+                      borderRadius: '8px',
                       cursor: 'pointer',
-                      transition: 'background-color var(--transition-fast)',
+                      transition: 'all 0.2s ease',
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--accent-peru)', e.currentTarget.style.color = 'white')}
-                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--light-beige)', e.currentTarget.style.color = 'var(--text-charcoal)')}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#003d7a';
+                      e.currentTarget.style.color = 'white';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '#F5F5DC';
+                      e.currentTarget.style.color = '#1E1E1E';
+                    }}
                   >
                     {question}
                   </button>
@@ -360,10 +440,11 @@ const Chatbot = () => {
               style={{
                 flex: 1,
                 padding: '0.75rem',
-                border: '1px solid var(--light-gray)',
-                borderRadius: 'var(--radius-md)',
+                border: '1px solid #EAE7E0',
+                borderRadius: '8px',
                 outline: 'none',
                 fontSize: '0.95rem',
+                color: '#1E1E1E',
               }}
             />
             <button
@@ -371,10 +452,10 @@ const Chatbot = () => {
               disabled={!inputMessage.trim()}
               style={{
                 padding: '0.75rem 1rem',
-                backgroundColor: 'var(--accent-peru)',
+                backgroundColor: '#003d7a',
                 color: 'white',
                 border: 'none',
-                borderRadius: 'var(--radius-md)',
+                borderRadius: '8px',
                 cursor: inputMessage.trim() ? 'pointer' : 'not-allowed',
                 opacity: inputMessage.trim() ? 1 : 0.5,
                 display: 'flex',
