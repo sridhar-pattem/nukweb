@@ -201,7 +201,8 @@ img {
 }
 
 .btn-outline:hover {
-  background: rgba(41, 91, 71, 0.05);
+  background: rgba(20, 104, 97, 0.15);
+  color: var(--teal);
 }
 
 .btn-ghost {
