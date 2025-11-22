@@ -84,33 +84,106 @@ const Chatbot = () => {
     <>
       {/* Chat Button */}
       {!isOpen && (
-        <button
-          onClick={() => setIsOpen(true)}
+        <div
           style={{
             position: 'fixed',
             bottom: '2rem',
             right: '2rem',
-            width: '60px',
-            height: '60px',
-            borderRadius: '50%',
-            backgroundColor: 'var(--accent-peru)',
-            color: 'white',
-            border: 'none',
-            boxShadow: 'var(--shadow-lg)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '1.5rem',
             zIndex: 1000,
-            transition: 'transform var(--transition-fast)',
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.1)')}
-          onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-          aria-label="Open chatbot"
         >
-          <FaComment />
-        </button>
+          {/* Pulsing ring animation */}
+          <div
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: '80px',
+              height: '80px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--accent-peru)',
+              opacity: 0.3,
+              animation: 'pulse 2s ease-in-out infinite',
+            }}
+          />
+
+          {/* Helper text bubble */}
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '75px',
+              right: '0',
+              backgroundColor: 'white',
+              padding: '0.75rem 1rem',
+              borderRadius: '12px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              whiteSpace: 'nowrap',
+              fontSize: '0.9rem',
+              fontWeight: '600',
+              color: 'var(--text-charcoal)',
+              animation: 'fadeInUp 0.5s ease-out',
+            }}
+          >
+            👋 Need help? Ask me anything!
+          </div>
+
+          <button
+            onClick={() => setIsOpen(true)}
+            style={{
+              position: 'relative',
+              width: '70px',
+              height: '70px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--accent-peru)',
+              color: 'white',
+              border: 'none',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '2rem',
+              transition: 'all 0.3s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.1)';
+              e.currentTarget.style.boxShadow = '0 12px 32px rgba(0,0,0,0.3)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.2)';
+            }}
+            aria-label="Open chatbot"
+          >
+            <FaRobot />
+          </button>
+
+          {/* Add CSS animations */}
+          <style>{`
+            @keyframes pulse {
+              0%, 100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0.3;
+              }
+              50% {
+                transform: translate(-50%, -50%) scale(1.2);
+                opacity: 0.1;
+              }
+            }
+
+            @keyframes fadeInUp {
+              from {
+                opacity: 0;
+                transform: translateY(10px);
+              }
+              to {
+                opacity: 1;
+                transform: translateY(0);
+              }
+            }
+          `}</style>
+        </div>
       )}
 
       {/* Chat Window */}

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FaMapMarkerAlt, FaPhone, FaEnvelope, FaClock, FaParking, FaBus } from 'react-icons/fa';
+import BannerImageManager from '../admin/BannerImageManager';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -46,6 +47,7 @@ const Contact = () => {
           <h1>Contact Us</h1>
           <p>We'd love to hear from you</p>
         </div>
+        <BannerImageManager pageName="contact" currentImage="Nuk-15.jpeg" />
       </section>
 
       {/* Contact Information */}

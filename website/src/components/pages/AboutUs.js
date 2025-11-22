@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { FaBook, FaUsers, FaAward, FaHeart } from 'react-icons/fa';
+import BannerImageManager from '../admin/BannerImageManager';
 
 const AboutUs = () => {
   return (
@@ -22,6 +23,7 @@ const AboutUs = () => {
           <h1>About Nuk Library</h1>
           <p>14 years of fostering a love for reading and learning in Bangalore</p>
         </div>
+        <BannerImageManager pageName="about" currentImage="Nuk-10.jpeg" />
       </section>
 
       {/* Our Story */}

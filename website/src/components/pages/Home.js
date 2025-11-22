@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { FaBook, FaLaptop, FaGraduationCap, FaCoffee, FaChess, FaPalette, FaMicrophone, FaStar } from 'react-icons/fa';
 import BookCard from '../shared/BookCard';
 import EventCard from '../shared/EventCard';
+import BannerImageManager from '../admin/BannerImageManager';
 
 const Home = () => {
   const [newArrivals, setNewArrivals] = useState([]);
@@ -103,6 +104,7 @@ const Home = () => {
             </Link>
           </div>
         </div>
+        <BannerImageManager pageName="home" currentImage="Home_Banner.jpeg" />
       </section>
 
       {/* Stats Section */}

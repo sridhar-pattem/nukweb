@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FaBook, FaUser, FaCalendar, FaComment } from 'react-icons/fa';
+import BannerImageManager from '../admin/BannerImageManager';
 
 const Blog = () => {
   const [posts, setPosts] = useState([]);
@@ -74,6 +75,7 @@ const Blog = () => {
           <h1><FaBook style={{ marginRight: '1rem' }} />Member Blog</h1>
           <p>Stories, reviews, and insights from our reading community</p>
         </div>
+        <BannerImageManager pageName="blog" currentImage="Nuk-20.jpeg" />
       </section>
 
       {/* Blog Posts */}
