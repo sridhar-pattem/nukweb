@@ -15,52 +15,6 @@ const Footer = () => {
     <footer className="footer">
       <div className="footer-content">
         <div className="footer-section">
-          <h4>About Nuk Library</h4>
-          <p>
-            A 14-year-old community hub in Bangalore offering library, cowork space,
-            study space, and cultural activities. Serving all ages from toddlers to adults.
-          </p>
-          <div className="social-links">
-            <a
-              href="https://www.facebook.com/nuklibrary"
-              className="social-link"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Facebook"
-            >
-              <FaFacebook />
-            </a>
-            <a
-              href="https://www.instagram.com/nuklibrary"
-              className="social-link"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Instagram"
-            >
-              <FaInstagram />
-            </a>
-            <a
-              href="https://twitter.com/nuklibrary"
-              className="social-link"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Twitter"
-            >
-              <FaTwitter />
-            </a>
-            <a
-              href="https://www.youtube.com/nuklibrary"
-              className="social-link"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="YouTube"
-            >
-              <FaYoutube />
-            </a>
-          </div>
-        </div>
-
-        <div className="footer-section">
           <h4>Quick Links</h4>
           <ul className="footer-links">
             <li><Link to="/about">About Us</Link></li>
@@ -106,6 +60,44 @@ const Footer = () => {
             Sat-Sun: 10 AM - 9 PM<br />
             <em>(Library closed on Mondays)</em>
           </p>
+          <div className="social-links" style={{ marginTop: '1rem' }}>
+            <a
+              href="https://www.facebook.com/nuklibrary"
+              className="social-link"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Facebook"
+            >
+              <FaFacebook />
+            </a>
+            <a
+              href="https://www.instagram.com/nuklibrary"
+              className="social-link"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram"
+            >
+              <FaInstagram />
+            </a>
+            <a
+              href="https://twitter.com/nuklibrary"
+              className="social-link"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Twitter"
+            >
+              <FaTwitter />
+            </a>
+            <a
+              href="https://www.youtube.com/nuklibrary"
+              className="social-link"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="YouTube"
+            >
+              <FaYoutube />
+            </a>
+          </div>
         </div>
       </div>
 
