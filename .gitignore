@@ -63,3 +63,4 @@ frontend/static/
 
 # Images
 website/public/assets/images/
+database/data_export/
