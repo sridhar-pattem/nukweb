@@ -63,16 +63,28 @@ def search_books_public():
     params = []
 
     if search:
-        where_clauses.append("""
-            (b.title ILIKE %s OR b.subtitle ILIKE %s OR
-             EXISTS (
-                 SELECT 1 FROM book_contributors bc
-                 JOIN contributors c ON bc.contributor_id = c.contributor_id
-                 WHERE bc.book_id = b.book_id AND c.name ILIKE %s
-             ))
-        """)
-        search_param = f'%{search}%'
-        params.extend([search_param, search_param, search_param])
+        # Split search into individual words for more flexible matching
+        # Each word must appear somewhere in title, subtitle, or author
+        search_words = [word.strip() for word in search.split() if word.strip()]
+
+        if search_words:
+            # For each word, require it appears in title, subtitle, or author
+            word_conditions = []
+            for word in search_words:
+                word_param = f'%{word}%'
+                word_conditions.append("""
+                    (b.title ILIKE %s OR b.subtitle ILIKE %s OR
+                     EXISTS (
+                         SELECT 1 FROM book_contributors bc
+                         JOIN contributors c ON bc.contributor_id = c.contributor_id
+                         WHERE bc.book_id = b.book_id AND c.name ILIKE %s
+                     ))
+                """)
+                params.extend([word_param, word_param, word_param])
+
+            # All words must match (AND logic)
+            if word_conditions:
+                where_clauses.append("(" + " AND ".join(word_conditions) + ")")
 
     where_sql = "WHERE " + " AND ".join(where_clauses)
 
