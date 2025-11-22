@@ -60,7 +60,11 @@ const Chatbot = () => {
 
     // Search through all response categories in the knowledge base
     for (const [key, value] of Object.entries(knowledgeBase.responses)) {
-      if (value.keywords && value.keywords.some(keyword => lowerQuery.includes(keyword))) {
+      if (value.keywords && value.keywords.some(keyword => {
+        // Use word boundary matching to avoid substring matches (e.g., "hi" in "membership")
+        const regex = new RegExp('\\b' + keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+        return regex.test(query);
+      })) {
         return value.response;
       }
     }
