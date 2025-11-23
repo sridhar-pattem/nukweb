@@ -12,6 +12,56 @@ from datetime import datetime, date
 
 admin_import_bp = Blueprint('admin_import', __name__)
 
+def sanitize_publication_year(year_str):
+    """
+    Sanitize publication year to ensure it's a valid integer or None.
+    Handles cases like '200?', '1990s', '2000-2005', etc.
+    """
+    if not year_str:
+        return None
+
+    # Convert to string if it's not already
+    year_str = str(year_str).strip()
+
+    # If it's already a valid integer string, return it as int
+    if year_str.isdigit() and len(year_str) == 4:
+        year = int(year_str)
+        # Validate year is reasonable (between 1000 and current year + 5)
+        current_year = datetime.now().year
+        if 1000 <= year <= current_year + 5:
+            return year
+
+    # Handle question mark (e.g., "200?" -> 2000)
+    if '?' in year_str:
+        # Replace ? with 0 and try to parse
+        cleaned = year_str.replace('?', '0')
+        if cleaned.isdigit() and len(cleaned) == 4:
+            return int(cleaned)
+
+    # Handle decade notation (e.g., "1990s" -> 1990)
+    if year_str.endswith('s') and year_str[:-1].isdigit():
+        return int(year_str[:-1])
+
+    # Handle ranges (e.g., "2000-2005" -> 2000)
+    if '-' in year_str:
+        parts = year_str.split('-')
+        if parts[0].isdigit() and len(parts[0]) == 4:
+            return int(parts[0])
+
+    # Handle circa notation (e.g., "c. 2000" -> 2000)
+    if year_str.lower().startswith('c.') or year_str.lower().startswith('ca.'):
+        cleaned = re.sub(r'^c\.?\s*|^ca\.?\s*', '', year_str, flags=re.IGNORECASE).strip()
+        if cleaned.isdigit() and len(cleaned) == 4:
+            return int(cleaned)
+
+    # Extract first 4-digit number from the string
+    match = re.search(r'\b(1\d{3}|20\d{2})\b', year_str)
+    if match:
+        return int(match.group(1))
+
+    # If nothing works, return None
+    return None
+
 @admin_import_bp.route('/import/books/preview', methods=['POST'])
 @jwt_required()
 @admin_required
@@ -280,12 +330,16 @@ def execute_book_import():
                     continue
 
                 # Use provided book info (which may be from CSV, Google Books, or Open Library)
+                # Sanitize publication year to handle invalid formats like "200?"
+                raw_year = book_data.get('year')
+                sanitized_year = sanitize_publication_year(raw_year)
+
                 book_info = {
                     'isbn': isbn,
                     'title': book_data.get('title'),
                     'author': book_data.get('author'),
                     'publisher': book_data.get('publisher'),
-                    'publication_year': book_data.get('year'),
+                    'publication_year': sanitized_year,
                     'description': book_data.get('description', ''),
                     'cover_image_url': book_data.get('cover_url', ''),
                     'language': book_data.get('language', 'eng')
@@ -388,8 +442,13 @@ def execute_book_import():
                     'reason': str(e)
                 })
 
-        # Refresh materialized view
-        cursor.execute("REFRESH MATERIALIZED VIEW mv_book_availability")
+    # Refresh materialized view in a separate transaction to avoid being blocked by failed imports
+    try:
+        with get_db_cursor() as cursor:
+            cursor.execute("REFRESH MATERIALIZED VIEW mv_book_availability")
+    except Exception as e:
+        print(f"Warning: Failed to refresh materialized view: {str(e)}")
+        # Don't fail the entire import if materialized view refresh fails
 
     total_count = len(books_data) if books_data else len(isbns)
 
