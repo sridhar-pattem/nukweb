@@ -30,7 +30,8 @@ CREATE TABLE users (
     role VARCHAR(50) NOT NULL CHECK (role IN ('admin', 'patron')),
     status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'suspended')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    phone VARCHAR(20)
 );
 
 -- Membership Plans
