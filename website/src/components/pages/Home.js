@@ -9,11 +9,13 @@ const Home = () => {
   const [newArrivals, setNewArrivals] = useState([]);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
 
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+
   useEffect(() => {
     // Fetch new arrivals from API
     const fetchNewArrivals = async () => {
       try {
-        const response = await fetch('http://localhost:5001/api/patron/books/new-arrivals?limit=4');
+        const response = await fetch(`${API_URL}/patron/books/new-arrivals?limit=4`);
         const data = await response.json();
 
         // Transform data to match BookCard component expectations

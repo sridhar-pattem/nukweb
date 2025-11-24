@@ -16,6 +16,8 @@ const Chatbot = () => {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
 
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -122,7 +124,7 @@ const Chatbot = () => {
 
   const searchBooks = async (searchTerm) => {
     try {
-      const response = await fetch(`http://localhost:5001/api/patron/books/search?search=${encodeURIComponent(searchTerm)}&page=1&limit=10`);
+      const response = await fetch(`${API_URL}/patron/books/search?search=${encodeURIComponent(searchTerm)}&page=1&limit=10`);
 
       const data = await response.json();
 
