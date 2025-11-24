@@ -1,6 +1,6 @@
 {
   "name": "nuk-library-website",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Nuk Library Public Website - mynuk.com",
   "private": true,
   "dependencies": {
