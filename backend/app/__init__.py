@@ -56,4 +56,10 @@ def create_app():
     def health_check():
         return {"status": "healthy"}, 200
     
+    # Temporary: Print all routes for debugging
+    print("=== REGISTERED ROUTES ===")
+    for rule in app.url_map.iter_rules():
+        print(f"{rule.methods} {rule.rule}")
+    print("========================")
+
     return app
