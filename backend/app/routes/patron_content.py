@@ -33,6 +33,72 @@ def create_notification(user_id, notification_type, title, message, link_url=Non
         """, (user_id, notification_type, title, message, link_url))
 
 # =====================================================
+# DASHBOARD STATS
+# =====================================================
+
+@patron_content_bp.route('/dashboard/stats', methods=['GET'])
+@jwt_required()
+def get_dashboard_stats():
+    """Get dashboard statistics for the current patron"""
+    current_user_id = get_jwt_identity()
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+
+        try:
+            # Get patron_id from user_id
+            cursor.execute("""
+                SELECT patron_id FROM patrons WHERE user_id = %s
+            """, (current_user_id,))
+
+            patron = cursor.fetchone()
+            if not patron:
+                # User is not a patron, return zero stats
+                return jsonify({
+                    'total_blog_posts': 0,
+                    'total_suggestions': 0,
+                    'total_testimonials': 0,
+                    'unread_notifications': 0
+                }), 200
+
+            patron_id = patron[0]
+
+            # Get total blog posts by this user
+            cursor.execute("""
+                SELECT COUNT(*) FROM blog_posts WHERE author_id = %s
+            """, (current_user_id,))
+            total_blog_posts = cursor.fetchone()[0]
+
+            # Get total book suggestions by this patron
+            cursor.execute("""
+                SELECT COUNT(*) FROM book_suggestions WHERE patron_id = %s
+            """, (patron_id,))
+            total_suggestions = cursor.fetchone()[0]
+
+            # Get total testimonials by this user
+            cursor.execute("""
+                SELECT COUNT(*) FROM testimonials WHERE user_id = %s
+            """, (current_user_id,))
+            total_testimonials = cursor.fetchone()[0]
+
+            # Get unread notifications count
+            cursor.execute("""
+                SELECT COUNT(*) FROM notifications
+                WHERE user_id = %s AND is_read = FALSE
+            """, (current_user_id,))
+            unread_notifications = cursor.fetchone()[0]
+
+            return jsonify({
+                'total_blog_posts': total_blog_posts,
+                'total_suggestions': total_suggestions,
+                'total_testimonials': total_testimonials,
+                'unread_notifications': unread_notifications
+            }), 200
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+# =====================================================
 # BLOG POSTS
 # =====================================================
 
@@ -472,6 +538,51 @@ def create_suggestion():
 # =====================================================
 # TESTIMONIALS
 # =====================================================
+
+@patron_content_bp.route('/testimonials', methods=['GET'])
+@jwt_required()
+def get_my_testimonials():
+    """Get current user's testimonials"""
+    current_user_id = get_jwt_identity()
+    limit = request.args.get('limit', type=int, default=20)
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("""
+                SELECT
+                    testimonial_id, testimonial_text, rating,
+                    display_name, user_role, status,
+                    created_at, updated_at
+                FROM testimonials
+                WHERE user_id = %s
+                ORDER BY created_at DESC
+                LIMIT %s
+            """, (current_user_id, limit))
+
+            testimonials = cursor.fetchall()
+
+            testimonials_list = []
+            for test in testimonials:
+                testimonials_list.append({
+                    'testimonial_id': test[0],
+                    'testimonial_text': test[1],
+                    'rating': test[2],
+                    'display_name': test[3],
+                    'user_role': test[4],
+                    'status': test[5],
+                    'created_at': test[6].isoformat() if test[6] else None,
+                    'updated_at': test[7].isoformat() if test[7] else None
+                })
+
+            return jsonify({
+                'testimonials': testimonials_list,
+                'total': len(testimonials_list)
+            }), 200
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
 
 @patron_content_bp.route('/testimonials', methods=['POST'])
 @jwt_required()
