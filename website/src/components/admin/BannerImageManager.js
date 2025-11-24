@@ -8,6 +8,8 @@ const BannerImageManager = ({ pageName, currentImage, onImageUpdate }) => {
   const [message, setMessage] = useState('');
   const fileInputRef = useRef(null);
 
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+
   if (!isAdmin()) return null;
 
   const handleFileSelect = async (e) => {
@@ -36,7 +38,7 @@ const BannerImageManager = ({ pageName, currentImage, onImageUpdate }) => {
       formData.append('image', file);
       formData.append('pageName', pageName);
 
-      const response = await fetch('http://localhost:5001/api/admin/website/upload-banner', {
+      const response = await fetch(`${API_URL}/admin/website/upload-banner`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,

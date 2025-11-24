@@ -10,6 +10,8 @@ const Catalogue = () => {
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+
   const handleSearch = async (e) => {
     e.preventDefault();
 
@@ -22,7 +24,7 @@ const Catalogue = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:5001/api/patron/books/search?search=${encodeURIComponent(searchTerm)}&page=1&limit=6`
+        `${API_URL}/patron/books/search?search=${encodeURIComponent(searchTerm)}&page=1&limit=6`
       );
       const data = await response.json();
 
