@@ -1,7 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.utils.database import execute_query, get_db_cursor
-from app.utils.recommendations import get_recommendations_for_patron
 from app.config import Config
 
 patron_bp = Blueprint('patron', __name__)
@@ -345,9 +344,51 @@ def get_recommendations():
     if not patron:
         return jsonify({"error": "Patron not found"}), 404
 
-    recommendations = get_recommendations_for_patron(patron['patron_id'], limit=10)
+    try:
+        # Simple recommendation algorithm based on:
+        # 1. Books not already borrowed/read
+        # 2. Highly rated books
+        # 3. Recently added books
 
-    return jsonify([dict(r) for r in recommendations]), 200
+        query = """
+            SELECT DISTINCT b.book_id, b.isbn, b.title, b.subtitle,
+                   b.publisher, b.publication_year,
+                   b.collection_id, c.collection_name,
+                   b.age_rating, b.cover_image_url,
+                   ba.available_items, ba.total_items,
+                   COALESCE((SELECT json_agg(
+                       json_build_object('name', contrib.name, 'role', bc.role)
+                       ORDER BY bc.role, bc.sequence_number
+                   )
+                    FROM book_contributors bc
+                    JOIN contributors contrib ON bc.contributor_id = contrib.contributor_id
+                    WHERE bc.book_id = b.book_id
+                   ), '[]'::json) as contributors,
+                   (SELECT AVG(rating) FROM reviews WHERE book_id = b.book_id) as avg_rating,
+                   (SELECT COUNT(*) FROM reviews WHERE book_id = b.book_id) as review_count
+            FROM books b
+            LEFT JOIN collections c ON b.collection_id = c.collection_id
+            LEFT JOIN mv_book_availability ba ON b.book_id = ba.book_id
+            WHERE b.is_active = TRUE
+              AND ba.available_items > 0
+              AND b.book_id NOT IN (
+                  -- Exclude books already borrowed by this patron
+                  SELECT DISTINCT i.book_id
+                  FROM borrowings br
+                  JOIN items i ON br.item_id = i.item_id
+                  WHERE br.patron_id = %s
+              )
+            ORDER BY avg_rating DESC NULLS LAST, b.created_at DESC
+            LIMIT 10
+        """
+
+        recommendations = execute_query(query, (patron['patron_id'],), fetch_all=True)
+
+        return jsonify([dict(r) for r in (recommendations or [])]), 200
+    except Exception as e:
+        # Log error and return empty list as fallback
+        print(f"Error getting recommendations: {str(e)}")
+        return jsonify([]), 200
 
 @patron_bp.route('/cowork-booking', methods=['POST'])
 @jwt_required()
