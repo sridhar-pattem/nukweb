@@ -31,6 +31,8 @@ def create_app():
     from app.routes.event_management import event_bp
     # Website Admin
     from app.routes.admin_website import admin_website_bp
+    # AI Chatbot
+    from app.routes.chatbot import chatbot_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(admin_patrons_bp, url_prefix='/api/admin')
@@ -50,7 +52,9 @@ def create_app():
     app.register_blueprint(event_bp, url_prefix='/api/events')
     # Website Admin
     app.register_blueprint(admin_website_bp, url_prefix='/api/admin/website')
-    
+    # AI Chatbot
+    app.register_blueprint(chatbot_bp, url_prefix='/api/chatbot')
+
     # Health check endpoint
     @app.route('/health')
     def health_check():

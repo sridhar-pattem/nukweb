@@ -68,39 +68,55 @@ const Chatbot = () => {
   };
 
   const generateBotResponse = async (query) => {
-    // Check if query is about books/catalogue
-    const bookQuestionPatterns = [
-      /do you have.*book/i,
-      /show me.*book/i,
-      /books? (on|about|by)/i,
-      /search.*book/i,
-      /catalogue/i,
-      /catalog/i,
-      /find.*book/i,
-      /looking for.*book/i,
-      /any.*books/i,
-    ];
+    try {
+      // Build conversation history for context (last 6 messages = 3 turns)
+      const conversationHistory = messages.slice(-6).map(msg => ({
+        role: msg.sender === 'user' ? 'user' : 'assistant',
+        content: msg.text
+      }));
 
-    const isBookQuery = bookQuestionPatterns.some(pattern => pattern.test(query));
+      // Call the new AI chatbot API
+      const response = await fetch(`${API_URL}/chatbot/conversation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: query,
+          conversation_history: conversationHistory
+        })
+      });
 
-    if (isBookQuery) {
-      // This is a book search query - return a placeholder that will be replaced with API results
-      return '__BOOK_SEARCH__';
-    }
+      const data = await response.json();
 
-    // Search through all response categories in the knowledge base
-    for (const value of Object.values(knowledgeBase.responses)) {
-      if (value.keywords && value.keywords.some(keyword => {
-        // Use word boundary matching to avoid substring matches (e.g., "hi" in "membership")
-        const regex = new RegExp('\\b' + keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
-        return regex.test(query);
-      })) {
-        return value.response;
+      // Check if it's a book search query
+      if (data.is_book_search) {
+        return '__BOOK_SEARCH__';
       }
-    }
 
-    // Return fallback if no match found
-    return knowledgeBase.fallback;
+      // Return AI-generated response
+      if (data.response) {
+        return data.response;
+      }
+
+      // Fallback to knowledge base if AI fails
+      return knowledgeBase.fallback;
+
+    } catch (error) {
+      console.error('AI chatbot error:', error);
+
+      // Fallback to rule-based response on error
+      for (const value of Object.values(knowledgeBase.responses)) {
+        if (value.keywords && value.keywords.some(keyword => {
+          const regex = new RegExp('\\b' + keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+          return regex.test(query);
+        })) {
+          return value.response;
+        }
+      }
+
+      return knowledgeBase.fallback;
+    }
   };
 
   const extractSearchTerms = (query) => {
