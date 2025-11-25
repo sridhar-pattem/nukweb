@@ -42,7 +42,9 @@
         "fullDayMonthly": "Rs 4000 per month",
         "daily": "Rs 500 per day",
         "halfDayMonthly": "Rs 2500 per month",
-        "halfDayDaily": "Rs 300 per day"
+        "halfDayDaily": "Rs 300 per day",
+        "weekendOnlyMonthly": "Rs 2000 per month",
+        "weekendOnlyStudentMonthly": "Rs 1000 per month"
       }
     },
     "dedicatedDesk": {
@@ -56,6 +58,7 @@
     },
     "notes": [
       "Free one-day trial is offered to experience the facility firsthand",
+      "Weekend-only plans available: Rs 2000 per month (Rs 1000 for students)",
       "Special pricing for students under study plans",
       "Additional discount for students below 18 years - produce student ID and age proof to avail",
       "Meeting room available on prior booking",
@@ -158,11 +161,11 @@
     },
     "cowork": {
       "keywords": ["cowork", "workspace", "desk", "office"],
-      "response": "💼 COWORK SPACE OPTIONS:\n\n📌 SHARED DESK (Library hall, first-cum-first-serve):\n• Full-day: Rs 4,000/month | Rs 500/day\n• Half-day: Rs 2,500/month | Rs 300/day\n\n📌 DEDICATED DESK (Glass-partitioned cabins with storage):\n• Monthly: Rs 7,000\n• Daily: Rs 750\n\n✨ INCLUDES:\n• 300 Mbps WiFi + Backup WiFi\n• Charging points | AC | Power backup\n• Meeting room (prior booking)\n\n🎁 FREE one-day trial to experience the facility!\n🎓 Special student discounts available!\n💰 Extra discount for students below 18 years (show student ID and age proof)\n\nCall +91 725 952 8336 for more details!"
+      "response": "💼 COWORK SPACE OPTIONS:\n\n📌 SHARED DESK (Library hall, first-cum-first-serve):\n• Full-day: Rs 4,000/month | Rs 500/day\n• Half-day: Rs 2,500/month | Rs 300/day\n• Weekend-only: Rs 2,000/month (Rs 1,000/month for students)\n\n📌 DEDICATED DESK (Glass-partitioned cabins with storage):\n• Monthly: Rs 7,000\n• Daily: Rs 750\n\n✨ INCLUDES:\n• 300 Mbps WiFi + Backup WiFi\n• Charging points | AC | Power backup\n• Meeting room (prior booking)\n\n🎁 FREE one-day trial to experience the facility!\n🎓 Special student discounts available!\n💰 Extra discount for students below 18 years (show student ID and age proof)\n\nCall +91 725 952 8336 for more details!"
     },
     "study": {
       "keywords": ["study", "study space", "reading room"],
-      "response": "📝 STUDY SPACE OPTIONS:\n\n⏰ HOURS:\n• Monday - Friday: 9 AM to 9 PM\n• Saturday - Sunday: 10 AM to 9 PM\n\n📌 SHARED DESK:\n• Full-day: Rs 4,000/month | Rs 500/day\n• Half-day: Rs 2,500/month | Rs 300/day\n\n📌 DEDICATED DESK:\n• Monthly: Rs 7,000 | Daily: Rs 750\n\n✨ INCLUDES:\n• 300 Mbps WiFi + Backup WiFi\n• Charging points | AC | Power backup\n• Quiet, focused environment\n\n🎁 FREE one-day trial!\n🎓 Special student discounts available (show student ID and age proof)!\n\nCall +91 725 952 8336 for details!"
+      "response": "📝 STUDY SPACE OPTIONS:\n\n⏰ HOURS:\n• Monday - Friday: 9 AM to 9 PM\n• Saturday - Sunday: 10 AM to 9 PM\n\n📌 SHARED DESK:\n• Full-day: Rs 4,000/month | Rs 500/day\n• Half-day: Rs 2,500/month | Rs 300/day\n• Weekend-only: Rs 2,000/month (Rs 1,000/month for students)\n\n📌 DEDICATED DESK:\n• Monthly: Rs 7,000 | Daily: Rs 750\n\n✨ INCLUDES:\n• 300 Mbps WiFi + Backup WiFi\n• Charging points | AC | Power backup\n• Quiet, focused environment\n\n🎁 FREE one-day trial!\n🎓 Special student discounts available (show student ID and age proof)!\n\nCall +91 725 952 8336 for details!"
     },
     "contact": {
       "keywords": ["contact", "phone", "email", "call", "reach"],
