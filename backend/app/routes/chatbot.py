@@ -26,11 +26,28 @@ def get_anthropic_client():
         import anthropic
         api_key = os.getenv('ANTHROPIC_API_KEY')
         if not api_key:
+            print("ANTHROPIC_API_KEY not found in environment")
             return None
-        return anthropic.Anthropic(api_key=api_key)
+
+        # Initialize client with minimal configuration to avoid proxy issues
+        client = anthropic.Anthropic(
+            api_key=api_key,
+            max_retries=2,
+            timeout=30.0
+        )
+        return client
     except ImportError:
-        print("Anthropic library not installed")
+        print("Anthropic library not installed. Run: pip install anthropic")
         return None
+    except TypeError as e:
+        # Handle initialization errors (like unexpected arguments)
+        print(f"Anthropic client initialization error: {e}")
+        # Try basic initialization without extra parameters
+        try:
+            import anthropic
+            return anthropic.Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY'))
+        except:
+            return None
     except Exception as e:
         print(f"Error initializing Anthropic client: {e}")
         return None
