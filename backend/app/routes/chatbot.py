@@ -29,27 +29,36 @@ def get_anthropic_client():
             print("ANTHROPIC_API_KEY not found in environment")
             return None
 
-        # Initialize client with minimal configuration to avoid proxy issues
-        client = anthropic.Anthropic(
-            api_key=api_key,
-            max_retries=2,
-            timeout=30.0
-        )
-        return client
+        # Clear proxy environment variables that might interfere
+        # Save original values
+        original_http_proxy = os.environ.get('HTTP_PROXY')
+        original_https_proxy = os.environ.get('HTTPS_PROXY')
+        original_all_proxy = os.environ.get('ALL_PROXY')
+
+        # Temporarily remove proxy settings
+        for proxy_var in ['HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'http_proxy', 'https_proxy', 'all_proxy']:
+            os.environ.pop(proxy_var, None)
+
+        try:
+            # Initialize client with just the API key
+            client = anthropic.Anthropic(api_key=api_key)
+            return client
+        finally:
+            # Restore original proxy settings
+            if original_http_proxy:
+                os.environ['HTTP_PROXY'] = original_http_proxy
+            if original_https_proxy:
+                os.environ['HTTPS_PROXY'] = original_https_proxy
+            if original_all_proxy:
+                os.environ['ALL_PROXY'] = original_all_proxy
+
     except ImportError:
         print("Anthropic library not installed. Run: pip install anthropic")
         return None
-    except TypeError as e:
-        # Handle initialization errors (like unexpected arguments)
-        print(f"Anthropic client initialization error: {e}")
-        # Try basic initialization without extra parameters
-        try:
-            import anthropic
-            return anthropic.Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY'))
-        except:
-            return None
     except Exception as e:
         print(f"Error initializing Anthropic client: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 def extract_relevant_context(user_message):
