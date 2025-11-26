@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.utils.database import execute_query, get_db_cursor
 from app.config import Config
+from app.utils.semantic_search import semantic_search as run_semantic_search
 
 patron_bp = Blueprint('patron', __name__)
 
@@ -126,6 +127,94 @@ def search_books_public():
         "page": page,
         "per_page": limit
     }), 200
+
+
+def _keyword_search(search: str, limit: int = 6):
+    where_clauses = ["b.is_active = TRUE"]
+    params = []
+
+    if search:
+        search_words = [word.strip() for word in search.split() if word.strip()]
+
+        if search_words:
+            word_conditions = []
+            for word in search_words:
+                word_param = f'%{word}%'
+                word_conditions.append("""
+                    (b.title ILIKE %s OR b.subtitle ILIKE %s OR
+                     EXISTS (
+                         SELECT 1 FROM book_contributors bc
+                         JOIN contributors c ON bc.contributor_id = c.contributor_id
+                         WHERE bc.book_id = b.book_id AND c.name ILIKE %s
+                     ))
+                """)
+                params.extend([word_param, word_param, word_param])
+
+            if word_conditions:
+                where_clauses.append("(" + " AND ".join(word_conditions) + ")")
+
+    where_sql = "WHERE " + " AND ".join(where_clauses)
+
+    query = f"""
+        SELECT b.book_id, b.isbn, b.title, b.subtitle,
+               b.publisher, b.publication_year,
+               b.collection_id, c.collection_name,
+               b.age_rating, b.cover_image_url,
+               ba.available_items, ba.total_items,
+               COALESCE((SELECT json_agg(
+                   json_build_object('name', contrib.name, 'role', bc.role)
+                   ORDER BY bc.role, bc.sequence_number
+               )
+                FROM book_contributors bc
+                JOIN contributors contrib ON bc.contributor_id = contrib.contributor_id
+                WHERE bc.book_id = b.book_id
+               ), '[]'::json) as contributors,
+               (SELECT AVG(rating) FROM reviews WHERE book_id = b.book_id) as avg_rating,
+               (SELECT COUNT(*) FROM reviews WHERE book_id = b.book_id) as review_count
+        FROM books b
+        LEFT JOIN collections c ON b.collection_id = c.collection_id
+        LEFT JOIN mv_book_availability ba ON b.book_id = ba.book_id
+        {where_sql}
+        ORDER BY b.title
+        LIMIT %s OFFSET %s
+    """
+    params.extend([limit, 0])
+
+    return execute_query(query, tuple(params), fetch_all=True) or []
+
+
+@patron_bp.route('/books/semantic-search', methods=['POST'])
+@jwt_required()
+def semantic_search_books():
+    payload = request.get_json() or {}
+    query = (payload.get('query') or '').strip()
+    try:
+        limit = int(payload.get('limit', 6))
+    except (TypeError, ValueError):
+        limit = 6
+
+    if limit <= 0:
+        limit = 6
+    if limit > 50:
+        limit = 50
+
+    if not query:
+        return jsonify({"error": "Query is required"}), 400
+
+    try:
+        books = run_semantic_search(query, limit=limit)
+        if not books:
+            books = _keyword_search(query, limit=limit)
+            return jsonify({"books": [dict(b) for b in books], "mode": "keyword-fallback"}), 200
+
+        return jsonify({"books": books, "mode": "semantic"}), 200
+    except Exception as exc:
+        return jsonify({
+            "books": [],
+            "mode": "error",
+            "error": "Semantic search unavailable",
+            "details": str(exc)
+        }), 500
 
 @patron_bp.route('/books', methods=['GET'])
 @jwt_required()
@@ -264,7 +353,8 @@ def add_review(book_id):
     patron = execute_query(patron_query, (user_id,), fetch_one=True)
 
     if not patron:
-        return jsonify({"error": "Patron not found"}), 404
+        # Authenticated but not a patron: return empty recommendations to avoid 404s on admin accounts
+        return jsonify([]), 200
 
     with get_db_cursor() as cursor:
         # Check if review already exists
@@ -342,7 +432,8 @@ def get_recommendations():
     patron = execute_query(patron_query, (user_id,), fetch_one=True)
 
     if not patron:
-        return jsonify({"error": "Patron not found"}), 404
+        # Authenticated user without a patron record (e.g., admin testing dashboard)
+        return jsonify([]), 200
 
     try:
         # Simple recommendation algorithm based on:

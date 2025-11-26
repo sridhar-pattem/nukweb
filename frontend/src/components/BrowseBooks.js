@@ -8,6 +8,8 @@ function BrowseBooks() {
   const [selectedBook, setSelectedBook] = useState(null);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [review, setReview] = useState({ rating: 5, comment: '' });
+  const [searchMode, setSearchMode] = useState('keyword'); // 'keyword' or 'semantic'
+  const [searchResult, setSearchResult] = useState({ mode: '', count: 0 });
 
   useEffect(() => {
     loadBooks();
@@ -18,10 +20,40 @@ function BrowseBooks() {
       setLoading(true);
       const response = await patronAPI.getBooks(1, '', search);
       setBooks(response.data.books);
+      setSearchResult({ mode: 'keyword', count: response.data.books.length });
     } catch (err) {
       console.error('Failed to load books:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSemanticSearch = async () => {
+    if (!search.trim()) return;
+
+    try {
+      setLoading(true);
+      const response = await patronAPI.semanticSearch(search, 20);
+      setBooks(response.data.books || []);
+      setSearchResult({
+        mode: response.data.mode || 'semantic',
+        count: (response.data.books || []).length
+      });
+    } catch (err) {
+      console.error('Semantic search failed:', err);
+      // Fallback to regular search
+      loadBooks();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchMode === 'semantic') {
+      handleSemanticSearch();
+    } else {
+      loadBooks();
     }
   };
 
@@ -58,19 +90,68 @@ function BrowseBooks() {
       <h1>Browse Books</h1>
 
       <div style={{ marginBottom: '20px' }}>
-        <input
-          type="text"
-          placeholder="Search books by title or author..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{
-            width: '100%',
-            padding: '12px',
-            fontSize: '16px',
-            border: '1px solid #ddd',
-            borderRadius: '5px'
-          }}
-        />
+        <form onSubmit={handleSearchSubmit}>
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+            <input
+              type="text"
+              placeholder={searchMode === 'semantic'
+                ? "Try: 'books about chemistry for students' or 'inspiring biographies'"
+                : "Search books by title or author..."}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{
+                flex: 1,
+                padding: '12px',
+                fontSize: '16px',
+                border: '1px solid #ddd',
+                borderRadius: '5px'
+              }}
+            />
+            <button
+              type="submit"
+              className="btn btn-primary"
+              style={{ padding: '12px 24px', whiteSpace: 'nowrap' }}
+            >
+              Search
+            </button>
+          </div>
+        </form>
+
+        <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <span style={{ fontWeight: '600', fontSize: '14px' }}>Search Mode:</span>
+            <button
+              type="button"
+              onClick={() => setSearchMode('keyword')}
+              className={`btn ${searchMode === 'keyword' ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ padding: '6px 16px', fontSize: '14px' }}
+            >
+              Keyword
+            </button>
+            <button
+              type="button"
+              onClick={() => setSearchMode('semantic')}
+              className={`btn ${searchMode === 'semantic' ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ padding: '6px 16px', fontSize: '14px' }}
+            >
+              Semantic AI
+            </button>
+          </div>
+
+          {searchMode === 'semantic' && (
+            <span style={{ fontSize: '13px', color: '#666', fontStyle: 'italic' }}>
+              💡 Semantic search understands natural language queries
+            </span>
+          )}
+
+          {searchResult.mode && search && (
+            <span style={{ fontSize: '13px', color: '#27ae60', fontWeight: '500' }}>
+              {searchResult.mode === 'keyword-fallback'
+                ? `⚠️ Semantic search unavailable, showing keyword results (${searchResult.count})`
+                : `✓ Found ${searchResult.count} books using ${searchResult.mode} search`}
+            </span>
+          )}
+        </div>
       </div>
 
       {selectedBook ? (

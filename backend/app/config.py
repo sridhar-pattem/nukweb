@@ -35,3 +35,5 @@ class Config:
     MAX_RENEWALS = 2
     RENEWAL_EXTENSION_DAYS = 14
     INVOICE_ADVANCE_NOTICE_DAYS = 14
+
+    CORS_ORIGINS = os.getenv('CORS_ORIGINS', 'https://localhost:3001').split(',')

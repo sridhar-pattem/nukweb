@@ -1,5 +1,6 @@
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from pgvector.psycopg2 import register_vector
 from contextlib import contextmanager
 from app.config import Config
 
@@ -7,6 +8,7 @@ from app.config import Config
 def get_db_connection():
     """Context manager for database connections"""
     conn = psycopg2.connect(Config.DATABASE_URL)
+    register_vector(conn)
     try:
         yield conn
         conn.commit()

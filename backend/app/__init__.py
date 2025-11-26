@@ -8,8 +8,12 @@ def create_app():
     app.config.from_object(Config)
 
     # Initialize extensions with explicit CORS configuration
-    # Allow all origins during development
-    CORS(app, origins="*", supports_credentials=False)
+    # Use environment variable for allowed origins
+    CORS(app,
+         origins=Config.CORS_ORIGINS,
+         supports_credentials=True,
+         allow_headers=['Content-Type', 'Authorization'],
+         methods=['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'])
     jwt = JWTManager(app)
     
     # Register blueprints

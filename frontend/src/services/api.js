@@ -184,6 +184,8 @@ export const patronAPI = {
   requestCoworkBooking: (bookingData) =>
     api.post('/patron/cowork-booking', bookingData),
   getMyCoworkBookings: () => api.get('/patron/my-cowork-bookings'),
+  semanticSearch: (query, limit = 20) =>
+    api.post('/patron/books/semantic-search', { query, limit }),
 };
 
 // Admin - Cowork Invoices API

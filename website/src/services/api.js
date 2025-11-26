@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Base API URL - will be configured via environment variables
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
 
 // Create axios instance with default config
 const apiClient = axios.create({
@@ -79,6 +79,9 @@ export const catalogueAPI = {
 
   // Search books
   searchBooks: (query) => apiClient.get('/website/catalogue/search', { params: { q: query } }),
+
+  // Semantic search (authenticated patrons/admins)
+  semanticSearch: (query, limit = 6) => apiClient.post('/patron/books/semantic-search', { query, limit }),
 
   // New arrivals
   getNewArrivals: (days = 30) => apiClient.get('/website/new-arrivals', { params: { days } }),
@@ -286,6 +289,7 @@ export const patronLibraryAPI = {
   getBrowseBooks: (params) => apiClient.get('/patron/books', { params }),
   getBookDetails: (bookId) => apiClient.get(`/patron/books/${bookId}`),
   addBookReview: (bookId, data) => apiClient.post(`/patron/books/${bookId}/review`, data),
+  semanticSearch: (query, limit = 20) => apiClient.post('/patron/books/semantic-search', { query, limit }),
 
   // Borrowings
   getMyBorrowings: (status = 'active') => apiClient.get('/patron/my-borrowings', { params: { status } }),

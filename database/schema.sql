@@ -218,6 +218,15 @@ CREATE INDEX idx_reviews_book_id ON reviews(book_id);
 CREATE INDEX idx_invoices_patron_id ON invoices(patron_id);
 CREATE INDEX idx_users_email ON users(email);
 
+-- Semantic search support
+CREATE EXTENSION IF NOT EXISTS vector;
+
+CREATE TABLE IF NOT EXISTS book_embeddings (
+    book_id INTEGER PRIMARY KEY REFERENCES books(book_id) ON DELETE CASCADE,
+    embedding vector(384) NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Insert default age ratings
 INSERT INTO age_ratings (rating_name, min_age, max_age, description) VALUES
 ('2-4 years', 2, 4, 'Toddlers and preschoolers'),

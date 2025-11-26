@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FaSearch, FaFilter } from 'react-icons/fa';
 import BookCard from '../shared/BookCard';
+import apiClient from '../../services/api';
 
 const Catalogue = () => {
   const [books, setBooks] = useState([]);
@@ -9,8 +10,26 @@ const Catalogue = () => {
   const [selectedAgeRating, setSelectedAgeRating] = useState('all');
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [error, setError] = useState('');
 
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+
+  const transformBooks = (dataBooks = []) =>
+    dataBooks.map((book) => ({
+      book_id: book.book_id,
+      title: book.title,
+      authors: book.contributors
+        ? book.contributors
+            .filter((c) => c.role === 'author')
+            .map((c) => c.name)
+        : [],
+      cover_image_url:
+        book.cover_image_url || 'https://via.placeholder.com/200x300?text=No+Cover',
+      rating: book.avg_rating || 0,
+      available_items: book.available_items || 0,
+      collection_name: book.collection_name || '',
+      age_rating: book.age_rating || '',
+    }));
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -21,37 +40,25 @@ const Catalogue = () => {
 
     setLoading(true);
     setHasSearched(true);
+    setError('');
 
     try {
-      const response = await fetch(
-        `${API_URL}/patron/books/search?search=${encodeURIComponent(searchTerm)}&page=1&limit=6`
-      );
-      const data = await response.json();
+      const response = await apiClient.get('/patron/books/search', {
+        params: { search: searchTerm, page: 1, limit: 6 },
+        baseURL: API_URL,
+      });
 
-      if (response.ok && data.books) {
-        // Transform data to match BookCard component expectations
-        const transformedBooks = data.books.map(book => ({
-          book_id: book.book_id,
-          title: book.title,
-          authors: book.contributors
-            ? book.contributors
-                .filter(c => c.role === 'author')
-                .map(c => c.name)
-            : [],
-          cover_image_url: book.cover_image_url || 'https://via.placeholder.com/200x300?text=No+Cover',
-          rating: book.avg_rating || 0,
-          available_items: book.available_items || 0,
-          collection_name: book.collection_name || '',
-          age_rating: book.age_rating || '',
-        }));
+      const data = response.data;
 
-        setBooks(transformedBooks);
+      if (data?.books) {
+        setBooks(transformBooks(data.books));
       } else {
         setBooks([]);
       }
     } catch (error) {
       console.error('Error fetching books:', error);
       setBooks([]);
+      setError('Unable to fetch books right now. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -135,6 +142,7 @@ const Catalogue = () => {
                 {filteredBooks.length} {filteredBooks.length === 1 ? 'Book' : 'Books'} Found
                 {filteredBooks.length === 6 && ' (showing first 6 results)'}
               </h3>
+              {error && <p style={{ color: 'var(--accent-peru)', marginTop: '0.25rem' }}>{error}</p>}
             </div>
           )}
 

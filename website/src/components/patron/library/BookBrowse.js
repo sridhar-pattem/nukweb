@@ -14,6 +14,8 @@ const BookBrowse = () => {
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
   const [selectedCollection, setSelectedCollection] = useState(searchParams.get('collection') || '');
   const [error, setError] = useState('');
+  const [searchMode, setSearchMode] = useState('keyword'); // 'keyword' or 'semantic'
+  const [searchResult, setSearchResult] = useState({ mode: '', count: 0 });
   const itemsPerPage = 12;
 
   useEffect(() => {
@@ -42,9 +44,33 @@ const BookBrowse = () => {
       const response = await patronLibraryAPI.getBrowseBooks(params);
       setBooks(response.data.books || []);
       setTotal(response.data.total || 0);
+      setSearchResult({ mode: 'keyword', count: response.data.books?.length || 0 });
     } catch (err) {
       console.error('Error fetching books:', err);
       setError('Failed to load books');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSemanticSearch = async () => {
+    if (!searchTerm.trim()) return;
+
+    try {
+      setLoading(true);
+      setError('');
+      const response = await patronLibraryAPI.semanticSearch(searchTerm, 20);
+      setBooks(response.data.books || []);
+      setTotal((response.data.books || []).length);
+      setSearchResult({
+        mode: response.data.mode || 'semantic',
+        count: (response.data.books || []).length
+      });
+    } catch (err) {
+      console.error('Semantic search failed:', err);
+      setError('Semantic search failed. Falling back to keyword search...');
+      // Fallback to regular search
+      fetchBooks();
     } finally {
       setLoading(false);
     }
@@ -69,7 +95,12 @@ const BookBrowse = () => {
   const handleSearch = (e) => {
     e.preventDefault();
     setPage(1);
-    fetchBooks();
+
+    if (searchMode === 'semantic' && searchTerm.trim()) {
+      handleSemanticSearch();
+    } else {
+      fetchBooks();
+    }
 
     // Update URL params
     const params = new URLSearchParams();
@@ -131,7 +162,9 @@ const BookBrowse = () => {
             <FaSearch />
             <input
               type="text"
-              placeholder="Search by title, author, or ISBN..."
+              placeholder={searchMode === 'semantic'
+                ? "Try: 'inspiring biographies' or 'chemistry for students'..."
+                : "Search by title, author, or ISBN..."}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -156,6 +189,52 @@ const BookBrowse = () => {
             ))}
           </select>
         </div>
+      </div>
+
+      {/* Search Mode Toggle */}
+      <div className="search-mode-section" style={{
+        padding: '12px 20px',
+        backgroundColor: '#f8f9fa',
+        borderRadius: '8px',
+        marginBottom: '20px',
+        display: 'flex',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '15px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontWeight: '600', fontSize: '14px' }}>Search Mode:</span>
+          <button
+            type="button"
+            onClick={() => setSearchMode('keyword')}
+            className={`btn ${searchMode === 'keyword' ? 'btn-primary' : 'btn-outline'}`}
+            style={{ padding: '6px 16px', fontSize: '14px' }}
+          >
+            Keyword
+          </button>
+          <button
+            type="button"
+            onClick={() => setSearchMode('semantic')}
+            className={`btn ${searchMode === 'semantic' ? 'btn-primary' : 'btn-outline'}`}
+            style={{ padding: '6px 16px', fontSize: '14px' }}
+          >
+            Semantic AI
+          </button>
+        </div>
+
+        {searchMode === 'semantic' && (
+          <span style={{ fontSize: '13px', color: '#666', fontStyle: 'italic' }}>
+            💡 Semantic search understands natural language queries
+          </span>
+        )}
+
+        {searchResult.mode && searchTerm && (
+          <span style={{ fontSize: '13px', color: '#27ae60', fontWeight: '500' }}>
+            {searchResult.mode === 'keyword-fallback'
+              ? `⚠️ Semantic search unavailable, showing keyword results (${searchResult.count})`
+              : `✓ Found ${searchResult.count} books using ${searchResult.mode} search`}
+          </span>
+        )}
       </div>
 
       {/* Results Summary */}
