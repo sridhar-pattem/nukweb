@@ -61,4 +61,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD python3 -c "import requests; requests.get('http://localhost:5001/health')" || exit 1
 
 # Run with gunicorn (4 workers)
-CMD ["gunicorn", "--workers", "4", "--bind", "0.0.0.0:5001", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-", "app:create_app()"]
+# Use shell form to support Railway's $PORT environment variable
+CMD gunicorn --workers 4 --bind 0.0.0.0:${PORT:-5001} --timeout 120 --access-logfile - --error-logfile - "app:create_app()"
