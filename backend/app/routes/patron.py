@@ -369,14 +369,14 @@ def add_review(book_id):
             # Update existing review
             cursor.execute("""
                 UPDATE reviews
-                SET rating = %s, comment = %s
+                SET rating = %s, review_text = %s
                 WHERE review_id = %s
             """, (rating, comment, existing['review_id']))
             message = "Review updated successfully"
         else:
             # Create new review
             cursor.execute("""
-                INSERT INTO reviews (patron_id, book_id, rating, comment)
+                INSERT INTO reviews (patron_id, book_id, rating, review_text)
                 VALUES (%s, %s, %s, %s)
                 RETURNING review_id
             """, (patron['patron_id'], book_id, rating, comment))
