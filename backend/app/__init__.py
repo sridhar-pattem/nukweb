@@ -9,6 +9,10 @@ def create_app():
 
     # Initialize extensions with explicit CORS configuration
     # Use environment variable for allowed origins
+    print(f"=== CORS CONFIGURATION ===")
+    print(f"CORS_ORIGINS: {Config.CORS_ORIGINS}")
+    print(f"=========================")
+
     CORS(app,
          origins=Config.CORS_ORIGINS,
          supports_credentials=True,
