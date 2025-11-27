@@ -89,43 +89,59 @@ def semantic_search(query: str, limit: int = 6) -> List[dict]:
     if not query:
         return []
 
+    # Check if pgvector is available
+    try:
+        from app.utils.database import PGVECTOR_AVAILABLE
+        if not PGVECTOR_AVAILABLE:
+            logging.warning("pgvector not available - semantic search disabled")
+            return []
+    except Exception:
+        logging.warning("Could not check pgvector availability")
+        return []
+
     # Ensure embeddings exist before searching
     try:
         backfill_missing_embeddings()
     except Exception as exc:  # pragma: no cover - best-effort warmup
         logging.warning("Failed to backfill embeddings: %s", exc)
+        return []  # Return empty if can't create embeddings
 
-    query_embedding = embed_texts([query])[0]
+    try:
+        query_embedding = embed_texts([query])[0]
 
-    with get_db_cursor() as cur:
-        cur.execute(
-            """
-            SELECT b.book_id, b.isbn, b.title, b.subtitle,
-                   b.publisher, b.publication_year,
-                   b.collection_id, c.collection_name,
-                   b.age_rating, b.cover_image_url,
-                   ba.available_items, ba.total_items,
-                   COALESCE((SELECT json_agg(
-                       json_build_object('name', contrib.name, 'role', bc.role)
-                       ORDER BY bc.role, bc.sequence_number
-                   )
-                    FROM book_contributors bc
-                    JOIN contributors contrib ON bc.contributor_id = contrib.contributor_id
-                    WHERE bc.book_id = b.book_id
-                   ), '[]'::json) as contributors,
-                   (SELECT AVG(rating) FROM reviews WHERE book_id = b.book_id) as avg_rating,
-                   (SELECT COUNT(*) FROM reviews WHERE book_id = b.book_id) as review_count,
-                   be.embedding <-> %s::vector(384) AS distance
-            FROM book_embeddings be
-            JOIN books b ON be.book_id = b.book_id
-            LEFT JOIN collections c ON b.collection_id = c.collection_id
-            LEFT JOIN mv_book_availability ba ON b.book_id = ba.book_id
-            WHERE b.is_active = TRUE
-            ORDER BY be.embedding <-> %s::vector(384)
-            LIMIT %s
-            """,
-            (query_embedding, query_embedding, limit),
-        )
-        rows = cur.fetchall() or []
+        with get_db_cursor() as cur:
+            cur.execute(
+                """
+                SELECT b.book_id, b.isbn, b.title, b.subtitle,
+                       b.publisher, b.publication_year,
+                       b.collection_id, c.collection_name,
+                       b.age_rating, b.cover_image_url,
+                       ba.available_items, ba.total_items,
+                       COALESCE((SELECT json_agg(
+                           json_build_object('name', contrib.name, 'role', bc.role)
+                           ORDER BY bc.role, bc.sequence_number
+                       )
+                        FROM book_contributors bc
+                        JOIN contributors contrib ON bc.contributor_id = contrib.contributor_id
+                        WHERE bc.book_id = b.book_id
+                       ), '[]'::json) as contributors,
+                       (SELECT AVG(rating) FROM reviews WHERE book_id = b.book_id) as avg_rating,
+                       (SELECT COUNT(*) FROM reviews WHERE book_id = b.book_id) as review_count,
+                       be.embedding <-> %s::vector(384) AS distance
+                FROM book_embeddings be
+                JOIN books b ON be.book_id = b.book_id
+                LEFT JOIN collections c ON b.collection_id = c.collection_id
+                LEFT JOIN mv_book_availability ba ON b.book_id = ba.book_id
+                WHERE b.is_active = TRUE
+                ORDER BY be.embedding <-> %s::vector(384)
+                LIMIT %s
+                """,
+                (query_embedding, query_embedding, limit),
+            )
+            rows = cur.fetchall() or []
 
-    return [dict(r) for r in rows]
+        return [dict(r) for r in rows]
+    except Exception as e:
+        # If semantic search fails, return empty (will fallback to keyword)
+        logging.error("Semantic search failed: %s", e)
+        return []

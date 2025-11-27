@@ -1,14 +1,31 @@
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from pgvector.psycopg2 import register_vector
 from contextlib import contextmanager
 from app.config import Config
+
+# Try to import pgvector, but make it optional
+try:
+    from pgvector.psycopg2 import register_vector
+    PGVECTOR_AVAILABLE = True
+except ImportError:
+    PGVECTOR_AVAILABLE = False
 
 @contextmanager
 def get_db_connection():
     """Context manager for database connections"""
     conn = psycopg2.connect(Config.DATABASE_URL)
-    register_vector(conn)
+
+    # Only register vector if pgvector is available and extension is installed
+    if PGVECTOR_AVAILABLE:
+        try:
+            register_vector(conn)
+        except psycopg2.ProgrammingError as e:
+            # pgvector extension not installed in database - semantic search will be disabled
+            if 'vector type not found' in str(e):
+                print("WARNING: pgvector extension not found - semantic search disabled")
+            else:
+                raise
+
     try:
         yield conn
         conn.commit()
