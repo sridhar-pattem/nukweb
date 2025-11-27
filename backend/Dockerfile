@@ -15,7 +15,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 
 # Install Python packages in user directory
-RUN pip install --no-cache-dir --user -r requirements.txt
+# Add PyTorch CPU index explicitly for CPU-only builds
+RUN pip install --no-cache-dir --user \
+    --extra-index-url https://download.pytorch.org/whl/cpu \
+    -r requirements.txt
 
 # Stage 2: Runtime - Minimal final image
 FROM python:3.12-slim

@@ -25,7 +25,7 @@ gunicorn==21.2.0
 numpy==1.26.4
 
 # PyTorch CPU-only (optimized for Railway deployment - reduces build size by ~300MB)
---extra-index-url https://download.pytorch.org/whl/cpu
+# Note: Dockerfile adds --extra-index-url https://download.pytorch.org/whl/cpu
 torch==2.0.1+cpu
 
 # Transformers and sentence-transformers
