@@ -39,12 +39,9 @@ COPY . .
 # Set PATH to include user-installed packages
 ENV PATH=/root/.local/bin:$PATH
 
-# Pre-download sentence transformer model at build time
-# This caches the 758MB model in the Docker layer
-RUN python3 -c "from sentence_transformers import SentenceTransformer; \
-    print('Downloading all-MiniLM-L6-v2 model...'); \
-    SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2'); \
-    print('Model cached successfully')"
+# Note: Sentence transformer model will download on first use (~758MB)
+# This happens at runtime to avoid build timeouts
+# First semantic search request will be slower (~30s)
 
 # Create uploads directory
 RUN mkdir -p /app/uploads
