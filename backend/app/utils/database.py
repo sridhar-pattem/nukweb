@@ -23,6 +23,8 @@ def get_db_connection():
             # pgvector extension not installed in database - semantic search will be disabled
             if 'vector type not found' in str(e):
                 print("WARNING: pgvector extension not found - semantic search disabled")
+                # Rollback the failed transaction so connection can be used
+                conn.rollback()
             else:
                 raise
 
