@@ -57,8 +57,6 @@ EXPOSE 5001
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD python3 -c "import requests; requests.get('http://localhost:5001/health')" || exit 1
 
-# Make entrypoint executable
-RUN chmod +x /app/entrypoint.py
-
-# Run with Python entrypoint that handles $PORT
-CMD ["python3", "/app/entrypoint.py"]
+# Run with gunicorn - using shell form for Railway's $PORT variable expansion
+# Shell form (not exec form) is required for environment variable substitution
+CMD gunicorn --workers 4 --bind 0.0.0.0:$PORT --timeout 120 --access-logfile - --error-logfile - "app:create_app()"
