@@ -19,14 +19,19 @@ def get_db_connection():
     if PGVECTOR_AVAILABLE:
         try:
             register_vector(conn)
-        except psycopg2.ProgrammingError as e:
+        except (psycopg2.ProgrammingError, psycopg2.errors.UndefinedObject) as e:
             # pgvector extension not installed in database - semantic search will be disabled
-            if 'vector type not found' in str(e):
+            error_msg = str(e).lower()
+            if 'vector' in error_msg or 'does not exist' in error_msg:
                 print("WARNING: pgvector extension not found - semantic search disabled")
                 # Rollback the failed transaction so connection can be used
                 conn.rollback()
             else:
                 raise
+        except Exception as e:
+            # Any other error during vector registration
+            print(f"WARNING: Failed to register pgvector: {e}")
+            conn.rollback()
 
     try:
         yield conn
