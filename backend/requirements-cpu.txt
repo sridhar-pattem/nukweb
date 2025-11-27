@@ -1,3 +1,7 @@
+# CPU-Only PyTorch Version (Alternative requirements.txt)
+# This version uses CPU-only PyTorch to reduce build size by ~300MB
+# To use this, rename to requirements.txt
+
 # Core Flask
 Flask==3.0.0
 Flask-CORS==4.0.0
@@ -24,10 +28,15 @@ gunicorn==21.2.0
 # Scientific computing
 numpy==1.26.4
 
-# PyTorch CPU-only (optimized for Railway deployment - reduces build size by ~300MB)
+# PyTorch CPU-only (smaller than full PyTorch)
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch==2.0.1+cpu
 
 # Transformers and sentence-transformers
 sentence-transformers==2.2.2
 huggingface-hub==0.19.4
+
+# Note: This configuration uses CPU-only PyTorch
+# Reduces size: ~300MB
+# Performance impact: None (servers typically don't have GPUs)
+# Semantic search will still work perfectly

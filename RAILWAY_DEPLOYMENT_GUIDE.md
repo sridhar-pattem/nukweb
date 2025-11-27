@@ -144,6 +144,20 @@ You can do this by connecting to the database and running:
 railway run psql -c "REFRESH MATERIALIZED VIEW mv_book_availability;"
 ```
 
+### Step 8b: Install pgvector Extension (Required for Semantic Search)
+
+Semantic search requires the pgvector PostgreSQL extension:
+
+```bash
+railway run psql -c "CREATE EXTENSION IF NOT EXISTS vector;"
+```
+
+Verify installation:
+
+```bash
+railway run psql -c "SELECT * FROM pg_extension WHERE extname = 'vector';"
+```
+
 ---
 
 ## Part 4: Deploy Backend (Flask)
@@ -178,8 +192,10 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 
 1. Go to "Settings" tab
 2. Set **Root Directory**: `backend`
-3. Set **Build Command**: `pip install -r requirements.txt`
-4. Set **Start Command**: `gunicorn -w 4 -b 0.0.0.0:$PORT app.app:app`
+3. Set **Dockerfile Path**: `backend/Dockerfile` (Railway will auto-detect)
+4. Leave **Build Command** and **Start Command** empty (Dockerfile handles it)
+
+> **Note:** The included Dockerfile uses multi-stage builds and optimizations to reduce build size from 8GB to 2-3GB. See `BACKEND_BUILD_SIZE_OPTIMIZATION.md` for details.
 
 ### Step 12: Add gunicorn to requirements.txt
 
@@ -341,6 +357,17 @@ Run this weekly via cron or GitHub Actions.
 - Ensure all required environment variables are set
 - Check that gunicorn is in requirements.txt
 
+### Build size too large (8GB+)
+- Verify `.dockerignore` file exists in backend/
+- Check that Dockerfile is being used (not buildpacks)
+- See `BACKEND_BUILD_SIZE_OPTIMIZATION.md` for optimization strategies
+- Expected optimized size: 2-3GB
+
+### Semantic search not working
+- Ensure pgvector extension is installed: `CREATE EXTENSION vector;`
+- Check embeddings exist: `SELECT COUNT(*) FROM book_embeddings;`
+- Generate embeddings if needed (see Step 22 below)
+
 ### Frontend shows 404 or blank page
 - Verify build completed successfully
 - Check that serve is installed
@@ -388,6 +415,28 @@ railway logs --service=frontend
 ### Refresh Materialized View
 ```bash
 railway run psql -c "REFRESH MATERIALIZED VIEW mv_book_availability;"
+```
+
+### Generate Book Embeddings for Semantic Search
+```bash
+# Option 1: Generate locally and export to production
+# Run locally first:
+python3 << 'EOF'
+from app.utils.semantic_search import backfill_missing_embeddings
+backfill_missing_embeddings(batch_size=50)
+EOF
+
+# Export embeddings
+PGPASSWORD=EQawah13 psql -h localhost -p 5432 -U sridharpattem -d nuk_library \
+  -c "COPY book_embeddings TO '/tmp/book_embeddings.csv' CSV HEADER;"
+
+# Import to Railway
+railway run psql -c "COPY book_embeddings FROM STDIN CSV HEADER;" < /tmp/book_embeddings.csv
+```
+
+Or verify embeddings were created:
+```bash
+railway run psql -c "SELECT COUNT(*) FROM book_embeddings;"
 ```
 
 ---

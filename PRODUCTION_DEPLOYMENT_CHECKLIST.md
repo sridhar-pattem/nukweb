@@ -488,10 +488,15 @@ volumes:
    - Manual refresh needed if data seems stale
 
 3. **CORS Configuration:**
-   - Currently allows all origins (`*`) - MUST fix before production
+   - ✅ FIXED - Now uses `Config.CORS_ORIGINS` from environment variable
 
 4. **No Rate Limiting:**
    - Recommend adding Flask-Limiter for API protection
+
+5. **Large Build Size (8GB):**
+   - Caused by sentence-transformers dependencies (torch, transformers, scipy)
+   - See `BACKEND_BUILD_SIZE_OPTIMIZATION.md` for reduction strategies
+   - Recommended: Use CPU-only PyTorch + Docker multi-stage build (reduces to 2-3GB)
 
 ---
 
@@ -512,6 +517,14 @@ REFRESH MATERIALIZED VIEW mv_book_availability;
 ### Semantic Search Returns Empty
 - Check embeddings exist: `SELECT COUNT(*) FROM book_embeddings;`
 - Run backfill: `python -c "from app.utils.semantic_search import backfill_missing_embeddings; backfill_missing_embeddings()"`
+
+### Railway Build Size is Too Large (8GB+)
+- See `BACKEND_BUILD_SIZE_OPTIMIZATION.md` for detailed solutions
+- Quick fixes:
+  1. Add `.dockerignore` file to exclude venv and cache files
+  2. Use CPU-only PyTorch (replace requirements.txt with requirements-cpu.txt)
+  3. Use multi-stage Docker build (Dockerfile included in backend/)
+- Expected final size: 2-3GB after optimizations
 
 ---
 
