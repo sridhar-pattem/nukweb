@@ -76,7 +76,7 @@ const Profile = () => {
     try {
       setLoading(true);
       await authAPI.changePassword({
-        current_password: passwordData.currentPassword,
+        old_password: passwordData.currentPassword,
         new_password: passwordData.newPassword,
       });
 
@@ -87,9 +87,10 @@ const Profile = () => {
         confirmPassword: '',
       });
     } catch (error) {
+      console.error('Password change error:', error);
       setMessage({
         type: 'error',
-        text: error.response?.data?.message || 'Failed to change password. Please try again.'
+        text: error.response?.data?.error || error.response?.data?.message || 'Failed to change password. Please try again.'
       });
     } finally {
       setLoading(false);

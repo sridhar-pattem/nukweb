@@ -1,10 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FaBook, FaCalendar, FaComment } from 'react-icons/fa';
 import BannerImageManager from '../admin/BannerImageManager';
+import { useAuth } from '../../context/AuthContext';
 
 const Blog = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [posts, setPosts] = useState([]);
+
+  const handleSubmitPost = () => {
+    if (!isAuthenticated) {
+      alert('Please log in to submit a blog post');
+      navigate('/login');
+      return;
+    }
+    navigate('/patron/blog/new');
+  };
 
   useEffect(() => {
     // Mock data - will be replaced with API call
@@ -153,7 +165,7 @@ const Blog = () => {
                   Members can share their reading experiences, book reviews, and recommendations.
                   Your post will be reviewed before publishing.
                 </p>
-                <button className="btn btn-primary" style={{ width: '100%' }}>
+                <button className="btn btn-primary" style={{ width: '100%' }} onClick={handleSubmitPost}>
                   Submit a Post
                 </button>
               </div>
