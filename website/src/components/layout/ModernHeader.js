@@ -39,7 +39,7 @@ const ModernHeader = () => {
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="desktop-nav" style={{ display: 'flex', gap: '4px' }}>
+        <nav className="desktop-nav" style={{ display: 'flex', gap: '2px' }}>
           {/* Public Links */}
           <NavLink to="/" className="btn btn-outline" onClick={closeMobileMenu}>
             Home

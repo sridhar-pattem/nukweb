@@ -27,6 +27,10 @@ function BookCatalogue() {
     age_rating: '',
     cover_image_url: ''
   });
+  const [selectedBooks, setSelectedBooks] = useState([]);
+  const [showBulkActions, setShowBulkActions] = useState(false);
+  const [bulkTargetCollection, setBulkTargetCollection] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     loadCollections();
@@ -73,6 +77,59 @@ function BookCatalogue() {
 
   const handleBookClick = (bookId) => {
     navigate(`/admin/books/${bookId}`);
+  };
+
+  const handleCollectionChange = async (bookId, newCollectionId) => {
+    try {
+      await adminBooksAPI.updateBookCollection(bookId, newCollectionId);
+      setSuccessMessage('Book moved successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+      loadBooks(); // Reload the book list
+    } catch (err) {
+      console.error('Error moving book:', err);
+      setError(err.response?.data?.error || 'Failed to move book');
+    }
+  };
+
+  const toggleBookSelection = (bookId) => {
+    setSelectedBooks(prev =>
+      prev.includes(bookId)
+        ? prev.filter(id => id !== bookId)
+        : [...prev, bookId]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedBooks.length === books.length) {
+      setSelectedBooks([]);
+    } else {
+      setSelectedBooks(books.map(b => b.book_id));
+    }
+  };
+
+  const handleBulkMove = async () => {
+    if (!bulkTargetCollection) {
+      setError('Please select a target collection');
+      return;
+    }
+
+    if (selectedBooks.length === 0) {
+      setError('Please select at least one book');
+      return;
+    }
+
+    try {
+      await adminBooksAPI.batchUpdateBookCollection(selectedBooks, bulkTargetCollection);
+      setSuccessMessage(`${selectedBooks.length} book(s) moved successfully!`);
+      setSelectedBooks([]);
+      setBulkTargetCollection('');
+      setShowBulkActions(false);
+      setTimeout(() => setSuccessMessage(''), 3000);
+      loadBooks(); // Reload the book list
+    } catch (err) {
+      console.error('Error moving books:', err);
+      setError(err.response?.data?.error || 'Failed to move books');
+    }
   };
 
   const handleISBNLookup = async () => {
@@ -341,10 +398,77 @@ function BookCatalogue() {
           </div>
         </div>
 
+        {/* Success Message */}
+        {successMessage && (
+          <div style={{
+            padding: '12px',
+            marginBottom: '15px',
+            backgroundColor: '#d4edda',
+            color: '#155724',
+            border: '1px solid #c3e6cb',
+            borderRadius: '5px'
+          }}>
+            {successMessage}
+          </div>
+        )}
+
+        {/* Bulk Actions Bar */}
+        {selectedBooks.length > 0 && (
+          <div style={{
+            padding: '12px',
+            marginBottom: '15px',
+            backgroundColor: '#e3f2fd',
+            border: '1px solid #90caf9',
+            borderRadius: '5px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            flexWrap: 'wrap'
+          }}>
+            <span style={{ fontWeight: '500' }}>
+              {selectedBooks.length} book(s) selected
+            </span>
+            <select
+              value={bulkTargetCollection}
+              onChange={(e) => setBulkTargetCollection(e.target.value)}
+              style={{ padding: '8px', borderRadius: '5px', border: '1px solid #90caf9' }}
+            >
+              <option value="">Move to...</option>
+              {collections.map((col) => (
+                <option key={col.collection_id} value={col.collection_id}>
+                  {col.collection_name}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={handleBulkMove}
+              className="btn btn-primary"
+              style={{ padding: '8px 16px' }}
+            >
+              Move Selected
+            </button>
+            <button
+              onClick={() => setSelectedBooks([])}
+              className="btn btn-outline"
+              style={{ padding: '8px 16px' }}
+            >
+              Clear Selection
+            </button>
+          </div>
+        )}
+
         <div style={{ overflowX: 'auto' }}>
           <table>
             <thead>
               <tr>
+                <th style={{ width: '40px' }}>
+                  <input
+                    type="checkbox"
+                    checked={selectedBooks.length === books.length && books.length > 0}
+                    onChange={toggleSelectAll}
+                    style={{ cursor: 'pointer' }}
+                  />
+                </th>
                 <th>Cover</th>
                 <th>ISBN</th>
                 <th>Title</th>
@@ -357,6 +481,14 @@ function BookCatalogue() {
             <tbody>
               {books.map((book) => (
                 <tr key={book.book_id}>
+                  <td style={{ textAlign: 'center' }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedBooks.includes(book.book_id)}
+                      onChange={() => toggleBookSelection(book.book_id)}
+                      style={{ cursor: 'pointer' }}
+                    />
+                  </td>
                   <td>
                     <img
                       src={book.cover_image_url || 'https://via.placeholder.com/60x90?text=No+Cover'}
@@ -399,7 +531,25 @@ function BookCatalogue() {
                       </div>
                     )}
                   </td>
-                  <td>{book.collection_name || book.collection}</td>
+                  <td>
+                    <select
+                      value={book.collection_id}
+                      onChange={(e) => handleCollectionChange(book.book_id, e.target.value)}
+                      style={{
+                        padding: '6px',
+                        borderRadius: '4px',
+                        border: '1px solid #ddd',
+                        fontSize: '13px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {collections.map((col) => (
+                        <option key={col.collection_id} value={col.collection_id}>
+                          {col.collection_name}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
                   <td>
                     <div>
                       <strong>{book.available_items || 0}/{book.total_items || 0}</strong>

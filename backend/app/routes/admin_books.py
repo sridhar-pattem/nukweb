@@ -650,3 +650,89 @@ def add_age_rating():
             "message": "Age rating added successfully",
             "rating_id": rating_id
         }), 201
+
+@admin_books_bp.route('/books/<int:book_id>/collection', methods=['PUT'])
+@jwt_required()
+@admin_required
+def update_book_collection(book_id):
+    """Update a single book's collection"""
+    data = request.get_json()
+    new_collection_id = data.get('collection_id')
+
+    if not new_collection_id:
+        return jsonify({'error': 'Collection ID required'}), 400
+
+    # Verify book exists
+    book = execute_query(
+        "SELECT book_id, title FROM books WHERE book_id = %s",
+        (book_id,),
+        fetch_one=True
+    )
+
+    if not book:
+        return jsonify({'error': 'Book not found'}), 404
+
+    # Verify collection exists
+    collection = execute_query(
+        "SELECT collection_id, collection_name FROM collections WHERE collection_id = %s",
+        (new_collection_id,),
+        fetch_one=True
+    )
+
+    if not collection:
+        return jsonify({'error': 'Collection not found'}), 404
+
+    # Update book's collection
+    execute_query(
+        """UPDATE books
+           SET collection_id = %s, updated_at = CURRENT_TIMESTAMP
+           WHERE book_id = %s""",
+        (new_collection_id, book_id)
+    )
+
+    return jsonify({
+        'message': f'Book moved to {collection["collection_name"]} successfully',
+        'book_id': book_id,
+        'new_collection': collection['collection_name']
+    }), 200
+
+@admin_books_bp.route('/books/batch-update-collection', methods=['PUT'])
+@jwt_required()
+@admin_required
+def batch_update_book_collection():
+    """Update multiple books' collections at once"""
+    data = request.get_json()
+    book_ids = data.get('book_ids', [])
+    new_collection_id = data.get('collection_id')
+
+    if not book_ids:
+        return jsonify({'error': 'Book IDs required'}), 400
+
+    if not new_collection_id:
+        return jsonify({'error': 'Collection ID required'}), 400
+
+    # Verify collection exists
+    collection = execute_query(
+        "SELECT collection_id, collection_name FROM collections WHERE collection_id = %s",
+        (new_collection_id,),
+        fetch_one=True
+    )
+
+    if not collection:
+        return jsonify({'error': 'Collection not found'}), 404
+
+    # Update all books
+    with get_db_cursor() as cursor:
+        cursor.execute(
+            """UPDATE books
+               SET collection_id = %s, updated_at = CURRENT_TIMESTAMP
+               WHERE book_id = ANY(%s)""",
+            (new_collection_id, book_ids)
+        )
+        updated_count = cursor.rowcount
+
+    return jsonify({
+        'message': f'{updated_count} book(s) moved to {collection["collection_name"]} successfully',
+        'updated_count': updated_count,
+        'new_collection': collection['collection_name']
+    }), 200

@@ -82,6 +82,11 @@ export const adminBooksAPI = {
     api.delete(`/admin/books/${bookId}/contributors/${bookContributorId}`),
   getAgeRatings: () => api.get('/admin/age-ratings'),
   addAgeRating: (ratingData) => api.post('/admin/age-ratings', ratingData),
+  // Collection Management
+  updateBookCollection: (bookId, collectionId) =>
+    api.put(`/admin/books/${bookId}/collection`, { collection_id: collectionId }),
+  batchUpdateBookCollection: (bookIds, collectionId) =>
+    api.put('/admin/books/batch-update-collection', { book_ids: bookIds, collection_id: collectionId }),
   // Book Import
   previewBookImport: (formData) => api.post('/admin/import/books/preview', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
