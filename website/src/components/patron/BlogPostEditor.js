@@ -152,12 +152,11 @@ const BlogPostEditor = () => {
       setSaving(true);
       const data = {
         ...formData,
-        submit: true,
+        submit: true, // This flag tells the backend to set status as 'pending' instead of 'draft'
       };
 
       if (id) {
         await patronContentAPI.updateBlogPost(id, data);
-        await patronContentAPI.submitBlogPost(id);
       } else {
         await patronContentAPI.createBlogPost(data);
       }

@@ -78,17 +78,20 @@ const BookBrowse = () => {
 
   const fetchCollections = async () => {
     try {
-      // For now, we'll use a simplified version. In a full implementation,
-      // we'd need an API endpoint to fetch collections
+      const response = await patronLibraryAPI.getCollections();
+      const fetchedCollections = response.data || [];
+
+      // Add "All Collections" option at the beginning
       setCollections([
         { collection_id: '', collection_name: 'All Collections' },
-        { collection_id: '1', collection_name: 'Fiction' },
-        { collection_id: '2', collection_name: 'Non-Fiction' },
-        { collection_id: '3', collection_name: 'Reference' },
-        { collection_id: '4', collection_name: 'Children' },
+        ...fetchedCollections
       ]);
     } catch (err) {
       console.error('Error fetching collections:', err);
+      // Fallback to empty array if API fails
+      setCollections([
+        { collection_id: '', collection_name: 'All Collections' }
+      ]);
     }
   };
 

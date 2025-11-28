@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { FaSearch, FaFilter } from 'react-icons/fa';
 import BookCard from '../shared/BookCard';
 import apiClient from '../../services/api';
+import { patronLibraryAPI } from '../../services/api';
 
 const Catalogue = () => {
   const [books, setBooks] = useState([]);
@@ -11,8 +12,24 @@ const Catalogue = () => {
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [error, setError] = useState('');
+  const [collections, setCollections] = useState([]);
 
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+
+  // Fetch collections on mount
+  useEffect(() => {
+    fetchCollections();
+  }, []);
+
+  const fetchCollections = async () => {
+    try {
+      const response = await patronLibraryAPI.getCollections();
+      setCollections(response.data || []);
+    } catch (err) {
+      console.error('Error fetching collections:', err);
+      setCollections([]);
+    }
+  };
 
   const transformBooks = (dataBooks = []) =>
     dataBooks.map((book) => ({
@@ -109,11 +126,11 @@ const Catalogue = () => {
                   onChange={(e) => setSelectedCollection(e.target.value)}
                 >
                   <option value="all">All Collections</option>
-                  <option value="Fiction">Fiction</option>
-                  <option value="Non-Fiction">Non-Fiction</option>
-                  <option value="Children">Children</option>
-                  <option value="Young Adult">Young Adult</option>
-                  <option value="Reference">Reference</option>
+                  {collections.map((collection) => (
+                    <option key={collection.collection_id} value={collection.collection_name}>
+                      {collection.collection_name}
+                    </option>
+                  ))}
                 </select>
               </div>
 

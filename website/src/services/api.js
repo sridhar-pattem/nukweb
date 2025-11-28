@@ -206,7 +206,6 @@ export const patronContentAPI = {
   createBlogPost: (data) => apiClient.post('/patron/content/blog/posts', data),
   updateBlogPost: (id, data) => apiClient.put(`/patron/content/blog/posts/${id}`, data),
   deleteBlogPost: (id) => apiClient.delete(`/patron/content/blog/posts/${id}`),
-  submitBlogPost: (id) => apiClient.post(`/patron/content/blog/posts/${id}/submit`),
 
   // Book Suggestions
   getBookSuggestions: (params) => apiClient.get('/patron/content/suggestions', { params }),
@@ -290,6 +289,9 @@ export const patronLibraryAPI = {
   getBookDetails: (bookId) => apiClient.get(`/patron/books/${bookId}`),
   addBookReview: (bookId, data) => apiClient.post(`/patron/books/${bookId}/review`, data),
   semanticSearch: (query, limit = 20) => apiClient.post('/patron/books/semantic-search', { query, limit }),
+
+  // Collections
+  getCollections: () => apiClient.get('/patron/collections'),
 
   // Borrowings
   getMyBorrowings: (status = 'active') => apiClient.get('/patron/my-borrowings', { params: { status } }),

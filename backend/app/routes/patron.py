@@ -538,3 +538,18 @@ def get_my_cowork_bookings():
     bookings = execute_query(query, (user_id,), fetch_all=True)
 
     return jsonify([dict(b) for b in (bookings or [])]), 200
+
+@patron_bp.route('/collections', methods=['GET'])
+def get_collections():
+    """Get all collections (public endpoint for filtering books)"""
+    query = """
+        SELECT c.collection_id, c.collection_name, c.description,
+               COUNT(b.book_id) as book_count
+        FROM collections c
+        LEFT JOIN books b ON c.collection_id = b.collection_id AND b.is_active = TRUE
+        GROUP BY c.collection_id, c.collection_name, c.description
+        HAVING COUNT(b.book_id) > 0
+        ORDER BY c.collection_name
+    """
+    collections = execute_query(query, fetch_all=True)
+    return jsonify([dict(c) for c in (collections or [])]), 200
