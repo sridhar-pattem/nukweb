@@ -128,12 +128,79 @@ def update_theme_settings_bulk():
 def reset_theme():
     """Reset theme to default settings"""
     try:
-        # This would reset to default values defined in the migration
-        # For now, return success message
-        return jsonify({
-            'success': True,
-            'message': 'Theme reset to defaults. Please refresh the page.'
-        }), 200
+        # Define default theme values
+        default_settings = {
+            # Backgrounds
+            'background_primary': '#ffffff',
+            'background_secondary': '#f8f9fa',
+            'background_dark': '#2c3e50',
+
+            # Buttons
+            'button_primary_bg': '#2c3e50',
+            'button_primary_text': '#ffffff',
+            'button_primary_hover': '#1a252f',
+            'button_secondary_bg': '#ffffff',
+            'button_secondary_text': '#2c3e50',
+
+            # Cards
+            'card_background': '#ffffff',
+            'card_border': '#dee2e6',
+            'card_shadow': 'rgba(0,0,0,0.1)',
+
+            # Colors
+            'primary_color': '#2c3e50',
+            'secondary_color': '#3498db',
+            'accent_color': '#e74c3c',
+            'success_color': '#27ae60',
+            'warning_color': '#f39c12',
+            'danger_color': '#e74c3c',
+
+            # Footer
+            'footer_background': '#2c3e50',
+            'footer_text': '#ffffff',
+            'footer_link': '#3498db',
+
+            # Header
+            'header_background': '#ffffff',
+            'header_text': '#2c3e50',
+            'header_hover': '#3498db',
+
+            # Spacing
+            'border_radius': '4px',
+            'spacing_container': '1200px',
+            'spacing_section': '4rem',
+
+            # Text
+            'text_primary': '#2c3e50',
+            'text_secondary': '#6c757d',
+            'text_light': '#adb5bd',
+            'text_white': '#ffffff',
+
+            # Typography
+            'font_family_primary': '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            'font_family_heading': 'Georgia, serif',
+            'font_size_base': '16px',
+            'font_size_h1': '2.5rem',
+            'font_size_h2': '2rem',
+            'font_size_h3': '1.5rem'
+        }
+
+        with get_db_cursor() as cur:
+            # Reset each setting to default value
+            reset_count = 0
+            for setting_key, default_value in default_settings.items():
+                cur.execute("""
+                    UPDATE website_theme_settings
+                    SET setting_value = %s, updated_at = CURRENT_TIMESTAMP
+                    WHERE setting_key = %s
+                """, (default_value, setting_key))
+                reset_count += cur.rowcount
+
+            return jsonify({
+                'success': True,
+                'message': f'Theme reset to defaults ({reset_count} settings updated). Please refresh the page.',
+                'reset_count': reset_count
+            }), 200
 
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
