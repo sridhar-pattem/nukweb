@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import apiClient from '../../../services/api';
 
 const ThemeCustomizer = () => {
     const [settings, setSettings] = useState({});
@@ -13,14 +13,14 @@ const ThemeCustomizer = () => {
 
     const fetchThemeSettings = async () => {
         try {
-            const response = await axios.get('/api/admin/website/theme/settings');
+            const response = await apiClient.get('/admin/website/theme/settings');
             if (response.data.success) {
                 setSettings(response.data.settings);
             }
             setLoading(false);
         } catch (error) {
             console.error('Error fetching theme settings:', error);
-            setMessage('Error loading theme settings');
+            setMessage(`Error loading theme settings: ${error.response?.data?.error || error.message}`);
             setLoading(false);
         }
     };
@@ -53,7 +53,7 @@ const ThemeCustomizer = () => {
                 });
             });
 
-            const response = await axios.put('/api/admin/website/theme/settings/bulk', {
+            const response = await apiClient.put('/admin/website/theme/settings/bulk', {
                 settings: allSettings
             });
 
@@ -63,7 +63,7 @@ const ThemeCustomizer = () => {
             }
         } catch (error) {
             console.error('Error saving theme settings:', error);
-            setMessage('Error saving theme settings');
+            setMessage(`Error saving theme settings: ${error.response?.data?.error || error.message}`);
         } finally {
             setSaving(false);
         }
@@ -75,7 +75,7 @@ const ThemeCustomizer = () => {
         }
 
         try {
-            const response = await axios.post('/api/admin/website/theme/reset');
+            const response = await apiClient.post('/admin/website/theme/reset');
             if (response.data.success) {
                 setMessage('Theme reset to defaults. Refreshing...');
                 setTimeout(() => {
@@ -84,7 +84,7 @@ const ThemeCustomizer = () => {
             }
         } catch (error) {
             console.error('Error resetting theme:', error);
-            setMessage('Error resetting theme');
+            setMessage(`Error resetting theme: ${error.response?.data?.error || error.message}`);
         }
     };
 
