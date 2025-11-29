@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { patronContentAPI } from '../../services/api';
-import { FaSave, FaPaperPlane, FaArrowLeft } from 'react-icons/fa';
+import { FaSave, FaPaperPlane, FaArrowLeft, FaUpload, FaImage } from 'react-icons/fa';
 import '../../styles/blog-editor.css';
 
 const BlogPostEditor = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
   const [formData, setFormData] = useState({
     title: '',
     slug: '',
@@ -18,7 +19,10 @@ const BlogPostEditor = () => {
   });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [imageHeight, setImageHeight] = useState('400');
   const [errors, setErrors] = useState({});
+  const [uploadMessage, setUploadMessage] = useState('');
 
   const categories = [
     'Book Reviews',
@@ -141,6 +145,68 @@ const BlogPostEditor = () => {
     }
   };
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setUploadMessage('Please select an image file');
+      setTimeout(() => setUploadMessage(''), 3000);
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadMessage('Image size should be less than 5MB');
+      setTimeout(() => setUploadMessage(''), 3000);
+      return;
+    }
+
+    setUploading(true);
+    setUploadMessage('');
+
+    try {
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+      const formDataUpload = new FormData();
+      formDataUpload.append('image', file);
+      formDataUpload.append('pageName', 'blog-content');
+
+      const response = await fetch(`${API_URL}/admin/website/upload-banner`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: formDataUpload,
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Set the uploaded image URL
+        setFormData((prev) => ({
+          ...prev,
+          featured_image_url: data.imagePath,
+        }));
+        setUploadMessage('✓ Image uploaded successfully!');
+        setTimeout(() => setUploadMessage(''), 3000);
+      } else {
+        setUploadMessage(`Error: ${data.message || 'Upload failed'}`);
+        setTimeout(() => setUploadMessage(''), 3000);
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      setUploadMessage('Failed to upload image. Please try again.');
+      setTimeout(() => setUploadMessage(''), 3000);
+    } finally {
+      setUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -257,15 +323,106 @@ const BlogPostEditor = () => {
         </div>
 
         <div className="form-group">
-          <label htmlFor="featured_image_url">Featured Image URL</label>
+          <label htmlFor="featured_image_url">Featured Image</label>
+
+          {/* Upload Button */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            style={{ display: 'none' }}
+          />
+
+          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="btn btn-outline"
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            >
+              {uploading ? (
+                <>
+                  <FaUpload style={{ animation: 'spin 1s linear infinite' }} />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <FaImage />
+                  Upload Image
+                </>
+              )}
+            </button>
+
+            {/* Height selector */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <label htmlFor="imageHeight" style={{ marginBottom: 0, fontSize: '0.9rem', whiteSpace: 'nowrap' }}>
+                Image Height:
+              </label>
+              <select
+                id="imageHeight"
+                value={imageHeight}
+                onChange={(e) => setImageHeight(e.target.value)}
+                style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+              >
+                <option value="200">200px</option>
+                <option value="300">300px</option>
+                <option value="400">400px (Recommended)</option>
+                <option value="500">500px</option>
+                <option value="600">600px</option>
+              </select>
+            </div>
+          </div>
+
+          {uploadMessage && (
+            <div
+              style={{
+                padding: '0.75rem 1rem',
+                marginBottom: '1rem',
+                backgroundColor: uploadMessage.startsWith('✓') ? '#d4edda' : '#f8d7da',
+                color: uploadMessage.startsWith('✓') ? '#155724' : '#721c24',
+                border: `1px solid ${uploadMessage.startsWith('✓') ? '#c3e6cb' : '#f5c6cb'}`,
+                borderRadius: '4px',
+                fontSize: '0.9rem',
+              }}
+            >
+              {uploadMessage}
+            </div>
+          )}
+
+          {/* Image URL Input (or manual URL entry) */}
           <input
             type="url"
             id="featured_image_url"
             name="featured_image_url"
             value={formData.featured_image_url}
             onChange={handleChange}
-            placeholder="https://example.com/image.jpg"
+            placeholder="Or enter image URL manually: https://example.com/image.jpg"
           />
+
+          {/* Image Preview */}
+          {formData.featured_image_url && (
+            <div style={{ marginTop: '1rem' }}>
+              <p style={{ fontSize: '0.9rem', fontWeight: '600', marginBottom: '0.5rem' }}>Preview:</p>
+              <img
+                src={formData.featured_image_url}
+                alt="Featured preview"
+                style={{
+                  width: '100%',
+                  height: `${imageHeight}px`,
+                  objectFit: 'cover',
+                  borderRadius: '8px',
+                  border: '1px solid #ddd'
+                }}
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+            </div>
+          )}
+
+          <small>Upload an image or enter a URL manually. Image will match content width.</small>
         </div>
 
         <div className="form-group">
