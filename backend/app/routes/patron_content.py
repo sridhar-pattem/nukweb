@@ -4,7 +4,7 @@ Handles blog posts, reviews, suggestions, and testimonials from patrons
 """
 
 from flask import Blueprint, request, jsonify
-from app.utils.database import get_db_connection
+from app.utils.database import get_db_connection, execute_query
 from app.utils.auth import admin_required
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
@@ -220,8 +220,18 @@ def create_blog_post():
     # Create slug from title
     slug = create_slug(data['title'])
 
-    # Determine status: draft or pending
-    status = 'pending' if data.get('submit', False) else 'draft'
+    # Check if user is admin
+    user_query = "SELECT role FROM users WHERE user_id = %s"
+    user = execute_query(user_query, (current_user_id,), fetch_one=True)
+    is_admin = user and user['role'] == 'admin'
+
+    # Determine status: admins can publish directly, patrons must submit for review or save as draft
+    if is_admin and data.get('status') == 'published':
+        status = 'published'
+    elif data.get('submit', False):
+        status = 'pending'
+    else:
+        status = 'draft'
 
     with get_db_connection() as conn:
         cursor = conn.cursor()
@@ -231,6 +241,11 @@ def create_blog_post():
             cursor.execute("SELECT post_id FROM blog_posts WHERE slug = %s", (slug,))
             if cursor.fetchone():
                 slug = f"{slug}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+
+            # Prepare tags - ensure it's a string
+            tags_value = data.get('tags', '')
+            if isinstance(tags_value, list):
+                tags_value = ', '.join(tags_value)
 
             cursor.execute("""
                 INSERT INTO blog_posts (
@@ -242,11 +257,11 @@ def create_blog_post():
                 current_user_id,
                 data['title'],
                 slug,
-                data.get('excerpt'),
+                data.get('excerpt', ''),
                 data['content'],
-                data.get('featured_image_url'),
-                data.get('category'),
-                data.get('tags', []),
+                data.get('featured_image_url', ''),
+                data.get('category', 'Book Reviews'),
+                tags_value,
                 status
             ))
 
@@ -285,6 +300,11 @@ def update_blog_post(post_id):
     current_user_id = get_jwt_identity()
     data = request.json
 
+    # Check if user is admin
+    user_query = "SELECT role FROM users WHERE user_id = %s"
+    user = execute_query(user_query, (current_user_id,), fetch_one=True)
+    is_admin = user and user['role'] == 'admin'
+
     with get_db_connection() as conn:
         cursor = conn.cursor()
 
@@ -301,8 +321,8 @@ def update_blog_post(post_id):
 
             current_status = result[0]
 
-            # Can only edit draft or posts with changes requested
-            if current_status not in ['draft', 'changes_requested']:
+            # Can only edit draft or posts with changes requested (unless admin)
+            if not is_admin and current_status not in ['draft', 'changes_requested']:
                 return jsonify({'error': 'Cannot edit published or pending posts'}), 403
 
             # Update slug if title changed
@@ -316,8 +336,13 @@ def update_blog_post(post_id):
                 if cursor.fetchone():
                     slug = f"{slug}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
-            # Determine new status
-            new_status = 'pending' if data.get('submit', False) else 'draft'
+            # Determine new status: admins can publish directly, patrons must submit for review or save as draft
+            if is_admin and data.get('status') == 'published':
+                new_status = 'published'
+            elif data.get('submit', False):
+                new_status = 'pending'
+            else:
+                new_status = 'draft'
 
             # Build update query
             update_fields = []
@@ -347,7 +372,11 @@ def update_blog_post(post_id):
 
             if 'tags' in data:
                 update_fields.append("tags = %s")
-                params.append(data['tags'])
+                # Ensure tags is a string
+                tags_value = data['tags']
+                if isinstance(tags_value, list):
+                    tags_value = ', '.join(tags_value)
+                params.append(tags_value)
 
             update_fields.append("status = %s")
             params.append(new_status)

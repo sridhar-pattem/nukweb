@@ -19,79 +19,168 @@ const MembershipPlans = () => {
         <div className="container">
           <div className="text-center mb-xl">
             <FaBook style={{ fontSize: '3rem', color: 'var(--accent-peru)', marginBottom: '1rem' }} />
-            <h2>Library Membership</h2>
-            <p className="text-muted">Access our collection of 10,000+ books</p>
+            <h2>Library Membership Plans</h2>
+            <p className="text-muted">Access our collection of 10,000+ books. Exchange unlimited times!</p>
           </div>
 
           <div className="grid grid-3">
+            {/* One Book Plan */}
             <div className="card" style={{ border: '2px solid var(--light-gray)' }}>
               <div className="text-center">
-                <h3>Basic</h3>
-                <div style={{ fontSize: '3rem', fontWeight: '700', color: 'var(--accent-peru)', margin: '1.5rem 0' }}>
-                  ₹500
-                </div>
-                <p className="text-muted">per month</p>
+                <h3>One Book Plan</h3>
+                <p className="text-muted" style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>Borrow 1 book at a time</p>
               </div>
               <hr className="divider" />
-              <ul style={{ marginLeft: '1.5rem', lineHeight: '2.5' }}>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Borrow 2 books at a time</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> 14-day borrowing period</li>
+              <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                  <span>3 months:</span>
+                  <strong style={{ color: 'var(--accent-peru)' }}>₹1,000</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                  <span>6 months:</span>
+                  <strong style={{ color: 'var(--accent-peru)' }}>₹1,600</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>1 year:</span>
+                  <strong style={{ color: 'var(--accent-peru)' }}>₹2,800</strong>
+                </div>
+              </div>
+              <ul style={{ marginLeft: '1.5rem', lineHeight: '2' }}>
                 <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Full catalogue access</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Reserve books</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Write reviews</li>
+                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Unlimited exchanges</li>
               </ul>
               <Link to="/contact" className="btn btn-outline" style={{ marginTop: '2rem', width: '100%' }}>
                 Get Started
               </Link>
             </div>
 
-            <div className="card" style={{ border: '3px solid var(--accent-peru)', position: 'relative', transform: 'scale(1.05)', zIndex: 1 }}>
-              <span className="badge" style={{ position: 'absolute', top: '-12px', right: '20px', fontSize: '0.875rem' }}>Most Popular</span>
+            {/* Two Book Plan */}
+            <div className="card" style={{ border: '2px solid var(--light-gray)' }}>
               <div className="text-center">
-                <h3>Standard</h3>
-                <div style={{ fontSize: '3rem', fontWeight: '700', color: 'var(--accent-peru)', margin: '1.5rem 0' }}>
-                  ₹800
-                </div>
-                <p className="text-muted">per month</p>
+                <h3>Two Book Plan</h3>
+                <p className="text-muted" style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>Borrow 2 books at a time</p>
               </div>
               <hr className="divider" />
-              <ul style={{ marginLeft: '1.5rem', lineHeight: '2.5' }}>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Borrow 4 books at a time</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> 21-day borrowing period</li>
+              <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                  <span>3 months:</span>
+                  <strong style={{ color: 'var(--accent-peru)' }}>₹1,300</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                  <span>6 months:</span>
+                  <strong style={{ color: 'var(--accent-peru)' }}>₹2,300</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>1 year:</span>
+                  <strong style={{ color: 'var(--accent-peru)' }}>₹4,100</strong>
+                </div>
+              </div>
+              <ul style={{ marginLeft: '1.5rem', lineHeight: '2' }}>
                 <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Full catalogue access</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Reserve books</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Write reviews</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Priority new arrivals</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> 10% discount on events</li>
+                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Unlimited exchanges</li>
+              </ul>
+              <Link to="/contact" className="btn btn-outline" style={{ marginTop: '2rem', width: '100%' }}>
+                Get Started
+              </Link>
+            </div>
+
+            {/* Three Book Plan */}
+            <div className="card" style={{ border: '2px solid var(--light-gray)' }}>
+              <div className="text-center">
+                <h3>Three Book Plan</h3>
+                <p className="text-muted" style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>Borrow 3 books at a time</p>
+              </div>
+              <hr className="divider" />
+              <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                  <span>3 months:</span>
+                  <strong style={{ color: 'var(--accent-peru)' }}>₹1,500</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                  <span>6 months:</span>
+                  <strong style={{ color: 'var(--accent-peru)' }}>₹2,600</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>1 year:</span>
+                  <strong style={{ color: 'var(--accent-peru)' }}>₹4,400</strong>
+                </div>
+              </div>
+              <ul style={{ marginLeft: '1.5rem', lineHeight: '2' }}>
+                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Full catalogue access</li>
+                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Unlimited exchanges</li>
+              </ul>
+              <Link to="/contact" className="btn btn-outline" style={{ marginTop: '2rem', width: '100%' }}>
+                Get Started
+              </Link>
+            </div>
+
+            {/* Four Book Plan */}
+            <div className="card" style={{ border: '3px solid var(--accent-peru)', position: 'relative' }}>
+              <span className="badge" style={{ position: 'absolute', top: '-12px', right: '20px' }}>Popular</span>
+              <div className="text-center">
+                <h3>Four Book Plan</h3>
+                <p className="text-muted" style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>Borrow 4 books at a time</p>
+              </div>
+              <hr className="divider" />
+              <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                  <span>3 months:</span>
+                  <strong style={{ color: 'var(--accent-peru)' }}>₹1,900</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                  <span>6 months:</span>
+                  <strong style={{ color: 'var(--accent-peru)' }}>₹3,400</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>1 year:</span>
+                  <strong style={{ color: 'var(--accent-peru)' }}>₹5,600</strong>
+                </div>
+              </div>
+              <ul style={{ marginLeft: '1.5rem', lineHeight: '2' }}>
+                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Full catalogue access</li>
+                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Unlimited exchanges</li>
               </ul>
               <Link to="/contact" className="btn btn-primary" style={{ marginTop: '2rem', width: '100%' }}>
                 Get Started
               </Link>
             </div>
 
+            {/* Six Book Plan */}
             <div className="card" style={{ border: '2px solid var(--light-gray)' }}>
               <div className="text-center">
-                <h3>Premium</h3>
-                <div style={{ fontSize: '3rem', fontWeight: '700', color: 'var(--accent-peru)', margin: '1.5rem 0' }}>
-                  ₹1,200
-                </div>
-                <p className="text-muted">per month</p>
+                <h3>Six Book Plan</h3>
+                <p className="text-muted" style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>Borrow 6 books at a time</p>
               </div>
               <hr className="divider" />
-              <ul style={{ marginLeft: '1.5rem', lineHeight: '2.5' }}>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Borrow 6 books at a time</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> 30-day borrowing period</li>
+              <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                  <span>3 months:</span>
+                  <strong style={{ color: 'var(--accent-peru)' }}>₹2,300</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                  <span>6 months:</span>
+                  <strong style={{ color: 'var(--accent-peru)' }}>₹4,100</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>1 year:</span>
+                  <strong style={{ color: 'var(--accent-peru)' }}>₹6,800</strong>
+                </div>
+              </div>
+              <ul style={{ marginLeft: '1.5rem', lineHeight: '2' }}>
                 <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Full catalogue access</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Reserve books</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Write reviews</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Priority new arrivals</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> 20% discount on events</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> 1 free activity pass/month</li>
+                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Unlimited exchanges</li>
               </ul>
               <Link to="/contact" className="btn btn-outline" style={{ marginTop: '2rem', width: '100%' }}>
                 Get Started
               </Link>
             </div>
+          </div>
+
+          <div className="text-center" style={{ marginTop: '2rem' }}>
+            <p className="text-muted">
+              💡 All plans include a one-time registration fee of ₹200 and a refundable security deposit.<br/>
+              Contact our front desk for higher plans.
+            </p>
           </div>
         </div>
       </section>
@@ -105,152 +194,86 @@ const MembershipPlans = () => {
             <p className="text-muted">Professional workspace with all amenities</p>
           </div>
 
-          <div className="grid grid-3">
+          <div className="grid grid-2" style={{ maxWidth: '900px', margin: '0 auto' }}>
+            {/* Shared Desk */}
             <div className="card" style={{ border: '2px solid var(--light-gray)' }}>
               <div className="text-center">
-                <h3>Day Pass</h3>
-                <div style={{ fontSize: '3rem', fontWeight: '700', color: 'var(--accent-peru)', margin: '1.5rem 0' }}>
-                  ₹300
-                </div>
-                <p className="text-muted">per day</p>
+                <h3>Shared Desk</h3>
+                <p className="text-muted" style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>Library hall (first-come-first-serve)</p>
               </div>
               <hr className="divider" />
+              <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                  <span>Half-day:</span>
+                  <strong style={{ color: 'var(--accent-peru)', fontSize: '1.5rem' }}>₹300</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                  <span>Daily:</span>
+                  <strong style={{ color: 'var(--accent-peru)', fontSize: '1.5rem' }}>₹500</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                  <span>Monthly:</span>
+                  <strong style={{ color: 'var(--accent-peru)', fontSize: '1.5rem' }}>₹4,000</strong>
+                </div>
+              </div>
               <ul style={{ marginLeft: '1.5rem', lineHeight: '2.5' }}>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> 9 AM - 9 PM access</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> High-speed WiFi</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Power & AC</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Café access</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Common seating</li>
+                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> 300 Mbps WiFi + Backup WiFi</li>
+                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Charging points</li>
+                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> AC & Power backup</li>
+                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Meeting room (prior booking)</li>
+                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Free one-day trial</li>
+                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Special student discounts</li>
               </ul>
               <Link to="/contact" className="btn btn-outline" style={{ marginTop: '2rem', width: '100%' }}>
                 Book Now
               </Link>
             </div>
 
+            {/* Dedicated Desk */}
             <div className="card" style={{ border: '3px solid var(--accent-peru)', position: 'relative' }}>
-              <span className="badge" style={{ position: 'absolute', top: '-12px', right: '20px' }}>Best Value</span>
+              <span className="badge" style={{ position: 'absolute', top: '-12px', right: '20px' }}>Premium</span>
               <div className="text-center">
-                <h3>Monthly</h3>
-                <div style={{ fontSize: '3rem', fontWeight: '700', color: 'var(--accent-peru)', margin: '1.5rem 0' }}>
-                  ₹6,000
-                </div>
-                <p className="text-muted">per month</p>
+                <h3>Dedicated Desk</h3>
+                <p className="text-muted" style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>Glass-partitioned cabins</p>
               </div>
               <hr className="divider" />
-              <ul style={{ marginLeft: '1.5rem', lineHeight: '2.5' }}>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Unlimited access (all days)</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> High-speed WiFi</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Power & AC</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Café access</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Dedicated desk</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Meeting room (2 hrs/week)</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Storage locker</li>
-              </ul>
-              <Link to="/contact" className="btn btn-primary" style={{ marginTop: '2rem', width: '100%' }}>
-                Book Now
-              </Link>
-            </div>
-
-            <div className="card" style={{ border: '2px solid var(--light-gray)' }}>
-              <div className="text-center">
-                <h3>Weekly</h3>
-                <div style={{ fontSize: '3rem', fontWeight: '700', color: 'var(--accent-peru)', margin: '1.5rem 0' }}>
-                  ₹1,800
+              <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                  <span>Half-day:</span>
+                  <strong style={{ color: 'var(--accent-peru)', fontSize: '1.5rem' }}>₹500</strong>
                 </div>
-                <p className="text-muted">per week</p>
-              </div>
-              <hr className="divider" />
-              <ul style={{ marginLeft: '1.5rem', lineHeight: '2.5' }}>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> 9 AM - 9 PM access</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> High-speed WiFi</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Power & AC</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Café access</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Flexible seating</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Meeting room (1 hr)</li>
-              </ul>
-              <Link to="/contact" className="btn btn-outline" style={{ marginTop: '2rem', width: '100%' }}>
-                Book Now
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Study Space */}
-      <section className="section">
-        <div className="container">
-          <div className="text-center mb-xl">
-            <FaGraduationCap style={{ fontSize: '3rem', color: 'var(--accent-peru)', marginBottom: '1rem' }} />
-            <h2>Study Space Plans</h2>
-            <p className="text-muted">Quiet, focused environment for learners</p>
-          </div>
-
-          <div className="grid grid-3">
-            <div className="card" style={{ border: '2px solid var(--light-gray)' }}>
-              <div className="text-center">
-                <h3>Half-Day</h3>
-                <div style={{ fontSize: '3rem', fontWeight: '700', color: 'var(--accent-peru)', margin: '1.5rem 0' }}>
-                  ₹100
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                  <span>Daily:</span>
+                  <strong style={{ color: 'var(--accent-peru)', fontSize: '1.5rem' }}>₹750</strong>
                 </div>
-                <p className="text-muted">4 hours</p>
-              </div>
-              <hr className="divider" />
-              <ul style={{ marginLeft: '1.5rem', lineHeight: '2.5' }}>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> 4-hour access</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Individual desk</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> AC & power</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> WiFi access</li>
-              </ul>
-              <Link to="/contact" className="btn btn-outline" style={{ marginTop: '2rem', width: '100%' }}>
-                Book Now
-              </Link>
-            </div>
-
-            <div className="card" style={{ border: '2px solid var(--light-gray)' }}>
-              <div className="text-center">
-                <h3>Full Day</h3>
-                <div style={{ fontSize: '3rem', fontWeight: '700', color: 'var(--accent-peru)', margin: '1.5rem 0' }}>
-                  ₹150
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                  <span>Monthly:</span>
+                  <strong style={{ color: 'var(--accent-peru)', fontSize: '1.5rem' }}>₹7,000</strong>
                 </div>
-                <p className="text-muted">per day</p>
               </div>
-              <hr className="divider" />
               <ul style={{ marginLeft: '1.5rem', lineHeight: '2.5' }}>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Full-day access</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Individual desk</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> AC & power</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> WiFi access</li>
-              </ul>
-              <Link to="/contact" className="btn btn-outline" style={{ marginTop: '2rem', width: '100%' }}>
-                Book Now
-              </Link>
-            </div>
-
-            <div className="card" style={{ border: '3px solid var(--accent-peru)', position: 'relative' }}>
-              <span className="badge" style={{ position: 'absolute', top: '-12px', right: '20px' }}>Popular</span>
-              <div className="text-center">
-                <h3>Monthly</h3>
-                <div style={{ fontSize: '3rem', fontWeight: '700', color: 'var(--accent-peru)', margin: '1.5rem 0' }}>
-                  ₹3,000
-                </div>
-                <p className="text-muted">per month</p>
-              </div>
-              <hr className="divider" />
-              <ul style={{ marginLeft: '1.5rem', lineHeight: '2.5' }}>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Unlimited access</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Reserved desk</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> AC & power</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> WiFi access</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Personal locker</li>
-                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Free printing (50 pages)</li>
+                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> 300 Mbps WiFi + Backup WiFi</li>
+                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Charging points</li>
+                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> AC & Power backup</li>
+                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Meeting room (prior booking)</li>
+                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Free one-day trial</li>
+                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Special student discounts</li>
+                <li><FaCheckCircle style={{ color: 'var(--success-green)' }} /> Private cabin space</li>
               </ul>
               <Link to="/contact" className="btn btn-primary" style={{ marginTop: '2rem', width: '100%' }}>
                 Book Now
               </Link>
             </div>
           </div>
+
+          <div className="text-center" style={{ marginTop: '2rem' }}>
+            <p className="text-muted">
+              🎓 Special student pricing available | 💰 Extra discount for students below 18 years
+            </p>
+          </div>
         </div>
       </section>
+
 
       {/* CTA */}
       <section className="section section-alt">

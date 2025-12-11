@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { patronContentAPI } from '../../services/api';
-import { FaSave, FaPaperPlane, FaArrowLeft, FaUpload, FaImage } from 'react-icons/fa';
+import { FaSave, FaPaperPlane, FaArrowLeft, FaUpload, FaImage, FaCheckCircle } from 'react-icons/fa';
+import { useAuth } from '../../context/AuthContext';
 import '../../styles/blog-editor.css';
 
 const BlogPostEditor = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   const fileInputRef = useRef(null);
   const [formData, setFormData] = useState({
     title: '',
@@ -232,6 +234,36 @@ const BlogPostEditor = () => {
     } catch (error) {
       console.error('Error submitting post:', error);
       alert(error.response?.data?.message || 'Failed to submit post');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handlePublish = async (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const data = {
+        ...formData,
+        status: 'published', // Admin can publish directly
+      };
+
+      if (id) {
+        await patronContentAPI.updateBlogPost(id, data);
+      } else {
+        await patronContentAPI.createBlogPost(data);
+      }
+
+      alert('Blog post published successfully!');
+      navigate('/patron/dashboard');
+    } catch (error) {
+      console.error('Error publishing post:', error);
+      alert(error.response?.data?.message || 'Failed to publish post');
     } finally {
       setSaving(false);
     }
@@ -466,13 +498,24 @@ const BlogPostEditor = () => {
           >
             <FaSave /> {saving ? 'Saving...' : 'Save as Draft'}
           </button>
-          <button
-            type="submit"
-            className="btn btn-primary"
-            disabled={saving}
-          >
-            <FaPaperPlane /> {saving ? 'Submitting...' : 'Submit for Review'}
-          </button>
+          {isAdmin ? (
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handlePublish}
+              disabled={saving}
+            >
+              <FaCheckCircle /> {saving ? 'Publishing...' : 'Publish Post'}
+            </button>
+          ) : (
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={saving}
+            >
+              <FaPaperPlane /> {saving ? 'Submitting...' : 'Submit for Review'}
+            </button>
+          )}
         </div>
       </form>
 

@@ -1207,7 +1207,7 @@ def upload_banner_image():
         
         # Get file extension
         ext = file.filename.rsplit('.', 1)[1].lower()
-        
+
         # Create a meaningful filename based on page name
         page_name_mapping = {
             'home': 'Home_Banner',
@@ -1216,9 +1216,16 @@ def upload_banner_image():
             'events': 'Nuk-17',
             'blog': 'Nuk-20'
         }
-        
-        base_filename = page_name_mapping.get(page_name, f'{page_name}_Banner')
-        filename = f'{base_filename}.{ext}'
+
+        # For blog content, use original filename with timestamp to avoid overwriting
+        if page_name == 'blog-content':
+            # Secure the original filename and add timestamp for uniqueness
+            original_name = secure_filename(file.filename.rsplit('.', 1)[0])
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filename = f'{original_name}_{timestamp}.{ext}'
+        else:
+            base_filename = page_name_mapping.get(page_name, f'{page_name}_Banner')
+            filename = f'{base_filename}.{ext}'
         
         # Get the absolute path to the website images directory
         # The backend is at /backend/, website is at /website/

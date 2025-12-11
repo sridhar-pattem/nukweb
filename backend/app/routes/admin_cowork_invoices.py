@@ -63,12 +63,12 @@ def create_cowork_invoice():
 
         # Set dates
         issue_date = datetime.now().date()
-        due_date = data.get('due_date')
+        due_date = data.get('due_date') or None  # Convert empty string to None
         if not due_date and data.get('payment_status') == 'pending':
             # Default: 30 days from issue date
             due_date = (issue_date + timedelta(days=30)).strftime('%Y-%m-%d')
 
-        payment_date = data.get('payment_date') if data.get('payment_status') == 'paid' else None
+        payment_date = data.get('payment_date') or None if data.get('payment_status') == 'paid' else None  # Convert empty string to None
         document_type = data.get('document_type', 'invoice')
 
         # Insert invoice into database
