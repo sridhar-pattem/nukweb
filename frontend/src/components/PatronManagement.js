@@ -12,7 +12,10 @@ function PatronManagement() {
   const [totalPages, setTotalPages] = useState(1);
   const [showAddForm, setShowAddForm] = useState(false);
   const [membershipPlans, setMembershipPlans] = useState([]);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editingPatron, setEditingPatron] = useState(null);
   const [newPatron, setNewPatron] = useState({
+    patron_id: '',
     email: '',
     first_name: '',
     last_name: '',
@@ -23,7 +26,13 @@ function PatronManagement() {
     postal_code: '',
     country: '',
     date_of_birth: '',
-    membership_plan_id: ''
+    membership_plan_id: '',
+    national_id: '',
+    national_id_type: '',
+    patron_email: '',
+    secondary_phone_no: '',
+    secondary_email: '',
+    correspond_language: 'English'
   });
 
   useEffect(() => {
@@ -70,6 +79,7 @@ function PatronManagement() {
       setSuccess('Patron added successfully!');
       setShowAddForm(false);
       setNewPatron({
+        patron_id: '',
         email: '',
         first_name: '',
         last_name: '',
@@ -80,7 +90,13 @@ function PatronManagement() {
         postal_code: '',
         country: '',
         date_of_birth: '',
-        membership_plan_id: ''
+        membership_plan_id: '',
+        national_id: '',
+        national_id_type: '',
+        patron_email: '',
+        secondary_phone_no: '',
+        secondary_email: '',
+        correspond_language: 'English'
       });
       loadPatrons();
       setTimeout(() => setSuccess(''), 3000);
@@ -115,6 +131,49 @@ function PatronManagement() {
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to reset password');
+    }
+  };
+
+  const handleEditClick = async (patron) => {
+    try {
+      setError('');
+      const response = await adminPatronsAPI.getPatron(patron.patron_id);
+      setEditingPatron(response.data);
+      setShowEditForm(true);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to load patron details');
+    }
+  };
+
+  const handleEditPatron = async (e) => {
+    e.preventDefault();
+    try {
+      setError('');
+      await adminPatronsAPI.updatePatron(editingPatron.patron_id, editingPatron);
+      setSuccess('Patron updated successfully!');
+      setShowEditForm(false);
+      setEditingPatron(null);
+      loadPatrons();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to update patron');
+    }
+  };
+
+  const handleDeletePatron = async (patronId) => {
+    const reason = window.prompt('Please provide a reason for deleting this patron:');
+    if (!reason) return;
+
+    if (!window.confirm('Are you sure you want to delete this patron? This action will move the patron to the deleted_patrons archive.')) return;
+
+    try {
+      setError('');
+      await adminPatronsAPI.deletePatron(patronId, { reason });
+      setSuccess('Patron deleted successfully!');
+      loadPatrons();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to delete patron');
     }
   };
 
@@ -179,6 +238,32 @@ function PatronManagement() {
             </div>
 
             <form onSubmit={handleAddPatron}>
+              {/* Patron ID */}
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Patron ID *</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ padding: '0.5rem', background: '#f5f5f5', border: '1px solid #ddd', borderRadius: '4px 0 0 4px', fontFamily: 'monospace', fontSize: '1rem', fontWeight: 'bold' }}>
+                    NUKG
+                  </span>
+                  <input
+                    type="text"
+                    value={newPatron.patron_id.replace(/^NUKG/, '')}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9]/g, '');
+                      setNewPatron({ ...newPatron, patron_id: 'NUKG' + value });
+                    }}
+                    required
+                    placeholder="9999999"
+                    pattern="[0-9]+"
+                    maxLength="11"
+                    style={{ flex: 1, padding: '0.5rem', border: '1px solid #ddd', borderLeft: 'none', borderRadius: '0 4px 4px 0', fontFamily: 'monospace', fontSize: '1rem' }}
+                  />
+                </div>
+                <small style={{ color: '#666' }}>Enter only numbers (e.g., 9999999) - NUKG prefix is added automatically</small>
+              </div>
+
+              {/* Basic Information */}
+              <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem', borderBottom: '2px solid #5BC0BE', paddingBottom: '0.5rem' }}>Basic Information</h3>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
                 <div>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>First Name *</label>
@@ -203,7 +288,19 @@ function PatronManagement() {
               </div>
 
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Email *</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Date of Birth</label>
+                <input
+                  type="date"
+                  value={newPatron.date_of_birth}
+                  onChange={(e) => setNewPatron({ ...newPatron, date_of_birth: e.target.value })}
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                />
+              </div>
+
+              {/* Contact Information */}
+              <h3 style={{ marginBottom: '1rem', marginTop: '1.5rem', fontSize: '1.1rem', borderBottom: '2px solid #5BC0BE', paddingBottom: '0.5rem' }}>Contact Information</h3>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Login Email *</label>
                 <input
                   type="email"
                   value={newPatron.email}
@@ -211,18 +308,151 @@ function PatronManagement() {
                   required
                   style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
                 />
+                <small style={{ color: '#666' }}>Used for login credentials</small>
               </div>
 
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Phone</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Patron Email</label>
                 <input
-                  type="tel"
-                  value={newPatron.phone}
-                  onChange={(e) => setNewPatron({ ...newPatron, phone: e.target.value })}
+                  type="email"
+                  value={newPatron.patron_email}
+                  onChange={(e) => setNewPatron({ ...newPatron, patron_email: e.target.value })}
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                />
+                <small style={{ color: '#666' }}>Primary contact email</small>
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Secondary Email</label>
+                <input
+                  type="email"
+                  value={newPatron.secondary_email}
+                  onChange={(e) => setNewPatron({ ...newPatron, secondary_email: e.target.value })}
                   style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
                 />
               </div>
 
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Phone</label>
+                  <input
+                    type="tel"
+                    value={newPatron.phone}
+                    onChange={(e) => setNewPatron({ ...newPatron, phone: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Secondary Phone</label>
+                  <input
+                    type="tel"
+                    value={newPatron.secondary_phone_no}
+                    onChange={(e) => setNewPatron({ ...newPatron, secondary_phone_no: e.target.value })}
+                    maxLength="10"
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Correspondence Language</label>
+                <select
+                  value={newPatron.correspond_language}
+                  onChange={(e) => setNewPatron({ ...newPatron, correspond_language: e.target.value })}
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                >
+                  <option value="English">English</option>
+                  <option value="Kannada">Kannada</option>
+                  <option value="Hindi">Hindi</option>
+                </select>
+              </div>
+
+              {/* Address Information */}
+              <h3 style={{ marginBottom: '1rem', marginTop: '1.5rem', fontSize: '1.1rem', borderBottom: '2px solid #5BC0BE', paddingBottom: '0.5rem' }}>Address Information</h3>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Address</label>
+                <textarea
+                  value={newPatron.address}
+                  onChange={(e) => setNewPatron({ ...newPatron, address: e.target.value })}
+                  rows="2"
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>City</label>
+                  <input
+                    type="text"
+                    value={newPatron.city}
+                    onChange={(e) => setNewPatron({ ...newPatron, city: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>State</label>
+                  <input
+                    type="text"
+                    value={newPatron.state}
+                    onChange={(e) => setNewPatron({ ...newPatron, state: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Postal Code</label>
+                  <input
+                    type="text"
+                    value={newPatron.postal_code}
+                    onChange={(e) => setNewPatron({ ...newPatron, postal_code: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Country</label>
+                  <input
+                    type="text"
+                    value={newPatron.country}
+                    onChange={(e) => setNewPatron({ ...newPatron, country: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  />
+                </div>
+              </div>
+
+              {/* Identification */}
+              <h3 style={{ marginBottom: '1rem', marginTop: '1.5rem', fontSize: '1.1rem', borderBottom: '2px solid #5BC0BE', paddingBottom: '0.5rem' }}>Identification</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>National ID Type</label>
+                  <select
+                    value={newPatron.national_id_type}
+                    onChange={(e) => setNewPatron({ ...newPatron, national_id_type: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  >
+                    <option value="">Select ID Type</option>
+                    <option value="Aadhaar">Aadhaar</option>
+                    <option value="Driving License">Driving License</option>
+                    <option value="PAN">PAN</option>
+                    <option value="Passport No">Passport No</option>
+                    <option value="Voter Id">Voter Id</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>National ID Number</label>
+                  <input
+                    type="text"
+                    value={newPatron.national_id}
+                    onChange={(e) => setNewPatron({ ...newPatron, national_id: e.target.value })}
+                    maxLength="20"
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  />
+                </div>
+              </div>
+
+              {/* Membership */}
+              <h3 style={{ marginBottom: '1rem', marginTop: '1.5rem', fontSize: '1.1rem', borderBottom: '2px solid #5BC0BE', paddingBottom: '0.5rem' }}>Membership</h3>
               <div style={{ marginBottom: '1rem' }}>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Membership Plan</label>
                 <select
@@ -243,6 +473,283 @@ function PatronManagement() {
                 </button>
                 <button type="submit" className="btn btn-primary">
                   Add Patron
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Patron Modal */}
+      {showEditForm && editingPatron && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}
+        onClick={() => setShowEditForm(false)}
+        >
+          <div style={{
+            background: 'white',
+            padding: '2rem',
+            borderRadius: '8px',
+            maxWidth: '600px',
+            width: '90%',
+            maxHeight: '90vh',
+            overflow: 'auto'
+          }}
+          onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+              <h2>Edit Patron</h2>
+              <button onClick={() => setShowEditForm(false)} className="btn">×</button>
+            </div>
+
+            <form onSubmit={handleEditPatron}>
+              {/* Patron ID (Read-only) */}
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Patron ID</label>
+                <input
+                  type="text"
+                  value={editingPatron.patron_id}
+                  disabled
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px', background: '#f5f5f5', cursor: 'not-allowed' }}
+                />
+                <small style={{ color: '#666' }}>Patron ID cannot be changed</small>
+              </div>
+
+              {/* Basic Information */}
+              <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem', borderBottom: '2px solid #5BC0BE', paddingBottom: '0.5rem' }}>Basic Information</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>First Name *</label>
+                  <input
+                    type="text"
+                    value={editingPatron.first_name || ''}
+                    onChange={(e) => setEditingPatron({ ...editingPatron, first_name: e.target.value })}
+                    required
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Last Name *</label>
+                  <input
+                    type="text"
+                    value={editingPatron.last_name || ''}
+                    onChange={(e) => setEditingPatron({ ...editingPatron, last_name: e.target.value })}
+                    required
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Date of Birth</label>
+                <input
+                  type="date"
+                  value={editingPatron.date_of_birth || ''}
+                  onChange={(e) => setEditingPatron({ ...editingPatron, date_of_birth: e.target.value })}
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                />
+              </div>
+
+              {/* Contact Information */}
+              <h3 style={{ marginBottom: '1rem', marginTop: '1.5rem', fontSize: '1.1rem', borderBottom: '2px solid #5BC0BE', paddingBottom: '0.5rem' }}>Contact Information</h3>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Login Email *</label>
+                <input
+                  type="email"
+                  value={editingPatron.email || ''}
+                  onChange={(e) => setEditingPatron({ ...editingPatron, email: e.target.value })}
+                  required
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                />
+                <small style={{ color: '#666' }}>Used for login credentials</small>
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Patron Email</label>
+                <input
+                  type="email"
+                  value={editingPatron.patron_email || ''}
+                  onChange={(e) => setEditingPatron({ ...editingPatron, patron_email: e.target.value })}
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                />
+                <small style={{ color: '#666' }}>Primary contact email</small>
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Secondary Email</label>
+                <input
+                  type="email"
+                  value={editingPatron.secondary_email || ''}
+                  onChange={(e) => setEditingPatron({ ...editingPatron, secondary_email: e.target.value })}
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Phone</label>
+                  <input
+                    type="tel"
+                    value={editingPatron.phone || ''}
+                    onChange={(e) => setEditingPatron({ ...editingPatron, phone: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Secondary Phone</label>
+                  <input
+                    type="tel"
+                    value={editingPatron.secondary_phone_no || ''}
+                    onChange={(e) => setEditingPatron({ ...editingPatron, secondary_phone_no: e.target.value })}
+                    maxLength="10"
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Correspondence Language</label>
+                <select
+                  value={editingPatron.correspond_language || 'English'}
+                  onChange={(e) => setEditingPatron({ ...editingPatron, correspond_language: e.target.value })}
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                >
+                  <option value="English">English</option>
+                  <option value="Kannada">Kannada</option>
+                  <option value="Hindi">Hindi</option>
+                </select>
+              </div>
+
+              {/* Address Information */}
+              <h3 style={{ marginBottom: '1rem', marginTop: '1.5rem', fontSize: '1.1rem', borderBottom: '2px solid #5BC0BE', paddingBottom: '0.5rem' }}>Address Information</h3>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Address</label>
+                <textarea
+                  value={editingPatron.address || ''}
+                  onChange={(e) => setEditingPatron({ ...editingPatron, address: e.target.value })}
+                  rows="2"
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>City</label>
+                  <input
+                    type="text"
+                    value={editingPatron.city || ''}
+                    onChange={(e) => setEditingPatron({ ...editingPatron, city: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>State</label>
+                  <input
+                    type="text"
+                    value={editingPatron.state || ''}
+                    onChange={(e) => setEditingPatron({ ...editingPatron, state: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Postal Code</label>
+                  <input
+                    type="text"
+                    value={editingPatron.postal_code || ''}
+                    onChange={(e) => setEditingPatron({ ...editingPatron, postal_code: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Country</label>
+                  <input
+                    type="text"
+                    value={editingPatron.country || ''}
+                    onChange={(e) => setEditingPatron({ ...editingPatron, country: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  />
+                </div>
+              </div>
+
+              {/* Identification */}
+              <h3 style={{ marginBottom: '1rem', marginTop: '1.5rem', fontSize: '1.1rem', borderBottom: '2px solid #5BC0BE', paddingBottom: '0.5rem' }}>Identification</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>National ID Type</label>
+                  <select
+                    value={editingPatron.national_id_type || ''}
+                    onChange={(e) => setEditingPatron({ ...editingPatron, national_id_type: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  >
+                    <option value="">Select ID Type</option>
+                    <option value="Aadhaar">Aadhaar</option>
+                    <option value="Driving License">Driving License</option>
+                    <option value="PAN">PAN</option>
+                    <option value="Passport No">Passport No</option>
+                    <option value="Voter Id">Voter Id</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>National ID Number</label>
+                  <input
+                    type="text"
+                    value={editingPatron.national_id || ''}
+                    onChange={(e) => setEditingPatron({ ...editingPatron, national_id: e.target.value })}
+                    maxLength="20"
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  />
+                </div>
+              </div>
+
+              {/* Membership */}
+              <h3 style={{ marginBottom: '1rem', marginTop: '1.5rem', fontSize: '1.1rem', borderBottom: '2px solid #5BC0BE', paddingBottom: '0.5rem' }}>Membership</h3>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Membership Plan</label>
+                <select
+                  value={editingPatron.membership_plan_id || ''}
+                  onChange={(e) => setEditingPatron({ ...editingPatron, membership_plan_id: e.target.value })}
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                >
+                  <option value="">No Plan</option>
+                  {membershipPlans.map(plan => (
+                    <option key={plan.plan_id} value={plan.plan_id}>{plan.plan_name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Status</label>
+                <select
+                  value={editingPatron.status || ''}
+                  onChange={(e) => setEditingPatron({ ...editingPatron, status: e.target.value })}
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                >
+                  <option value="active">Active</option>
+                  <option value="frozen">Frozen</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+                <button type="button" onClick={() => setShowEditForm(false)} className="btn">
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Update Patron
                 </button>
               </div>
             </form>
@@ -363,7 +870,15 @@ function PatronManagement() {
                       </span>
                     </td>
                     <td style={{ padding: '0.75rem' }}>
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <button
+                          onClick={() => handleEditClick(patron)}
+                          className="btn"
+                          style={{ fontSize: '0.875rem' }}
+                          title="Edit Patron"
+                        >
+                          ✏️ Edit
+                        </button>
                         {patron.status === 'active' && (
                           <button
                             onClick={() => handleStatusChange(patron.patron_id, 'freeze')}
@@ -391,6 +906,14 @@ function PatronManagement() {
                           title="Reset Password"
                         >
                           🔑 Reset
+                        </button>
+                        <button
+                          onClick={() => handleDeletePatron(patron.patron_id)}
+                          className="btn"
+                          style={{ fontSize: '0.875rem', background: '#f8d7da', color: '#721c24' }}
+                          title="Delete Patron"
+                        >
+                          🗑️ Delete
                         </button>
                       </div>
                     </td>

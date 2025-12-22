@@ -237,7 +237,7 @@ INSERT INTO age_ratings (rating_name, min_age, max_age, description) VALUES
 -- Insert default admin user (password: admin123 - should be changed)
 -- Password hash for 'admin123' using bcrypt
 INSERT INTO users (email, password_hash, role, name, phone, status) VALUES
-('admin@nuklibrary.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TT5WJQYpZx6i9Gx7qbqQ8QmW8WmG', 'admin', 'Admin User', '9999999999', 'active');
+('admin@nuklib.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TT5WJQYpZx6i9Gx7qbqQ8QmW8WmG', 'admin', 'Admin User', '9999999999', 'active');
 
 -- Create function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()

@@ -294,6 +294,17 @@ a:hover {
   position: relative;
 }
 
+/* Add invisible bridge between parent and dropdown to prevent hover gap */
+.nav-dropdown::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 12px;
+  background: transparent;
+}
+
 .nav-dropdown-menu {
   position: absolute;
   top: calc(100% + 8px);
@@ -308,6 +319,7 @@ a:hover {
   visibility: hidden;
   transform: translateY(-8px);
   transition: all var(--transition-base);
+  z-index: 1000;
 }
 
 .nav-dropdown:hover .nav-dropdown-menu {

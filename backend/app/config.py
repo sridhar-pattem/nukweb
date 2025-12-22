@@ -36,4 +36,6 @@ class Config:
     RENEWAL_EXTENSION_DAYS = 14
     INVOICE_ADVANCE_NOTICE_DAYS = 14
 
-    CORS_ORIGINS = os.getenv('CORS_ORIGINS', 'https://localhost:3001').split(',')
+    # CORS Origins - supports '*' for all origins or comma-separated list
+    cors_env = os.getenv('CORS_ORIGINS', 'http://localhost:3001,http://localhost:3002')
+    CORS_ORIGINS = cors_env if cors_env == '*' else cors_env.split(',')

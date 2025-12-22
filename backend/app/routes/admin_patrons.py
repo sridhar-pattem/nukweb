@@ -53,6 +53,9 @@ def get_patrons():
     query = f"""
         SELECT p.patron_id, p.first_name, p.last_name, p.membership_start_date,
                p.membership_end_date, p.address, p.phone, p.city, p.state,
+               p.national_id, p.national_id_type, p.email as patron_email,
+               p.secondary_phone_no, p.secondary_email, p.correspond_language,
+               p.last_renewed_on_date,
                u.user_id, u.email, u.status,
                mp.plan_name, mp.duration_months, mp.price, p.membership_plan_id
         FROM patrons p
@@ -126,11 +129,23 @@ def create_patron():
     """Create a new patron"""
     data = request.get_json()
 
-    required_fields = ['email', 'first_name', 'last_name', 'membership_plan_id']
+    required_fields = ['patron_id', 'email', 'first_name', 'last_name', 'membership_plan_id']
     if not all(field in data for field in required_fields):
-        return jsonify({"error": "Missing required fields: email, first_name, last_name, membership_plan_id"}), 400
+        return jsonify({"error": "Missing required fields: patron_id, email, first_name, last_name, membership_plan_id"}), 400
+
+    patron_id = data['patron_id'].strip().upper()
+
+    # Validate patron_id format (alphanumeric only)
+    import re
+    if not re.match(r'^[A-Z0-9]+$', patron_id):
+        return jsonify({"error": "Patron ID must contain only uppercase letters and numbers"}), 400
 
     with get_db_cursor() as cursor:
+        # Check if patron_id already exists
+        cursor.execute("SELECT patron_id FROM patrons WHERE patron_id = %s", (patron_id,))
+        if cursor.fetchone():
+            return jsonify({"error": f"Patron ID '{patron_id}' already exists. Please use a different ID."}), 400
+
         # Check if email already exists
         cursor.execute("SELECT user_id FROM users WHERE email = %s", (data['email'],))
         if cursor.fetchone():
@@ -165,21 +180,27 @@ def create_patron():
         start_date = date.today()
         end_date = start_date + relativedelta(months=plan['duration_months'])
 
-        # Create patron record
+        # Create patron record with admin-provided patron_id
         cursor.execute("""
             INSERT INTO patrons
-            (user_id, membership_plan_id, first_name, last_name, date_of_birth,
+            (patron_id, user_id, membership_plan_id, first_name, last_name, date_of_birth,
              phone, address, city, state, postal_code, country,
-             membership_start_date, membership_end_date)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+             membership_start_date, membership_end_date,
+             national_id, national_id_type, email, secondary_phone_no,
+             secondary_email, correspond_language, last_renewed_on_date)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING patron_id
-        """, (user_id, data['membership_plan_id'],
+        """, (patron_id, user_id, data['membership_plan_id'],
               data.get('first_name'), data.get('last_name'), data.get('date_of_birth'),
               data.get('phone'), data.get('address'), data.get('city'),
               data.get('state'), data.get('postal_code'), data.get('country'),
-              start_date, end_date))
+              start_date, end_date,
+              data.get('national_id'), data.get('national_id_type'),
+              data.get('patron_email'), data.get('secondary_phone_no'),
+              data.get('secondary_email'), data.get('correspond_language', 'English'),
+              start_date))
 
-        patron_id = cursor.fetchone()['patron_id']
+        created_patron_id = cursor.fetchone()['patron_id']
 
         return jsonify({
             "message": "Patron created successfully",
@@ -213,7 +234,9 @@ def update_patron(patron_id):
         # Update patron information
         patron_fields = [
             'first_name', 'last_name', 'phone', 'address', 'city',
-            'state', 'postal_code', 'country', 'date_of_birth', 'membership_plan_id'
+            'state', 'postal_code', 'country', 'date_of_birth', 'membership_plan_id',
+            'national_id', 'national_id_type', 'patron_email', 'secondary_phone_no',
+            'secondary_email', 'correspond_language', 'last_renewed_on_date'
         ]
 
         if any(k in data for k in patron_fields):
@@ -250,6 +273,27 @@ def update_patron(patron_id):
             if 'membership_plan_id' in data:
                 update_fields.append("membership_plan_id = %s")
                 params.append(data['membership_plan_id'])
+            if 'national_id' in data:
+                update_fields.append("national_id = %s")
+                params.append(data['national_id'])
+            if 'national_id_type' in data:
+                update_fields.append("national_id_type = %s")
+                params.append(data['national_id_type'])
+            if 'patron_email' in data:
+                update_fields.append("email = %s")
+                params.append(data['patron_email'])
+            if 'secondary_phone_no' in data:
+                update_fields.append("secondary_phone_no = %s")
+                params.append(data['secondary_phone_no'])
+            if 'secondary_email' in data:
+                update_fields.append("secondary_email = %s")
+                params.append(data['secondary_email'])
+            if 'correspond_language' in data:
+                update_fields.append("correspond_language = %s")
+                params.append(data['correspond_language'])
+            if 'last_renewed_on_date' in data:
+                update_fields.append("last_renewed_on_date = %s")
+                params.append(data['last_renewed_on_date'])
 
             if update_fields:
                 params.append(patron_id)
@@ -291,27 +335,93 @@ def update_patron_status(patron_id):
     """Update patron status (renew, freeze, close)"""
     data = request.get_json()
     action = data.get('action')  # 'renew', 'freeze', 'close'
-    
+
     if action not in ['renew', 'freeze', 'close']:
         return jsonify({"error": "Invalid action"}), 400
-    
+
     query = "SELECT user_id FROM patrons WHERE patron_id = %s"
     patron = execute_query(query, (patron_id,), fetch_one=True)
-    
+
     if not patron:
         return jsonify({"error": "Patron not found"}), 404
-    
+
     if action == 'renew':
         status = 'active'
     elif action == 'freeze':
         status = 'frozen'
     else:  # close
         status = 'closed'
-    
+
     update_query = "UPDATE users SET status = %s WHERE user_id = %s"
     execute_query(update_query, (status, patron['user_id']))
 
     return jsonify({"message": f"Patron status updated to {status}"}), 200
+
+@admin_patrons_bp.route('/patrons/<patron_id>', methods=['DELETE'])
+@jwt_required()
+@admin_required
+def delete_patron(patron_id):
+    """Soft delete a patron by moving to deleted_patrons table"""
+    from flask_jwt_extended import get_jwt_identity
+
+    data = request.get_json() or {}
+    deletion_reason = data.get('reason', 'No reason provided')
+    deleted_by = int(get_jwt_identity())
+
+    with get_db_cursor() as cursor:
+        # Get full patron record
+        cursor.execute("""
+            SELECT p.*, u.email, u.status
+            FROM patrons p
+            JOIN users u ON p.user_id = u.user_id
+            WHERE p.patron_id = %s
+        """, (patron_id,))
+
+        patron = cursor.fetchone()
+
+        if not patron:
+            return jsonify({"error": "Patron not found"}), 404
+
+        # Check for active borrowings
+        cursor.execute("""
+            SELECT COUNT(*) as count FROM borrowings
+            WHERE patron_id = %s AND status = 'active'
+        """, (patron_id,))
+        result = cursor.fetchone()
+
+        if result and result['count'] > 0:
+            return jsonify({"error": "Cannot delete patron with active borrowings"}), 400
+
+        # Insert into deleted_patrons table
+        cursor.execute("""
+            INSERT INTO deleted_patrons
+            (patron_id, user_id, membership_plan_id, membership_start_date,
+             membership_end_date, status, date_of_birth, address, phone_number,
+             emergency_contact_name, emergency_contact_phone, notes,
+             created_at, updated_at, national_id, national_id_type,
+             email, secondary_phone_no, secondary_email, correspond_language,
+             last_renewed_on_date, deleted_by, deletion_reason)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            patron['patron_id'], patron['user_id'], patron['membership_plan_id'],
+            patron.get('membership_start_date'), patron.get('membership_end_date'),
+            patron['status'], patron.get('date_of_birth'), patron.get('address'),
+            patron.get('phone'), patron.get('emergency_contact_name'),
+            patron.get('emergency_contact_phone'), patron.get('notes'),
+            patron.get('created_at'), patron.get('updated_at'),
+            patron.get('national_id'), patron.get('national_id_type'),
+            patron.get('email'), patron.get('secondary_phone_no'),
+            patron.get('secondary_email'), patron.get('correspond_language'),
+            patron.get('last_renewed_on_date'), deleted_by, deletion_reason
+        ))
+
+        # Delete from patrons table
+        cursor.execute("DELETE FROM patrons WHERE patron_id = %s", (patron_id,))
+
+        # Delete user account
+        cursor.execute("DELETE FROM users WHERE user_id = %s", (patron['user_id'],))
+
+        return jsonify({"message": "Patron deleted successfully"}), 200
 
 @admin_patrons_bp.route('/membership-plans', methods=['GET'])
 @jwt_required()

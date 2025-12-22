@@ -48,9 +48,11 @@ export const authAPI = {
 export const adminPatronsAPI = {
   getPatrons: (page = 1, search = '', status = '') =>
     api.get('/admin/patrons', { params: { page, search, status } }),
+  getPatron: (patronId) => api.get(`/admin/patrons/${patronId}`),
   getPatronDetails: (patronId) => api.get(`/admin/patrons/${patronId}`),
   createPatron: (patronData) => api.post('/admin/patrons', patronData),
   updatePatron: (patronId, patronData) => api.put(`/admin/patrons/${patronId}`, patronData),
+  deletePatron: (patronId, data) => api.delete(`/admin/patrons/${patronId}`, { data }),
   resetPassword: (patronId) => api.post(`/admin/patrons/${patronId}/reset-password`),
   updateStatus: (patronId, action) =>
     api.patch(`/admin/patrons/${patronId}/status`, { action }),

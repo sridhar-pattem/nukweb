@@ -13,12 +13,14 @@ const Catalogue = () => {
   const [hasSearched, setHasSearched] = useState(false);
   const [error, setError] = useState('');
   const [collections, setCollections] = useState([]);
+  const [ageRatings, setAgeRatings] = useState([]);
 
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
 
-  // Fetch collections on mount
+  // Fetch collections and age ratings on mount
   useEffect(() => {
     fetchCollections();
+    fetchAgeRatings();
   }, []);
 
   const fetchCollections = async () => {
@@ -28,6 +30,18 @@ const Catalogue = () => {
     } catch (err) {
       console.error('Error fetching collections:', err);
       setCollections([]);
+    }
+  };
+
+  const fetchAgeRatings = async () => {
+    try {
+      const response = await apiClient.get('/patron/age-ratings', {
+        baseURL: API_URL,
+      });
+      setAgeRatings(response.data || []);
+    } catch (err) {
+      console.error('Error fetching age ratings:', err);
+      setAgeRatings([]);
     }
   };
 
@@ -142,11 +156,11 @@ const Catalogue = () => {
                   onChange={(e) => setSelectedAgeRating(e.target.value)}
                 >
                   <option value="all">All Ages</option>
-                  <option value="toddlers">Toddlers (0-3)</option>
-                  <option value="preschool">Preschool (3-5)</option>
-                  <option value="children">Children (6-12)</option>
-                  <option value="young-adult">Young Adult (13-17)</option>
-                  <option value="adult">Adult (18+)</option>
+                  {ageRatings.map((rating) => (
+                    <option key={rating.rating_id} value={rating.rating_name}>
+                      {rating.rating_name}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>

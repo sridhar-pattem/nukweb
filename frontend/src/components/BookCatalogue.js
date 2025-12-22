@@ -6,6 +6,7 @@ function BookCatalogue() {
   const navigate = useNavigate();
   const [books, setBooks] = useState([]);
   const [collections, setCollections] = useState([]);
+  const [ageRatings, setAgeRatings] = useState([]);
   const [selectedCollection, setSelectedCollection] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -34,6 +35,7 @@ function BookCatalogue() {
 
   useEffect(() => {
     loadCollections();
+    loadAgeRatings();
   }, []);
 
   useEffect(() => {
@@ -72,6 +74,16 @@ function BookCatalogue() {
       }
     } catch (err) {
       console.error('Failed to load collections:', err);
+    }
+  };
+
+  const loadAgeRatings = async () => {
+    try {
+      const response = await adminBooksAPI.getAgeRatings();
+      setAgeRatings(response.data || []);
+    } catch (err) {
+      console.error('Failed to load age ratings:', err);
+      setAgeRatings([]);
     }
   };
 
@@ -334,10 +346,11 @@ function BookCatalogue() {
                   onChange={(e) => setNewBook({...newBook, age_rating: e.target.value})}
                 >
                   <option value="">Select Age Rating</option>
-                  <option value="2-4 years">2-4 years</option>
-                  <option value="5-6 years">5-6 years</option>
-                  <option value="7-9 years">7-9 years</option>
-                  <option value="10+ years">10+ years</option>
+                  {ageRatings.map((rating) => (
+                    <option key={rating.rating_id} value={rating.rating_name}>
+                      {rating.rating_name}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="form-group" style={{ gridColumn: '1 / -1' }}>

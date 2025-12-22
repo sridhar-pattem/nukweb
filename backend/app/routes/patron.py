@@ -553,3 +553,10 @@ def get_collections():
     """
     collections = execute_query(query, fetch_all=True)
     return jsonify([dict(c) for c in (collections or [])]), 200
+
+@patron_bp.route('/age-ratings', methods=['GET'])
+def get_age_ratings():
+    """Get all age ratings (public endpoint for filtering books)"""
+    query = "SELECT * FROM age_ratings ORDER BY min_age, max_age NULLS LAST"
+    ratings = execute_query(query, fetch_all=True)
+    return jsonify([dict(r) for r in (ratings or [])]), 200

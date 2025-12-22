@@ -13,9 +13,11 @@ function BookDetail() {
   const [contributorSearch, setContributorSearch] = useState('');
   const [contributorResults, setContributorResults] = useState([]);
   const [editFormData, setEditFormData] = useState(null);
+  const [ageRatings, setAgeRatings] = useState([]);
 
   useEffect(() => {
     loadBookDetails();
+    loadAgeRatings();
   }, [bookId]);
 
   const loadBookDetails = async () => {
@@ -28,6 +30,16 @@ function BookDetail() {
       setError(err.response?.data?.error || 'Failed to load book details');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadAgeRatings = async () => {
+    try {
+      const response = await adminBooksAPI.getAgeRatings();
+      setAgeRatings(response.data || []);
+    } catch (err) {
+      console.error('Failed to load age ratings:', err);
+      setAgeRatings([]);
     }
   };
 
@@ -273,11 +285,17 @@ function BookDetail() {
               </div>
               <div className="form-group">
                 <label>Age Rating</label>
-                <input
-                  type="text"
+                <select
                   value={editFormData.age_rating}
                   onChange={(e) => setEditFormData({...editFormData, age_rating: e.target.value})}
-                />
+                >
+                  <option value="">Select Age Rating</option>
+                  {ageRatings.map((rating) => (
+                    <option key={rating.rating_id} value={rating.rating_name}>
+                      {rating.rating_name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                 <label>Cover Image URL</label>
