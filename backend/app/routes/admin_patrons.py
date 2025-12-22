@@ -155,11 +155,14 @@ def create_patron():
         default_password = "BookNook313"
         password_hash = hash_password(default_password)
 
+        # Combine first and last name for the user's name field
+        full_name = f"{data.get('first_name', '')} {data.get('last_name', '')}".strip()
+
         cursor.execute("""
-            INSERT INTO users (email, password_hash, role, status)
-            VALUES (%s, %s, 'patron', 'active')
+            INSERT INTO users (email, password_hash, role, status, name)
+            VALUES (%s, %s, 'patron', 'active', %s)
             RETURNING user_id
-        """, (data['email'], password_hash))
+        """, (data['email'], password_hash, full_name))
 
         user_id = cursor.fetchone()['user_id']
 
@@ -181,6 +184,21 @@ def create_patron():
         end_date = start_date + relativedelta(months=plan['duration_months'])
 
         # Create patron record with admin-provided patron_id
+        # Convert empty strings to None for optional fields
+        date_of_birth = data.get('date_of_birth') or None
+        phone = data.get('phone') or None
+        address = data.get('address') or None
+        city = data.get('city') or None
+        state = data.get('state') or None
+        postal_code = data.get('postal_code') or None
+        country = data.get('country') or None
+        national_id = data.get('national_id') or None
+        national_id_type = data.get('national_id_type') or None
+        patron_email = data.get('patron_email') or None
+        secondary_phone_no = data.get('secondary_phone_no') or None
+        secondary_email = data.get('secondary_email') or None
+        correspond_language = data.get('correspond_language') or 'English'
+
         cursor.execute("""
             INSERT INTO patrons
             (patron_id, user_id, membership_plan_id, first_name, last_name, date_of_birth,
@@ -191,13 +209,12 @@ def create_patron():
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING patron_id
         """, (patron_id, user_id, data['membership_plan_id'],
-              data.get('first_name'), data.get('last_name'), data.get('date_of_birth'),
-              data.get('phone'), data.get('address'), data.get('city'),
-              data.get('state'), data.get('postal_code'), data.get('country'),
+              data.get('first_name'), data.get('last_name'), date_of_birth,
+              phone, address, city, state, postal_code, country,
               start_date, end_date,
-              data.get('national_id'), data.get('national_id_type'),
-              data.get('patron_email'), data.get('secondary_phone_no'),
-              data.get('secondary_email'), data.get('correspond_language', 'English'),
+              national_id, national_id_type,
+              patron_email, secondary_phone_no,
+              secondary_email, correspond_language,
               start_date))
 
         created_patron_id = cursor.fetchone()['patron_id']
