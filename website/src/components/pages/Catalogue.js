@@ -60,6 +60,7 @@ const Catalogue = () => {
       available_items: book.available_items || 0,
       collection_name: book.collection_name || '',
       age_rating: book.age_rating || '',
+      tags: book.tags || [],
     }));
 
   const handleSearch = async (e) => {
@@ -118,7 +119,7 @@ const Catalogue = () => {
                 <input
                   type="text"
                   className="search-input"
-                  placeholder="Search by title, author, or ISBN..."
+                  placeholder="Search by title, author, tags, or ISBN..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { adminBooksAPI, adminItemsAPI, adminContributorsAPI } from '../services/api';
+import TagInput from './common/TagInput';
 
 function BookDetail() {
   const { bookId } = useParams();
@@ -123,7 +124,8 @@ function BookDetail() {
       language: book.language || 'eng',
       age_rating: book.age_rating || '',
       cover_image_url: book.cover_image_url || '',
-      collection_id: book.collection_id || ''
+      collection_id: book.collection_id || '',
+      tags: book.tags || []
     });
     setShowEditForm(true);
   };
@@ -313,6 +315,13 @@ function BookDetail() {
                   rows="4"
                 />
               </div>
+              <div style={{ gridColumn: '1 / -1' }}>
+                <TagInput
+                  tags={editFormData.tags}
+                  onChange={(newTags) => setEditFormData({...editFormData, tags: newTags})}
+                  placeholder="Add tags for searchability (e.g., fiction, adventure, young-adult)"
+                />
+              </div>
             </div>
             <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
               <button type="submit" className="btn btn-success">Save Changes</button>
@@ -372,6 +381,31 @@ function BookDetail() {
               </div>
             )}
           </div>
+
+          {/* Tags Display */}
+          {book.tags && book.tags.length > 0 && (
+            <div style={{ marginTop: '15px' }}>
+              <strong>Tags:</strong>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
+                {book.tags.map((tag, index) => (
+                  <span
+                    key={index}
+                    style={{
+                      display: 'inline-block',
+                      padding: '0.25rem 0.75rem',
+                      background: '#e3f2fd',
+                      color: '#1976d2',
+                      borderRadius: '16px',
+                      fontSize: '0.875rem',
+                      fontWeight: '500'
+                    }}
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Status and Availability */}
           <div className="book-availability">

@@ -13,6 +13,7 @@ const BookCard = ({ book, compact = false }) => {
     available_items = 0,
     collection_name,
     age_rating,
+    tags = [],
   } = book;
 
   const displayImage = cover_image_url || thumbnail_url || '/assets/images/book-placeholder.jpg';
@@ -32,6 +33,28 @@ const BookCard = ({ book, compact = false }) => {
       <div className="book-card-content">
         <h4 className="book-card-title">{title}</h4>
         <p className="book-card-author">by {displayAuthors}</p>
+        {tags.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.5rem', marginBottom: '0.5rem' }}>
+            {tags.slice(0, 3).map((tag, index) => (
+              <span
+                key={index}
+                style={{
+                  fontSize: '0.7rem',
+                  padding: '0.15rem 0.4rem',
+                  background: '#e3f2fd',
+                  color: '#1976d2',
+                  borderRadius: '10px',
+                  fontWeight: '500'
+                }}
+              >
+                {tag}
+              </span>
+            ))}
+            {tags.length > 3 && (
+              <span style={{ fontSize: '0.7rem', color: '#666' }}>+{tags.length - 3}</span>
+            )}
+          </div>
+        )}
         <div className="book-card-meta">
           {compact ? (
             <>

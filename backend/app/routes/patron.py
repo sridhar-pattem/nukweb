@@ -78,9 +78,13 @@ def search_books_public():
                          SELECT 1 FROM book_contributors bc
                          JOIN contributors c ON bc.contributor_id = c.contributor_id
                          WHERE bc.book_id = b.book_id AND c.name ILIKE %s
+                     ) OR
+                     EXISTS (
+                         SELECT 1 FROM unnest(b.tags) AS tag
+                         WHERE tag ILIKE %s
                      ))
                 """)
-                params.extend([word_param, word_param, word_param])
+                params.extend([word_param, word_param, word_param, word_param])
 
             # All words must match (AND logic)
             if word_conditions:
@@ -98,7 +102,7 @@ def search_books_public():
         SELECT b.book_id, b.isbn, b.title, b.subtitle,
                b.publisher, b.publication_year,
                b.collection_id, c.collection_name,
-               b.age_rating, b.cover_image_url,
+               b.age_rating, b.cover_image_url, b.tags,
                ba.available_items, ba.total_items,
                COALESCE((SELECT json_agg(
                    json_build_object('name', contrib.name, 'role', bc.role)
@@ -146,9 +150,13 @@ def _keyword_search(search: str, limit: int = 6):
                          SELECT 1 FROM book_contributors bc
                          JOIN contributors c ON bc.contributor_id = c.contributor_id
                          WHERE bc.book_id = b.book_id AND c.name ILIKE %s
+                     ) OR
+                     EXISTS (
+                         SELECT 1 FROM unnest(b.tags) AS tag
+                         WHERE tag ILIKE %s
                      ))
                 """)
-                params.extend([word_param, word_param, word_param])
+                params.extend([word_param, word_param, word_param, word_param])
 
             if word_conditions:
                 where_clauses.append("(" + " AND ".join(word_conditions) + ")")
@@ -159,7 +167,7 @@ def _keyword_search(search: str, limit: int = 6):
         SELECT b.book_id, b.isbn, b.title, b.subtitle,
                b.publisher, b.publication_year,
                b.collection_id, c.collection_name,
-               b.age_rating, b.cover_image_url,
+               b.age_rating, b.cover_image_url, b.tags,
                ba.available_items, ba.total_items,
                COALESCE((SELECT json_agg(
                    json_build_object('name', contrib.name, 'role', bc.role)
@@ -257,7 +265,7 @@ def browse_books():
         SELECT b.book_id, b.isbn, b.title, b.subtitle,
                b.publisher, b.publication_year,
                b.collection_id, c.collection_name,
-               b.age_rating, b.cover_image_url,
+               b.age_rating, b.cover_image_url, b.tags,
                ba.available_items, ba.total_items,
                COALESCE((SELECT json_agg(
                    json_build_object('name', contrib.name, 'role', bc.role)

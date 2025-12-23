@@ -67,7 +67,7 @@ def get_books():
                b.publisher, b.publication_year,
                b.collection_id, c.collection_name,
                b.content_type, b.media_type, b.carrier_type,
-               b.language, b.subjects,
+               b.language, b.subjects, b.tags,
                b.age_rating, b.cover_image_url, b.created_at,
                ba.total_items, ba.available_items,
                ba.checked_out_items, ba.on_hold_items,
@@ -115,7 +115,7 @@ def get_book_details(book_id):
                b.series_title, b.series_number,
                b.extent, b.dimensions,
                b.content_type, b.media_type, b.carrier_type,
-               b.subjects, b.description, b.notes,
+               b.subjects, b.description, b.notes, b.tags,
                b.age_rating, b.target_audience,
                b.language, b.additional_languages,
                b.collection_id, c.collection_name,
@@ -369,14 +369,14 @@ def add_book():
          series_title, series_number,
          extent, dimensions,
          content_type, media_type, carrier_type,
-         subjects, description, notes,
+         subjects, description, notes, tags,
          age_rating, target_audience,
          language, additional_languages,
          collection_id, call_number,
          cover_image_url, thumbnail_url,
          resource_type, cataloged_by)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING book_id
     """
 
@@ -404,6 +404,7 @@ def add_book():
             data.get('subjects'),
             data.get('description'),
             data.get('notes'),
+            data.get('tags'),
             data.get('age_rating'),
             data.get('target_audience'),
             data.get('language', 'eng'),
@@ -466,7 +467,7 @@ def update_book(book_id):
         'series_title', 'series_number',
         'extent', 'dimensions',
         'content_type', 'media_type', 'carrier_type',
-        'subjects', 'description', 'notes',
+        'subjects', 'description', 'notes', 'tags',
         'age_rating', 'target_audience',
         'language', 'additional_languages',
         'collection_id', 'call_number',

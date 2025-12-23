@@ -22,6 +22,7 @@ const BookDetail = () => {
       cover_image_url: 'https://via.placeholder.com/300x450?text=Midnight+Library',
       description: 'Between life and death there is a library, and within that library, the shelves go on forever. Every book provides a chance to try another life you could have lived. To see how things would be if you had made other choices... Would you have done anything different, if you had the chance to undo your regrets?',
       subjects: ['Fiction', 'Philosophy', 'Contemporary'],
+      tags: ['fiction', 'philosophy', 'bestseller', 'mental-health'],
       collection: 'Fiction',
       age_rating: 'Adult',
       rating: 4.5,
@@ -199,6 +200,29 @@ const BookDetail = () => {
                     {subject}
                   </span>
                 ))}
+              </div>
+            )}
+            {book.tags && book.tags.length > 0 && (
+              <div style={{ marginTop: '1rem' }}>
+                <strong>Tags:</strong>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
+                  {book.tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      style={{
+                        display: 'inline-block',
+                        padding: '0.25rem 0.75rem',
+                        background: '#e3f2fd',
+                        color: '#1976d2',
+                        borderRadius: '16px',
+                        fontSize: '0.875rem',
+                        fontWeight: '500'
+                      }}
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
           </div>

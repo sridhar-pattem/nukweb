@@ -194,8 +194,31 @@ function BrowseBooks() {
               <p><strong>Collection:</strong> {selectedBook.book.collection}</p>
               <p><strong>Available Copies:</strong> {selectedBook.book.available_copies}</p>
               {selectedBook.book.avg_rating && (
-                <p><strong>Rating:</strong> {parseFloat(selectedBook.book.avg_rating).toFixed(1)} ⭐ 
+                <p><strong>Rating:</strong> {parseFloat(selectedBook.book.avg_rating).toFixed(1)} ⭐
                    ({selectedBook.book.review_count} reviews)</p>
+              )}
+              {selectedBook.book.tags && selectedBook.book.tags.length > 0 && (
+                <div style={{ marginTop: '10px' }}>
+                  <strong>Tags:</strong>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
+                    {selectedBook.book.tags.map((tag, index) => (
+                      <span
+                        key={index}
+                        style={{
+                          display: 'inline-block',
+                          padding: '0.25rem 0.75rem',
+                          background: '#e3f2fd',
+                          color: '#1976d2',
+                          borderRadius: '16px',
+                          fontSize: '0.875rem',
+                          fontWeight: '500'
+                        }}
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               )}
               {selectedBook.book.description && (
                 <p style={{ marginTop: '15px' }}>{selectedBook.book.description}</p>
@@ -288,6 +311,28 @@ function BrowseBooks() {
                 <p><small>{book.collection}</small></p>
                 {book.avg_rating && (
                   <p>⭐ {parseFloat(book.avg_rating).toFixed(1)}</p>
+                )}
+                {book.tags && book.tags.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.5rem' }}>
+                    {book.tags.slice(0, 3).map((tag, index) => (
+                      <span
+                        key={index}
+                        style={{
+                          fontSize: '0.7rem',
+                          padding: '0.15rem 0.4rem',
+                          background: '#e3f2fd',
+                          color: '#1976d2',
+                          borderRadius: '10px',
+                          fontWeight: '500'
+                        }}
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                    {book.tags.length > 3 && (
+                      <span style={{ fontSize: '0.7rem', color: '#666' }}>+{book.tags.length - 3}</span>
+                    )}
+                  </div>
                 )}
                 <p style={{ color: book.available_copies > 0 ? '#27ae60' : '#e74c3c', fontWeight: 'bold' }}>
                   {book.available_copies > 0 ? `${book.available_copies} Available` : 'Not Available'}
