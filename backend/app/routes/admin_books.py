@@ -27,16 +27,47 @@ def get_books():
     params = []
 
     if search:
-        where_clauses.append("""
-            (b.title ILIKE %s OR b.subtitle ILIKE %s OR b.isbn ILIKE %s OR
-             EXISTS (
-                 SELECT 1 FROM book_contributors bc
-                 JOIN contributors c ON bc.contributor_id = c.contributor_id
-                 WHERE bc.book_id = b.book_id AND c.name ILIKE %s
-             ))
-        """)
-        search_param = f'%{search}%'
-        params.extend([search_param, search_param, search_param, search_param])
+        # Handle quoted phrases for exact tag matching and regular words
+        import re
+        quoted_pattern = r'"([^"]+)"'
+        quoted_terms = re.findall(quoted_pattern, search)
+        # Remove quoted parts and split remaining into words
+        remaining = re.sub(quoted_pattern, '', search)
+        search_words = [word.strip() for word in remaining.split() if word.strip()]
+
+        word_conditions = []
+
+        # Process quoted terms (exact tag match only)
+        for quoted_term in quoted_terms:
+            quoted_lower = quoted_term.lower().strip()
+            word_conditions.append("""
+                EXISTS (
+                    SELECT 1 FROM unnest(b.tags) AS tag
+                    WHERE LOWER(tag) = %s
+                )
+            """)
+            params.append(quoted_lower)
+
+        # Process regular words (partial match in title/author/tags/ISBN)
+        for word in search_words:
+            word_param = f'%{word}%'
+            word_conditions.append("""
+                (b.title ILIKE %s OR b.subtitle ILIKE %s OR b.isbn ILIKE %s OR
+                 EXISTS (
+                     SELECT 1 FROM book_contributors bc
+                     JOIN contributors c ON bc.contributor_id = c.contributor_id
+                     WHERE bc.book_id = b.book_id AND c.name ILIKE %s
+                 ) OR
+                 EXISTS (
+                     SELECT 1 FROM unnest(b.tags) AS tag
+                     WHERE tag ILIKE %s
+                 ))
+            """)
+            params.extend([word_param, word_param, word_param, word_param, word_param])
+
+        # All conditions must match (AND logic)
+        if word_conditions:
+            where_clauses.append("(" + " AND ".join(word_conditions) + ")")
 
     if collection:
         where_clauses.append("b.collection_id = %s")
