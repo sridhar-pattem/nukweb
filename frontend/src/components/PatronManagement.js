@@ -106,11 +106,13 @@ function PatronManagement() {
   };
 
   const handleStatusChange = async (patronId, action) => {
-    const actionText = action === 'freeze' ? 'freeze' : action === 'renew' ? 'renew' : action === 'close' ? 'close' : action;
+    const actionText = action === 'freeze' ? 'freeze' : action === 'renew' ? 'renew' : action === 'close' ? 'close' : action === 'activate' ? 'activate' : action;
     const confirmText = action === 'close'
       ? 'Are you sure you want to close this patron\'s account? This will mark the account as closed but keep the data in the system.'
       : action === 'renew'
-      ? 'Are you sure you want to renew this patron\'s membership? This will set their status to active.'
+      ? 'Are you sure you want to renew this patron\'s membership? This will extend the membership and set their status to active.'
+      : action === 'activate'
+      ? 'Are you sure you want to activate this patron\'s account? This will change the status to active without extending the membership.'
       : `Are you sure you want to ${actionText} this patron's account?`;
 
     if (!window.confirm(confirmText)) return;
@@ -121,7 +123,9 @@ function PatronManagement() {
       const successText = action === 'close'
         ? 'Patron account closed successfully!'
         : action === 'renew'
-        ? 'Patron membership renewed successfully! Status is now active.'
+        ? 'Patron membership renewed successfully! Status is now active and membership extended.'
+        : action === 'activate'
+        ? 'Patron account activated successfully! Status is now active.'
         : action === 'freeze'
         ? 'Patron account frozen successfully!'
         : `Patron account ${actionText}d successfully!`;
@@ -921,23 +925,43 @@ function PatronManagement() {
                           ✏️ Edit
                         </button>
                         {patron.status === 'active' && (
-                          <button
-                            onClick={() => handleStatusChange(patron.patron_id, 'freeze')}
-                            className="btn"
-                            style={{ fontSize: '0.875rem' }}
-                            title="Freeze"
-                          >
-                            ⏸ Freeze
-                          </button>
+                          <>
+                            <button
+                              onClick={() => handleStatusChange(patron.patron_id, 'freeze')}
+                              className="btn"
+                              style={{ fontSize: '0.875rem' }}
+                              title="Freeze"
+                            >
+                              ⏸ Freeze
+                            </button>
+                            <button
+                              onClick={() => handleStatusChange(patron.patron_id, 'renew')}
+                              className="btn"
+                              style={{ fontSize: '0.875rem', background: '#d4edda', color: '#155724' }}
+                              title="Renew Membership"
+                            >
+                              🔄 Renew
+                            </button>
+                          </>
                         )}
-                        {(patron.status === 'frozen' || patron.status === 'inactive' || patron.status === 'closed') && (
+                        {patron.status === 'frozen' && (
                           <button
-                            onClick={() => handleStatusChange(patron.patron_id, 'renew')}
+                            onClick={() => handleStatusChange(patron.patron_id, 'activate')}
                             className="btn"
                             style={{ fontSize: '0.875rem', background: '#d4edda', color: '#155724' }}
-                            title="Renew Membership"
+                            title="Activate Account"
                           >
-                            🔄 Renew
+                            ▶ Activate
+                          </button>
+                        )}
+                        {patron.status === 'closed' && (
+                          <button
+                            onClick={() => handleStatusChange(patron.patron_id, 'activate')}
+                            className="btn"
+                            style={{ fontSize: '0.875rem', background: '#d4edda', color: '#155724' }}
+                            title="Activate Account"
+                          >
+                            ✓ Activate
                           </button>
                         )}
                         {(patron.status === 'active' || patron.status === 'frozen' || patron.status === 'inactive') && (

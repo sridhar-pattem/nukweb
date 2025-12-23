@@ -349,28 +349,66 @@ def reset_patron_password(patron_id):
 @jwt_required()
 @admin_required
 def update_patron_status(patron_id):
-    """Update patron status (renew, freeze, close)"""
+    """Update patron status (renew, activate, freeze, close)"""
     data = request.get_json()
-    action = data.get('action')  # 'renew', 'freeze', 'close'
+    action = data.get('action')  # 'renew', 'activate', 'freeze', 'close'
 
-    if action not in ['renew', 'freeze', 'close']:
+    if action not in ['renew', 'activate', 'freeze', 'close']:
         return jsonify({"error": "Invalid action"}), 400
 
-    query = "SELECT user_id FROM patrons WHERE patron_id = %s"
-    patron = execute_query(query, (patron_id,), fetch_one=True)
+    with get_db_cursor() as cursor:
+        # Get patron and membership plan details
+        cursor.execute("""
+            SELECT p.user_id, p.membership_plan_id, p.membership_end_date,
+                   mp.duration_months
+            FROM patrons p
+            LEFT JOIN membership_plans mp ON p.membership_plan_id = mp.plan_id
+            WHERE p.patron_id = %s
+        """, (patron_id,))
 
-    if not patron:
-        return jsonify({"error": "Patron not found"}), 404
+        patron = cursor.fetchone()
 
-    if action == 'renew':
-        status = 'active'
-    elif action == 'freeze':
-        status = 'frozen'
-    else:  # close
-        status = 'closed'
+        if not patron:
+            return jsonify({"error": "Patron not found"}), 404
 
-    update_query = "UPDATE users SET status = %s WHERE user_id = %s"
-    execute_query(update_query, (status, patron['user_id']))
+        if action == 'renew':
+            # Renew: Set status to active AND extend membership
+            status = 'active'
+
+            # Calculate new end date
+            if patron['membership_plan_id'] and patron['duration_months']:
+                from datetime import datetime
+                from dateutil.relativedelta import relativedelta
+
+                # If current membership is still valid, extend from end date
+                # Otherwise, extend from today
+                today = datetime.now().date()
+                current_end = patron['membership_end_date']
+
+                if current_end and current_end > today:
+                    # Extend from current end date
+                    new_end_date = current_end + relativedelta(months=patron['duration_months'])
+                else:
+                    # Start fresh from today
+                    new_end_date = today + relativedelta(months=patron['duration_months'])
+
+                # Update patron with new end date and renewed date
+                cursor.execute("""
+                    UPDATE patrons
+                    SET membership_end_date = %s, last_renewed_on_date = %s
+                    WHERE patron_id = %s
+                """, (new_end_date, today, patron_id))
+        elif action == 'activate':
+            # Activate: Only change status to active, don't touch membership dates
+            status = 'active'
+        elif action == 'freeze':
+            status = 'frozen'
+        else:  # close
+            status = 'closed'
+
+        # Update user status
+        cursor.execute("UPDATE users SET status = %s WHERE user_id = %s",
+                      (status, patron['user_id']))
 
     return jsonify({"message": f"Patron status updated to {status}"}), 200
 
