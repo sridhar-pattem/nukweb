@@ -119,7 +119,7 @@ const Catalogue = () => {
                 <input
                   type="text"
                   className="search-input"
-                  placeholder="Search by title, author, tags, or ISBN..."
+                  placeholder='Search by title, author, tags, or ISBN... Use "quotes" for exact tag match'
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -128,6 +128,10 @@ const Catalogue = () => {
                 </button>
               </div>
             </form>
+
+            <div style={{ fontSize: '0.875rem', color: '#666', marginTop: '0.5rem', fontStyle: 'italic' }}>
+              💡 Tip: Use quotes around tags for exact matches (e.g., "fiction" or "bestseller")
+            </div>
 
             <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', flexWrap: 'wrap' }}>
               <div className="form-group" style={{ marginBottom: 0, flex: '1', minWidth: '200px' }}>
