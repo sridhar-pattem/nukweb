@@ -64,14 +64,7 @@ function BookCatalogue() {
     try {
       const response = await adminCollectionsAPI.getCollections();
       setCollections(response.data);
-
-      // Find "Popular Science" collection and set as default
-      const popularScience = response.data.find(c =>
-        c.collection_name.toLowerCase().includes('popular science')
-      );
-      if (popularScience && !selectedCollection) {
-        setSelectedCollection(popularScience.collection_id);
-      }
+      // Default to "All Collections" (empty string)
     } catch (err) {
       console.error('Failed to load collections:', err);
     }
