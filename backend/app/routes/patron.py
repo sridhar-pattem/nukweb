@@ -601,3 +601,4 @@ def get_age_ratings():
     query = "SELECT * FROM age_ratings ORDER BY min_age, max_age NULLS LAST"
     ratings = execute_query(query, fetch_all=True)
     return jsonify([dict(r) for r in (ratings or [])]), 200
+# Tag search with quoted terms for exact matching
