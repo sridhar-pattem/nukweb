@@ -138,7 +138,7 @@ function PatronManagement() {
     try {
       setError('');
       const response = await adminPatronsAPI.getPatron(patron.patron_id);
-      setEditingPatron(response.data);
+      setEditingPatron(response.data.patron);
       setShowEditForm(true);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to load patron details');
