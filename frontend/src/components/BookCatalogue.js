@@ -396,11 +396,14 @@ function BookCatalogue() {
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Search:</label>
             <input
               type="text"
-              placeholder="Search by title, contributor, or ISBN..."
+              placeholder='Search by title, contributor, tags, or ISBN... Use "quotes" for exact tag match'
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}
             />
+            <div style={{ fontSize: '13px', color: '#666', marginTop: '5px', fontStyle: 'italic' }}>
+              💡 Tip: Use quotes around tags for exact matches (e.g., "fiction" or "bestseller")
+            </div>
           </div>
         </div>
 
