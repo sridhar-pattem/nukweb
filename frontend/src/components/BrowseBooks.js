@@ -96,7 +96,7 @@ function BrowseBooks() {
               type="text"
               placeholder={searchMode === 'semantic'
                 ? "Try: 'books about chemistry for students' or 'inspiring biographies'"
-                : "Search books by title or author..."}
+                : 'Search by title, author, tags, or ISBN... Use "quotes" for exact tag match'}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{
@@ -116,6 +116,10 @@ function BrowseBooks() {
             </button>
           </div>
         </form>
+
+        <div style={{ fontSize: '13px', color: '#666', marginBottom: '10px', fontStyle: 'italic' }}>
+          💡 Tip: Use quotes around tags for exact matches (e.g., "fiction" or "bestseller")
+        </div>
 
         <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
