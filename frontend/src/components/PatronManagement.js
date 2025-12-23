@@ -106,13 +106,26 @@ function PatronManagement() {
   };
 
   const handleStatusChange = async (patronId, action) => {
-    const actionText = action === 'freeze' ? 'freeze' : action === 'renew' ? 'unfreeze' : action;
-    if (!window.confirm(`Are you sure you want to ${actionText} this patron's account?`)) return;
+    const actionText = action === 'freeze' ? 'freeze' : action === 'renew' ? 'renew' : action === 'close' ? 'close' : action;
+    const confirmText = action === 'close'
+      ? 'Are you sure you want to close this patron\'s account? This will mark the account as closed but keep the data in the system.'
+      : action === 'renew'
+      ? 'Are you sure you want to renew this patron\'s membership? This will set their status to active.'
+      : `Are you sure you want to ${actionText} this patron's account?`;
+
+    if (!window.confirm(confirmText)) return;
 
     try {
       setError('');
       await adminPatronsAPI.updateStatus(patronId, action);
-      setSuccess(`Patron account ${actionText}d successfully!`);
+      const successText = action === 'close'
+        ? 'Patron account closed successfully!'
+        : action === 'renew'
+        ? 'Patron membership renewed successfully! Status is now active.'
+        : action === 'freeze'
+        ? 'Patron account frozen successfully!'
+        : `Patron account ${actionText}d successfully!`;
+      setSuccess(successText);
       loadPatrons();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
@@ -126,7 +139,7 @@ function PatronManagement() {
     try {
       setError('');
       const response = await adminPatronsAPI.resetPassword(patronId);
-      alert(`New password: ${response.data.new_password}\n\nPlease provide this to the patron and ask them to change it on first login.`);
+      alert(`New password: ${response.data.default_password}\n\nPlease provide this to the patron and ask them to change it on first login.`);
       setSuccess('Password reset successfully!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
@@ -138,9 +151,12 @@ function PatronManagement() {
     try {
       setError('');
       const response = await adminPatronsAPI.getPatron(patron.patron_id);
+      console.log('API Response:', response.data);
+      console.log('Patron data:', response.data.patron);
       setEditingPatron(response.data.patron);
       setShowEditForm(true);
     } catch (err) {
+      console.error('Error loading patron:', err);
       setError(err.response?.data?.error || 'Failed to load patron details');
     }
   };
@@ -744,13 +760,38 @@ function PatronManagement() {
                 </select>
               </div>
 
-              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
-                <button type="button" onClick={() => setShowEditForm(false)} className="btn">
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  Update Patron
-                </button>
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'space-between', marginTop: '1.5rem' }}>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleResetPassword(editingPatron.patron_id);
+                    }}
+                    className="btn"
+                    style={{ background: '#d1ecf1', color: '#0c5460' }}
+                  >
+                    🔑 Reset Password
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowEditForm(false);
+                      handleDeletePatron(editingPatron.patron_id);
+                    }}
+                    className="btn"
+                    style={{ background: '#f8d7da', color: '#721c24' }}
+                  >
+                    🗑️ Delete Patron
+                  </button>
+                </div>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <button type="button" onClick={() => setShowEditForm(false)} className="btn">
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn btn-primary">
+                    Update Patron
+                  </button>
+                </div>
               </div>
             </form>
           </div>
@@ -889,32 +930,26 @@ function PatronManagement() {
                             ⏸ Freeze
                           </button>
                         )}
-                        {patron.status === 'frozen' && (
+                        {(patron.status === 'frozen' || patron.status === 'inactive' || patron.status === 'closed') && (
                           <button
                             onClick={() => handleStatusChange(patron.patron_id, 'renew')}
                             className="btn"
-                            style={{ fontSize: '0.875rem' }}
-                            title="Unfreeze"
+                            style={{ fontSize: '0.875rem', background: '#d4edda', color: '#155724' }}
+                            title="Renew Membership"
                           >
-                            ▶ Unfreeze
+                            🔄 Renew
                           </button>
                         )}
-                        <button
-                          onClick={() => handleResetPassword(patron.patron_id)}
-                          className="btn"
-                          style={{ fontSize: '0.875rem' }}
-                          title="Reset Password"
-                        >
-                          🔑 Reset
-                        </button>
-                        <button
-                          onClick={() => handleDeletePatron(patron.patron_id)}
-                          className="btn"
-                          style={{ fontSize: '0.875rem', background: '#f8d7da', color: '#721c24' }}
-                          title="Delete Patron"
-                        >
-                          🗑️ Delete
-                        </button>
+                        {(patron.status === 'active' || patron.status === 'frozen' || patron.status === 'inactive') && (
+                          <button
+                            onClick={() => handleStatusChange(patron.patron_id, 'close')}
+                            className="btn"
+                            style={{ fontSize: '0.875rem', background: '#fff3cd', color: '#856404' }}
+                            title="Close Account"
+                          >
+                            🔒 Close
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
