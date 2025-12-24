@@ -14,6 +14,8 @@ function PatronManagement() {
   const [membershipPlans, setMembershipPlans] = useState([]);
   const [showEditForm, setShowEditForm] = useState(false);
   const [editingPatron, setEditingPatron] = useState(null);
+  const [showOverrideForm, setShowOverrideForm] = useState(null);
+  const [overrideData, setOverrideData] = useState({});
   const [newPatron, setNewPatron] = useState({
     patron_id: '',
     email: '',
@@ -282,6 +284,64 @@ function PatronManagement() {
                 <small style={{ color: '#666' }}>Enter only numbers (e.g., 9999999) - NUKG prefix is added automatically</small>
               </div>
 
+              {/* Patron Photo */}
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Patron Photo</label>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                  {newPatron.patron_photo ? (
+                    <img
+                      src={newPatron.patron_photo}
+                      alt="Patron"
+                      style={{ width: '120px', height: '120px', borderRadius: '8px', objectFit: 'cover', border: '2px solid #ddd' }}
+                    />
+                  ) : (
+                    <div style={{
+                      width: '120px',
+                      height: '120px',
+                      borderRadius: '8px',
+                      background: '#e0e0e0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '2rem',
+                      color: '#666',
+                      fontWeight: 'bold',
+                      border: '2px solid #ddd'
+                    }}>
+                      📷
+                    </div>
+                  )}
+                  <div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setNewPatron({ ...newPatron, patron_photo: reader.result });
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      style={{ marginBottom: '0.5rem' }}
+                    />
+                    {newPatron.patron_photo && (
+                      <button
+                        type="button"
+                        onClick={() => setNewPatron({ ...newPatron, patron_photo: null })}
+                        className="btn"
+                        style={{ fontSize: '0.875rem', background: '#f8d7da', color: '#721c24' }}
+                      >
+                        Remove Photo
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <small style={{ color: '#666' }}>Upload a photo (JPG, PNG). Max 5MB. Recommended: 300x300px</small>
+              </div>
+
               {/* Basic Information */}
               <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem', borderBottom: '2px solid #5BC0BE', paddingBottom: '0.5rem' }}>Basic Information</h3>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
@@ -542,7 +602,65 @@ function PatronManagement() {
                   disabled
                   style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px', background: '#f5f5f5', cursor: 'not-allowed' }}
                 />
-                <small style={{ color: '#666' }}>Patron ID cannot be changed</small>
+                <small style={{ color: '#666' }}>Patron ID cannot be changed here. Use Override to change.</small>
+              </div>
+
+              {/* Patron Photo */}
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Patron Photo</label>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                  {editingPatron.patron_photo ? (
+                    <img
+                      src={`data:${editingPatron.photo_content_type || 'image/jpeg'};base64,${editingPatron.patron_photo}`}
+                      alt="Patron"
+                      style={{ width: '120px', height: '120px', borderRadius: '8px', objectFit: 'cover', border: '2px solid #ddd' }}
+                    />
+                  ) : (
+                    <div style={{
+                      width: '120px',
+                      height: '120px',
+                      borderRadius: '8px',
+                      background: '#e0e0e0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '2rem',
+                      color: '#666',
+                      fontWeight: 'bold',
+                      border: '2px solid #ddd'
+                    }}>
+                      {editingPatron.first_name?.charAt(0)}{editingPatron.last_name?.charAt(0)}
+                    </div>
+                  )}
+                  <div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setEditingPatron({ ...editingPatron, patron_photo: reader.result });
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      style={{ marginBottom: '0.5rem' }}
+                    />
+                    {editingPatron.patron_photo && (
+                      <button
+                        type="button"
+                        onClick={() => setEditingPatron({ ...editingPatron, patron_photo: null })}
+                        className="btn"
+                        style={{ fontSize: '0.875rem', background: '#f8d7da', color: '#721c24' }}
+                      >
+                        Remove Photo
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <small style={{ color: '#666' }}>Upload a photo (JPG, PNG). Max 5MB. Recommended: 300x300px</small>
               </div>
 
               {/* Basic Information */}
@@ -737,35 +855,29 @@ function PatronManagement() {
               {/* Membership */}
               <h3 style={{ marginBottom: '1rem', marginTop: '1.5rem', fontSize: '1.1rem', borderBottom: '2px solid #5BC0BE', paddingBottom: '0.5rem' }}>Membership</h3>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Membership Plan</label>
-                <select
-                  value={editingPatron.membership_plan_id || ''}
-                  onChange={(e) => setEditingPatron({ ...editingPatron, membership_plan_id: e.target.value })}
-                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                >
-                  <option value="">No Plan</option>
-                  {membershipPlans.map(plan => (
-                    <option key={plan.plan_id} value={plan.plan_id}>{plan.plan_name}</option>
-                  ))}
-                </select>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Membership Plan (Read-only)</label>
+                <input
+                  type="text"
+                  value={editingPatron.plan_name || 'No Plan'}
+                  disabled
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px', background: '#f5f5f5', cursor: 'not-allowed' }}
+                />
+                <small style={{ color: '#666' }}>Use the Override button to change membership plan</small>
               </div>
 
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Status</label>
-                <select
-                  value={editingPatron.status || ''}
-                  onChange={(e) => setEditingPatron({ ...editingPatron, status: e.target.value })}
-                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                >
-                  <option value="active">Active</option>
-                  <option value="frozen">Frozen</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="closed">Closed</option>
-                </select>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Status (Read-only)</label>
+                <input
+                  type="text"
+                  value={editingPatron.status ? editingPatron.status.charAt(0).toUpperCase() + editingPatron.status.slice(1) : 'Unknown'}
+                  disabled
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px', background: '#f5f5f5', cursor: 'not-allowed' }}
+                />
+                <small style={{ color: '#666' }}>Use the Override button or status action buttons to change status</small>
               </div>
 
-              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'space-between', marginTop: '1.5rem' }}>
-                <div style={{ display: 'flex', gap: '1rem' }}>
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'space-between', marginTop: '1.5rem', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                   <button
                     type="button"
                     onClick={() => {
@@ -776,6 +888,21 @@ function PatronManagement() {
                   >
                     🔑 Reset Password
                   </button>
+                  {(editingPatron.status === 'active' || editingPatron.status === 'frozen' || editingPatron.status === 'inactive') && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (window.confirm('Are you sure you want to close this patron\'s account? This will mark the account as closed but keep the data in the system.')) {
+                          handleStatusChange(editingPatron.patron_id, 'close');
+                          setShowEditForm(false);
+                        }
+                      }}
+                      className="btn"
+                      style={{ background: '#fff3cd', color: '#856404' }}
+                    >
+                      🔒 Close Account
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => {
@@ -796,6 +923,129 @@ function PatronManagement() {
                     Update Patron
                   </button>
                 </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Override Patron Details Modal */}
+      {showOverrideForm && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}
+        onClick={() => setShowOverrideForm(null)}
+        >
+          <div style={{
+            background: 'white',
+            padding: '2rem',
+            borderRadius: '8px',
+            maxWidth: '600px',
+            width: '90%',
+            maxHeight: '90vh',
+            overflow: 'auto'
+          }}
+          onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+              <h2>Override Patron Details</h2>
+              <button onClick={() => setShowOverrideForm(null)} className="btn">×</button>
+            </div>
+
+            <div style={{ padding: '1rem', background: '#fff3cd', borderRadius: '4px', marginBottom: '1.5rem', border: '1px solid #ffc107' }}>
+              <strong>⚠️ Warning:</strong> This form allows you to override critical patron details. Use with caution.
+            </div>
+
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              try {
+                setError('');
+                await adminPatronsAPI.overridePatronDetails(showOverrideForm.patron_id, overrideData);
+                setSuccess('Patron details overridden successfully!');
+                setShowOverrideForm(null);
+                setOverrideData({});
+                loadPatrons();
+                setTimeout(() => setSuccess(''), 3000);
+              } catch (err) {
+                setError(err.response?.data?.error || 'Failed to override patron details');
+              }
+            }}>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Patron ID</label>
+                <input
+                  type="text"
+                  value={overrideData.new_patron_id || showOverrideForm.patron_id}
+                  onChange={(e) => setOverrideData({ ...overrideData, new_patron_id: e.target.value.toUpperCase() })}
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  placeholder={showOverrideForm.patron_id}
+                />
+                <small style={{ color: '#666' }}>⚠️ Changing patron ID will update all related records</small>
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Member Since (Membership Start Date)</label>
+                <input
+                  type="date"
+                  value={overrideData.membership_start_date || showOverrideForm.membership_start_date || ''}
+                  onChange={(e) => setOverrideData({ ...overrideData, membership_start_date: e.target.value })}
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Last Renewed On</label>
+                <input
+                  type="date"
+                  value={overrideData.last_renewed_on_date || showOverrideForm.last_renewed_on_date || ''}
+                  onChange={(e) => setOverrideData({ ...overrideData, last_renewed_on_date: e.target.value })}
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Status</label>
+                <select
+                  value={overrideData.status || showOverrideForm.status || ''}
+                  onChange={(e) => setOverrideData({ ...overrideData, status: e.target.value })}
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                >
+                  <option value="active">Active</option>
+                  <option value="frozen">Frozen</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Membership Plan</label>
+                <select
+                  value={overrideData.membership_plan_id || showOverrideForm.membership_plan_id || ''}
+                  onChange={(e) => setOverrideData({ ...overrideData, membership_plan_id: e.target.value })}
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                >
+                  <option value="">No Plan</option>
+                  {membershipPlans.map(plan => (
+                    <option key={plan.plan_id} value={plan.plan_id}>{plan.plan_name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+                <button type="button" onClick={() => { setShowOverrideForm(null); setOverrideData({}); }} className="btn">
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Override Details
+                </button>
               </div>
             </form>
           </div>
@@ -860,19 +1110,48 @@ function PatronManagement() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: '#f5f5f5' }}>
+                  <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid #ddd', width: '60px' }}>Photo</th>
                   <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Patron ID</th>
                   <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Name</th>
                   <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Email</th>
                   <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Phone</th>
                   <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Membership</th>
-                  <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Member Since</th>
-                  <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Status</th>
                   <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {patrons.map((patron) => (
                   <tr key={patron.patron_id} style={{ borderBottom: '1px solid #ddd' }}>
+                    <td style={{ padding: '0.75rem' }}>
+                      {patron.patron_photo ? (
+                        <img
+                          src={`data:${patron.photo_content_type || 'image/jpeg'};base64,${patron.patron_photo}`}
+                          alt={`${patron.first_name} ${patron.last_name}`}
+                          style={{
+                            width: '50px',
+                            height: '50px',
+                            borderRadius: '50%',
+                            objectFit: 'cover',
+                            border: '2px solid #ddd'
+                          }}
+                        />
+                      ) : (
+                        <div style={{
+                          width: '50px',
+                          height: '50px',
+                          borderRadius: '50%',
+                          background: '#e0e0e0',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '1.25rem',
+                          color: '#666',
+                          fontWeight: 'bold'
+                        }}>
+                          {patron.first_name?.charAt(0)}{patron.last_name?.charAt(0)}
+                        </div>
+                      )}
+                    </td>
                     <td style={{ padding: '0.75rem' }}>{patron.patron_id}</td>
                     <td style={{ padding: '0.75rem' }}>
                       <strong>{patron.first_name} {patron.last_name}</strong>
@@ -894,53 +1173,41 @@ function PatronManagement() {
                         'No Plan'
                       )}
                     </td>
-                    <td style={{ padding: '0.75rem' }}>{formatDate(patron.created_at)}</td>
-                    <td style={{ padding: '0.75rem' }}>
-                      <span style={{
-                        padding: '0.25rem 0.5rem',
-                        borderRadius: '4px',
-                        fontSize: '0.875rem',
-                        background:
-                          patron.status === 'active' ? '#d4edda' :
-                          patron.status === 'frozen' ? '#fff3cd' :
-                          patron.status === 'inactive' ? '#f8d7da' :
-                          '#e2e3e5',
-                        color:
-                          patron.status === 'active' ? '#155724' :
-                          patron.status === 'frozen' ? '#856404' :
-                          patron.status === 'inactive' ? '#721c24' :
-                          '#383d41'
-                      }}>
-                        {patron.status ? patron.status.charAt(0).toUpperCase() + patron.status.slice(1) : 'Unknown'}
-                      </span>
-                    </td>
                     <td style={{ padding: '0.75rem' }}>
                       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                         <button
                           onClick={() => handleEditClick(patron)}
                           className="btn"
-                          style={{ fontSize: '0.875rem' }}
+                          style={{ fontSize: '1.25rem', padding: '0.5rem', minWidth: '40px' }}
                           title="Edit Patron"
                         >
-                          ✏️ Edit
+                          ✏️
+                        </button>
+                        <button
+                          onClick={() => setShowOverrideForm(patron)}
+                          className="btn"
+                          style={{ fontSize: '1.25rem', padding: '0.5rem', minWidth: '40px', background: '#fff3cd', color: '#856404' }}
+                          title="Override Details"
+                        >
+                          ⚙️
                         </button>
                         {patron.status === 'active' && (
                           <>
                             <button
                               onClick={() => handleStatusChange(patron.patron_id, 'freeze')}
                               className="btn"
-                              style={{ fontSize: '0.875rem' }}
-                              title="Freeze"
+                              style={{ fontSize: '1.25rem', padding: '0.5rem', minWidth: '40px' }}
+                              title="Freeze Account"
                             >
-                              ⏸ Freeze
+                              ⏸
                             </button>
                             <button
                               onClick={() => handleStatusChange(patron.patron_id, 'renew')}
                               className="btn"
-                              style={{ fontSize: '0.875rem', background: '#d4edda', color: '#155724' }}
+                              style={{ fontSize: '1.25rem', padding: '0.5rem', minWidth: '40px', background: '#d4edda', color: '#155724' }}
                               title="Renew Membership"
                             >
-                              🔄 Renew
+                              🔄
                             </button>
                           </>
                         )}
@@ -948,30 +1215,20 @@ function PatronManagement() {
                           <button
                             onClick={() => handleStatusChange(patron.patron_id, 'activate')}
                             className="btn"
-                            style={{ fontSize: '0.875rem', background: '#d4edda', color: '#155724' }}
+                            style={{ fontSize: '1.25rem', padding: '0.5rem', minWidth: '40px', background: '#d4edda', color: '#155724' }}
                             title="Activate Account"
                           >
-                            ▶ Activate
+                            ▶
                           </button>
                         )}
                         {patron.status === 'closed' && (
                           <button
                             onClick={() => handleStatusChange(patron.patron_id, 'activate')}
                             className="btn"
-                            style={{ fontSize: '0.875rem', background: '#d4edda', color: '#155724' }}
+                            style={{ fontSize: '1.25rem', padding: '0.5rem', minWidth: '40px', background: '#d4edda', color: '#155724' }}
                             title="Activate Account"
                           >
-                            ✓ Activate
-                          </button>
-                        )}
-                        {(patron.status === 'active' || patron.status === 'frozen' || patron.status === 'inactive') && (
-                          <button
-                            onClick={() => handleStatusChange(patron.patron_id, 'close')}
-                            className="btn"
-                            style={{ fontSize: '0.875rem', background: '#fff3cd', color: '#856404' }}
-                            title="Close Account"
-                          >
-                            🔒 Close
+                            ✓
                           </button>
                         )}
                       </div>

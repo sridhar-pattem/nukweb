@@ -1,8 +1,11 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, send_file
 from flask_jwt_extended import jwt_required
 from app.utils.auth import admin_required, hash_password
 from app.utils.database import execute_query, get_db_cursor
 from app.config import Config
+import base64
+import io
+from datetime import datetime
 
 admin_patrons_bp = Blueprint('admin_patrons', __name__)
 
@@ -55,8 +58,8 @@ def get_patrons():
                p.membership_end_date, p.address, p.phone, p.city, p.state,
                p.national_id, p.national_id_type, p.email as patron_email,
                p.secondary_phone_no, p.secondary_email, p.correspond_language,
-               p.last_renewed_on_date,
-               u.user_id, u.email, u.status,
+               p.last_renewed_on_date, p.patron_photo, p.photo_content_type,
+               u.user_id, u.email, u.status, u.created_at,
                mp.plan_name, mp.duration_months, mp.price, p.membership_plan_id
         FROM patrons p
         JOIN users u ON p.user_id = u.user_id
@@ -66,8 +69,16 @@ def get_patrons():
         LIMIT %s OFFSET %s
     """
     params.extend([Config.ITEMS_PER_PAGE, offset])
-    
+
     patrons = execute_query(query, tuple(params), fetch_all=True)
+
+    # Convert photo BYTEA to base64 for JSON response
+    if patrons:
+        for patron in patrons:
+            if patron['patron_photo']:
+                patron['patron_photo'] = base64.b64encode(patron['patron_photo']).decode('utf-8')
+            else:
+                patron['patron_photo'] = None
     
     return jsonify({
         "patrons": [dict(p) for p in (patrons or [])],
@@ -91,9 +102,16 @@ def get_patron_details(patron_id):
         WHERE p.patron_id = %s
     """
     patron = execute_query(query, (patron_id,), fetch_one=True)
-    
+
     if not patron:
         return jsonify({"error": "Patron not found"}), 404
+
+    # Convert photo BYTEA to base64 for JSON response
+    patron = dict(patron)
+    if patron.get('patron_photo'):
+        patron['patron_photo'] = base64.b64encode(patron['patron_photo']).decode('utf-8')
+    else:
+        patron['patron_photo'] = None
     
     # Get borrowing history
     borrowing_query = """
@@ -116,9 +134,9 @@ def get_patron_details(patron_id):
         LIMIT 10
     """
     borrowings = execute_query(borrowing_query, (patron_id,), fetch_all=True)
-    
+
     return jsonify({
-        "patron": dict(patron),
+        "patron": patron,
         "recent_borrowings": [dict(b) for b in (borrowings or [])]
     }), 200
 
@@ -199,14 +217,32 @@ def create_patron():
         secondary_email = data.get('secondary_email') or None
         correspond_language = data.get('correspond_language') or 'English'
 
+        # Handle photo upload (base64 encoded)
+        patron_photo = None
+        photo_content_type = None
+        photo_uploaded_at = None
+        if data.get('patron_photo'):
+            try:
+                # Decode base64 photo
+                photo_data = data['patron_photo']
+                # Remove data URL prefix if present (e.g., "data:image/jpeg;base64,")
+                if ',' in photo_data:
+                    photo_content_type = photo_data.split(';')[0].split(':')[1]
+                    photo_data = photo_data.split(',')[1]
+                patron_photo = base64.b64decode(photo_data)
+                photo_uploaded_at = datetime.now()
+            except Exception as e:
+                print(f"Error processing photo: {e}")
+
         cursor.execute("""
             INSERT INTO patrons
             (patron_id, user_id, membership_plan_id, first_name, last_name, date_of_birth,
              phone, address, city, state, postal_code, country,
              membership_start_date, membership_end_date,
              national_id, national_id_type, email, secondary_phone_no,
-             secondary_email, correspond_language, last_renewed_on_date)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+             secondary_email, correspond_language, last_renewed_on_date,
+             patron_photo, photo_content_type, photo_uploaded_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING patron_id
         """, (patron_id, user_id, data['membership_plan_id'],
               data.get('first_name'), data.get('last_name'), date_of_birth,
@@ -215,7 +251,8 @@ def create_patron():
               national_id, national_id_type,
               patron_email, secondary_phone_no,
               secondary_email, correspond_language,
-              start_date))
+              start_date,
+              patron_photo, photo_content_type, photo_uploaded_at))
 
         created_patron_id = cursor.fetchone()['patron_id']
 
@@ -311,6 +348,31 @@ def update_patron(patron_id):
             if 'last_renewed_on_date' in data:
                 update_fields.append("last_renewed_on_date = %s")
                 params.append(data['last_renewed_on_date'])
+
+            # Handle photo update (base64 encoded)
+            if 'patron_photo' in data:
+                if data['patron_photo']:  # Not empty/null
+                    try:
+                        photo_data = data['patron_photo']
+                        photo_content_type = None
+                        # Remove data URL prefix if present
+                        if ',' in photo_data:
+                            photo_content_type = photo_data.split(';')[0].split(':')[1]
+                            photo_data = photo_data.split(',')[1]
+                        patron_photo = base64.b64decode(photo_data)
+                        update_fields.append("patron_photo = %s")
+                        params.append(patron_photo)
+                        if photo_content_type:
+                            update_fields.append("photo_content_type = %s")
+                            params.append(photo_content_type)
+                        update_fields.append("photo_uploaded_at = %s")
+                        params.append(datetime.now())
+                    except Exception as e:
+                        print(f"Error processing photo: {e}")
+                else:  # Delete photo
+                    update_fields.append("patron_photo = NULL")
+                    update_fields.append("photo_content_type = NULL")
+                    update_fields.append("photo_uploaded_at = NULL")
 
             if update_fields:
                 params.append(patron_id)
@@ -602,3 +664,66 @@ def delete_membership_plan(plan_id):
             return jsonify({"error": "Membership plan not found"}), 404
 
         return jsonify({"message": "Membership plan deactivated successfully"}), 200
+
+@admin_patrons_bp.route('/patrons/<patron_id>/override', methods=['PATCH'])
+@jwt_required()
+@admin_required
+def override_patron_details(patron_id):
+    """Override patron critical details (membership_start_date, last_renewed_on_date, patron_id, status, membership_plan_id)"""
+    data = request.get_json()
+
+    with get_db_cursor() as cursor:
+        # Get current patron info
+        cursor.execute("SELECT user_id, patron_id FROM patrons WHERE patron_id = %s", (patron_id,))
+        patron = cursor.fetchone()
+
+        if not patron:
+            return jsonify({"error": "Patron not found"}), 404
+
+        # Update patron table fields
+        patron_updates = []
+        patron_params = []
+
+        if 'membership_start_date' in data:
+            patron_updates.append("membership_start_date = %s")
+            patron_params.append(data['membership_start_date'])
+
+        if 'last_renewed_on_date' in data:
+            patron_updates.append("last_renewed_on_date = %s")
+            patron_params.append(data['last_renewed_on_date'])
+
+        if 'membership_plan_id' in data:
+            patron_updates.append("membership_plan_id = %s")
+            patron_params.append(data['membership_plan_id'])
+
+        # Handle patron_id change (CRITICAL - requires updating related tables)
+        new_patron_id = data.get('new_patron_id')
+        if new_patron_id and new_patron_id != patron_id:
+            # Check if new patron_id already exists
+            cursor.execute("SELECT patron_id FROM patrons WHERE patron_id = %s", (new_patron_id,))
+            if cursor.fetchone():
+                return jsonify({"error": f"Patron ID '{new_patron_id}' already exists"}), 400
+
+            # Validate format
+            import re
+            if not re.match(r'^[A-Z0-9]+$', new_patron_id):
+                return jsonify({"error": "Patron ID must contain only uppercase letters and numbers"}), 400
+
+            # Update patron_id (CASCADE will handle related tables)
+            cursor.execute("UPDATE patrons SET patron_id = %s WHERE patron_id = %s", (new_patron_id, patron_id))
+            patron_id = new_patron_id  # Use new ID for remaining updates
+
+        # Apply patron table updates
+        if patron_updates:
+            patron_params.append(patron_id)
+            cursor.execute(f"""
+                UPDATE patrons
+                SET {', '.join(patron_updates)}
+                WHERE patron_id = %s
+            """, tuple(patron_params))
+
+        # Update status in users table
+        if 'status' in data:
+            cursor.execute("UPDATE users SET status = %s WHERE user_id = %s", (data['status'], patron['user_id']))
+
+    return jsonify({"message": "Patron details overridden successfully", "patron_id": patron_id}), 200

@@ -56,6 +56,8 @@ export const adminPatronsAPI = {
   resetPassword: (patronId) => api.post(`/admin/patrons/${patronId}/reset-password`),
   updateStatus: (patronId, action) =>
     api.patch(`/admin/patrons/${patronId}/status`, { action }),
+  overridePatronDetails: (patronId, overrideData) =>
+    api.patch(`/admin/patrons/${patronId}/override`, overrideData),
   getMembershipPlans: () => api.get('/admin/membership-plans'),
   createMembershipPlan: (planData) => api.post('/admin/membership-plans', planData),
   updateMembershipPlan: (planId, planData) => api.put(`/admin/membership-plans/${planId}`, planData),
