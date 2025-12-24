@@ -317,19 +317,23 @@ def get_all_borrowings():
         JOIN books b ON i.book_id = b.book_id
         JOIN patrons p ON br.patron_id = p.patron_id
         JOIN users u ON p.user_id = u.user_id
-        WHERE br.status = 'active'
+        WHERE 1=1
     """
 
     params = []
 
-    if patron_filter:
-        query += " AND (p.first_name ILIKE %s OR p.last_name ILIKE %s)"
-        params.append(f'%{patron_filter}%')
-        params.append(f'%{patron_filter}%')
-
-    if book_filter:
-        query += " AND b.title ILIKE %s"
-        params.append(f'%{book_filter}%')
+    # If either patron_filter or book_filter is provided, use OR logic to search both
+    if patron_filter or book_filter:
+        search_term = patron_filter or book_filter
+        query += """ AND (
+            p.first_name ILIKE %s OR
+            p.last_name ILIKE %s OR
+            u.email ILIKE %s OR
+            b.title ILIKE %s OR
+            i.barcode ILIKE %s
+        )"""
+        search_param = f'%{search_term}%'
+        params.extend([search_param, search_param, search_param, search_param, search_param])
 
     query += " ORDER BY br.checkout_date DESC"
 
