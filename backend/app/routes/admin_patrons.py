@@ -670,60 +670,71 @@ def delete_membership_plan(plan_id):
 @admin_required
 def override_patron_details(patron_id):
     """Override patron critical details (membership_start_date, last_renewed_on_date, patron_id, status, membership_plan_id)"""
-    data = request.get_json()
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
 
-    with get_db_cursor() as cursor:
-        # Get current patron info
-        cursor.execute("SELECT user_id, patron_id FROM patrons WHERE patron_id = %s", (patron_id,))
-        patron = cursor.fetchone()
+        with get_db_cursor() as cursor:
+            # Get current patron info
+            cursor.execute("SELECT user_id, patron_id FROM patrons WHERE patron_id = %s", (patron_id,))
+            patron = cursor.fetchone()
 
-        if not patron:
-            return jsonify({"error": "Patron not found"}), 404
+            if not patron:
+                return jsonify({"error": "Patron not found"}), 404
 
-        # Update patron table fields
-        patron_updates = []
-        patron_params = []
+            # Update patron table fields
+            patron_updates = []
+            patron_params = []
 
-        if 'membership_start_date' in data:
-            patron_updates.append("membership_start_date = %s")
-            patron_params.append(data['membership_start_date'])
+            if 'membership_start_date' in data:
+                patron_updates.append("membership_start_date = %s")
+                patron_params.append(data['membership_start_date'])
 
-        if 'last_renewed_on_date' in data:
-            patron_updates.append("last_renewed_on_date = %s")
-            patron_params.append(data['last_renewed_on_date'])
+            if 'last_renewed_on_date' in data:
+                patron_updates.append("last_renewed_on_date = %s")
+                patron_params.append(data['last_renewed_on_date'])
 
-        if 'membership_plan_id' in data:
-            patron_updates.append("membership_plan_id = %s")
-            patron_params.append(data['membership_plan_id'])
+            if 'membership_plan_id' in data:
+                patron_updates.append("membership_plan_id = %s")
+                # Handle empty string as None for "No Plan"
+                plan_id = data['membership_plan_id'] if data['membership_plan_id'] else None
+                patron_params.append(plan_id)
 
-        # Handle patron_id change (CRITICAL - requires updating related tables)
-        new_patron_id = data.get('new_patron_id')
-        if new_patron_id and new_patron_id != patron_id:
-            # Check if new patron_id already exists
-            cursor.execute("SELECT patron_id FROM patrons WHERE patron_id = %s", (new_patron_id,))
-            if cursor.fetchone():
-                return jsonify({"error": f"Patron ID '{new_patron_id}' already exists"}), 400
+            # Handle patron_id change (CRITICAL - requires updating related tables)
+            new_patron_id = data.get('new_patron_id')
+            if new_patron_id and new_patron_id != patron_id:
+                # Check if new patron_id already exists
+                cursor.execute("SELECT patron_id FROM patrons WHERE patron_id = %s", (new_patron_id,))
+                if cursor.fetchone():
+                    return jsonify({"error": f"Patron ID '{new_patron_id}' already exists"}), 400
 
-            # Validate format
-            import re
-            if not re.match(r'^[A-Z0-9]+$', new_patron_id):
-                return jsonify({"error": "Patron ID must contain only uppercase letters and numbers"}), 400
+                # Validate format
+                import re
+                if not re.match(r'^[A-Z0-9]+$', new_patron_id):
+                    return jsonify({"error": "Patron ID must contain only uppercase letters and numbers"}), 400
 
-            # Update patron_id (CASCADE will handle related tables)
-            cursor.execute("UPDATE patrons SET patron_id = %s WHERE patron_id = %s", (new_patron_id, patron_id))
-            patron_id = new_patron_id  # Use new ID for remaining updates
+                # Update patron_id (CASCADE will handle related tables)
+                cursor.execute("UPDATE patrons SET patron_id = %s WHERE patron_id = %s", (new_patron_id, patron_id))
+                patron_id = new_patron_id  # Use new ID for remaining updates
 
-        # Apply patron table updates
-        if patron_updates:
-            patron_params.append(patron_id)
-            cursor.execute(f"""
-                UPDATE patrons
-                SET {', '.join(patron_updates)}
-                WHERE patron_id = %s
-            """, tuple(patron_params))
+            # Apply patron table updates
+            if patron_updates:
+                patron_params.append(patron_id)
+                cursor.execute(f"""
+                    UPDATE patrons
+                    SET {', '.join(patron_updates)}
+                    WHERE patron_id = %s
+                """, tuple(patron_params))
 
-        # Update status in users table
-        if 'status' in data:
-            cursor.execute("UPDATE users SET status = %s WHERE user_id = %s", (data['status'], patron['user_id']))
+            # Update status in users table
+            if 'status' in data:
+                cursor.execute("UPDATE users SET status = %s WHERE user_id = %s", (data['status'], patron['user_id']))
 
-    return jsonify({"message": "Patron details overridden successfully", "patron_id": patron_id}), 200
+        return jsonify({"message": "Patron details overridden successfully", "patron_id": patron_id}), 200
+
+    except Exception as e:
+        print(f"Error in override_patron_details: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"Failed to override patron details: {str(e)}"}), 500
